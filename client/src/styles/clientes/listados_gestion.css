@@ -1,0 +1,118 @@
+/* --- IMPORTANTE , ESTE CSS , ABARCA PROFESIONALES,CLIENTES Y MOROSOS--- */
+
+.main-content { 
+    width: 100%;
+    overflow-x: hidden; /* Evita el scroll horizontal de toda la página */
+}
+
+
+section, .main-content > div {
+    overflow: visible;
+}
+
+.seccion-clientes {
+    padding: 30px;
+}
+
+.cabecera-seccion {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+.header-planes-abonos{
+    display:flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    flex-direction: row;
+}
+
+.cabecera-seccion h2 {
+    margin: 0;
+    color: var(--primary-dark);
+    font-size: 1.5rem;
+}
+
+/* --- TABLA Y SCROLL --- */
+
+.contenedor-scroll {
+    width: 100%;
+    overflow-x: auto;
+    background: #fff;
+    border-radius: 12px;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.tabla-cronograma {
+    width: 100%;
+    min-width: 900px; 
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* --- CELDAS Y CABECERA --- */
+
+.tabla-cronograma th, 
+.tabla-cronograma td {
+    padding: 15px 20px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+    white-space: nowrap;
+}
+
+.tabla-cronograma th {
+    background-color: #f8f9fa;
+    color: #444;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+/* ---  COLUMNA FIJA --- */
+.columna-fija {
+    position: sticky;
+    left: 0; 
+    z-index: 10; 
+    background: #f1f3f5 !important; 
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1); 
+}
+
+th.columna-fija {
+    z-index: 11; 
+}
+
+.boton-editar, .boton-eliminar {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #eee;
+    background: white;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+
+
+
+
+/* --- RESPONSIVE --- */
+@media screen and (max-width: 768px) {
+    .seccion-clientes { padding: 15px; }
+    
+    .tabla-cronograma th, 
+    .tabla-cronograma td {
+        padding: 12px 10px;
+        font-size: 0.85rem;
+    }
+    
+    #content-header { 
+        height: auto; 
+        min-height: 100px; 
+        padding: 20px; }
+}
+.header-planes-abonos{
+    display:flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    flex-direction: row;
+}

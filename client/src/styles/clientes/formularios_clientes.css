@@ -1,0 +1,217 @@
+
+.contenedor-formulario {
+    padding: 40px;
+    width: 100%;          
+    max-width: 100%;      
+    margin: 0;         
+    display: block;     
+    box-sizing: border-box;
+}
+
+
+.formulario-fluxer {
+    background-color: var(--white);
+    padding: 30px;     
+    width: 90%;     
+    max-width: 1300px; 
+    margin: 0 auto;   
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+    text-align: left;   
+}
+
+.grupo-campo {
+
+    margin-bottom: 5px;
+}
+
+.grupo-campo label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.grupo-campo input, 
+.grupo-campo select, 
+.grupo-campo textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: inherit;
+}
+
+.grupo-campo textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.grupo-campo input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 2px rgba(64, 192, 87, 0.1);
+}
+
+.cabecera-formulario {
+    margin-bottom: 30px;
+    border-left: 5px solid var(--accent-blue);
+    padding-left: 20px;
+}
+
+.cabecera-profesional {
+    border-left-color: #40c057; 
+}
+
+.cabecera-formulario h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: var(--primary-dark);
+}
+
+.cabecera-formulario p {
+    color: #666;
+    margin-top: 5px;
+}
+
+.cuadricula-formulario {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.ancho-completo {
+    grid-column: 1 / -1;
+    margin-top: 10px;
+}
+
+.acciones-formulario {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+}
+
+/* Botones con estilos específicos no globales */
+.boton-profesional {
+    background-color: #40c057;
+}
+
+.boton-profesional:hover {
+    background-color: #2f9e44;
+}
+
+/* Estilos para botones de formularios */
+.btn-primary, .btn-secondary, .btn-help {
+    padding: 10px 25px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background-color: var(--accent-blue);
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #0086bc;
+}
+
+.btn-secondary {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    color: #333;
+    padding: 10px 20px;
+}
+
+.btn-secondary:hover {
+    background: #e9ecef;
+}
+
+.btn-help {
+    background: #40c057;
+    color: rgb(14, 13, 13);
+    border: none;
+}
+
+.btn-help:hover {
+    background: #2f9e44;
+}
+
+/* Estilo para el link activo en la sidebar */
+.enlace-activo {
+    color: var(--accent-blue) !important;
+    font-weight: bold;
+}
+
+
+
+
+
+
+/* --- RESPONSIVE: TABLETS Y CELULARES --- */
+@media screen and (max-width: 768px) {
+    
+    .contenedor-formulario {
+        padding: 10px;
+        width: 100%;
+    }
+
+    .formulario-fluxer {
+        width: 100%;       
+        padding: 5px 15px; 
+        border-radius: 8px;
+        box-shadow: none;
+        border: 1px solid #eee; 
+    }
+
+    .cuadricula-formulario {
+        grid-template-columns: 1fr; 
+        gap: 10px; 
+    }
+
+    .cabecera-formulario {
+        padding-left: 15px;
+        margin-bottom: 20px;
+    }
+
+    .cabecera-formulario h1 {
+        font-size: 1.4rem;
+    }
+
+    .grupo-campo input {
+        height: 45px;
+        font-size: 1rem;
+    }
+
+    .acciones-formulario {
+        flex-direction: column-reverse; 
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .btn-primary, .btn-secondary, .btn-help {
+        width: 100%;     
+        justify-content: center;
+        padding: 14px;
+    }
+}
+
+@media screen and (max-width: 400px) {
+    .formulario-fluxer {
+        padding: 15px 10px;
+    }
+    
+    .cabecera-formulario h1 {
+        font-size: 1.2rem;
+    }
+}
