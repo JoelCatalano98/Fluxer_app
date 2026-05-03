@@ -1,19 +1,110 @@
-import React from 'react';
-import { User } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import { 
+  Home, 
+  Users, 
+  Settings, 
+  Briefcase
+} from 'lucide-react';
 
 const Navbar = () => {
   return (
-    <nav style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', background: '#1a1a1a', color: 'white' }}>
-      <div className="logo" style={{ fontWeight: 'bold', fontSize: '1.5rem' }}>FLUXER</div>
-      <ul style={{ display: 'flex', gap: '20px', listStyle: 'none' }}>
-        <li>Inicio</li>
-        <li>Socios</li>
-        <li>Turnos</li>
-      </ul>
-      <div>
-        <User size={24} />
+    <aside className="sidebar">
+      <div className="logo">
+        <h2 style={{ letterSpacing: '2px', color: '#00a8e8' }}>FLUXER</h2>
       </div>
-    </nav>
+      <ul className="nav-links">
+        <li>
+          <NavLink to="/" end className={({ isActive }) => isActive ? 'active' : ''} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
+            <Home size={20} style={{ marginRight: '10px' }} /> <span>Inicio</span>
+          </NavLink>
+        </li>
+        
+        <li>
+          <details open>
+            <summary style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', listStyle: 'none', padding: '10px 0' }}>
+              <Briefcase size={20} style={{ marginRight: '10px', color: '#00a8e8' }} /> <span>Servicios</span>
+            </summary>
+            <ul className="submenu">
+              <li>
+                <NavLink to="/gestion-planes" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Gestión de Planes
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/turnos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Turnos / Horarios
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/configuracion-local" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Configuración Local
+                </NavLink>
+              </li>
+            </ul>
+          </details>
+        </li>
+
+        <li>
+          <details open>
+            <summary style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', listStyle: 'none', padding: '10px 0' }}>
+              <Users size={20} style={{ marginRight: '10px', color: '#00a8e8' }} /> <span>Clientes</span>
+            </summary>
+            <ul className="submenu">
+              <li>
+                <NavLink to="/profesionales" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Profesionales
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/socios" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Gestión de Socios
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/clientes-totales" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Clientes Totales
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/morosos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Morosos
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/abonos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Ver Planes
+                </NavLink>
+              </li>
+            </ul>
+          </details>
+        </li>
+
+        <li>
+          <details open>
+            <summary style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', listStyle: 'none', padding: '10px 0' }}>
+              <Settings size={20} style={{ marginRight: '10px', color: '#00a8e8' }} /> <span>Utilidades</span>
+            </summary>
+            <ul className="submenu">
+              <li>
+                <NavLink to="/categorias" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Categorías / Etiquetas
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/pagos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Medios de Pago
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/feriados" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Feriados
+                </NavLink>
+              </li>
+            </ul>
+          </details>
+        </li>
+      </ul>
+    </aside>
   );
 };
 
