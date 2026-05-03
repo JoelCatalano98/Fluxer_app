@@ -3,10 +3,11 @@ import {
   Home, 
   Users, 
   Settings, 
-  Briefcase
+  Briefcase,
+  Calendar
 } from 'lucide-react';
 
-const Navbar = () => {
+const Navbar = ({ onOpenCalendar }) => {
   return (
     <aside className="sidebar">
       <div className="logo">
@@ -99,6 +100,19 @@ const Navbar = () => {
                 <NavLink to="/feriados" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
                   Feriados
                 </NavLink>
+              </li>
+            </ul>
+          </details>
+        </li>
+
+        <li>
+          <details open>
+            <summary style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', listStyle: 'none', padding: '10px 0' }}>
+              <Calendar size={20} style={{ marginRight: '10px', color: '#00a8e8' }} /> <span>Calendario</span>
+            </summary>
+            <ul className="submenu">
+              <li onClick={onOpenCalendar} style={{ cursor: 'pointer' }}>
+                Mensual
               </li>
             </ul>
           </details>

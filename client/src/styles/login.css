@@ -4,29 +4,16 @@
     --white: #ffffff;
 }
 
-body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    width: 100%;
-    overflow: hidden; 
-}
-
-body {
-    font-family: 'Segoe UI', sans-serif;
-    background-color: var(--primary-dark);
-    display: flex;
-    justify-content: center;
-    align-items: center;    
-}
-
 .login-container {
     display: flex;
     justify-content: center;
     align-items: center;
     width: 100%;
+    min-height: 100vh;
     padding: 20px;
     box-sizing: border-box;
+    background-color: var(--primary-dark);
+    font-family: 'Segoe UI', sans-serif;
 }
 
 .login-box {
