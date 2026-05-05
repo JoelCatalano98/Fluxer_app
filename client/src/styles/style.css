@@ -189,7 +189,8 @@ body {
 
 .card {
     flex: 0 1 280px; 
-    height: 160px;    
+    height: 200px;  
+    max-width:500px ;
     background-color: var(--primary-dark);
     color: white;
     padding: 40px;

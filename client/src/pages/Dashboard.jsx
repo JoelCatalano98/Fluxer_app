@@ -4,10 +4,10 @@ import '../styles/style.css';
 const Dashboard = () => {
   return (
     <div className="main-content">
-      <section id="content-header" style={{ minHeight: '400px', height: '400px', position: 'relative', overflow: 'hidden' }}>
+      <section id="content-header" style={{ minHeight: '400px', height: '450px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'relative', zIndex: 2, padding: '40px' }}>
           <h1 id="main-title" style={{ color: 'white', textAlign: 'left', margin: 0, fontSize: '2.5rem' }}>Panel de Control</h1>
-          <p style={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0', fontSize: '1.2rem' }}>Bienvenido a Fluxer - Gestión de Gimnasio</p>
+          <p style={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0', fontSize: '1.2rem' }}>Bienvenido a Fluxer Gestion.</p>
         </div>
         <img 
           src="/img/welcome-background.png" 
@@ -29,7 +29,7 @@ const Dashboard = () => {
           <Users size={48} color="#00a8e8" />
           <div>
             <span className="stat" style={{ fontSize: '1.8rem', fontWeight: '700', display: 'block' }}>120</span>
-            <h3 style={{ margin: 0, color: '#666', fontSize: '1rem' }}>Socios Activos</h3>
+            <h3 style={{ margin: 0, color: '#666', fontSize: '1rem' }}>Clientes Totales</h3>
           </div>
         </div>
 
@@ -37,7 +37,14 @@ const Dashboard = () => {
           <UserCheck size={48} color="#00a8e8" />
           <div>
             <span className="stat" style={{ fontSize: '1.8rem', fontWeight: '700', display: 'block' }}>15</span>
-            <h3 style={{ margin: 0, color: '#666', fontSize: '1rem' }}>Nuevos (Mes)</h3>
+            <h3 style={{ margin: 0, color: '#666', fontSize: '1rem' }}>Turnos Hoy</h3>
+          </div>
+        </div>
+        <div className="card" style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <UserCheck size={48} color="#00a8e8" />
+          <div>
+            <span className="stat" style={{ fontSize: '1.8rem', fontWeight: '700', display: 'block' }}>15</span>
+            <h3 style={{ margin: 0, color: '#666', fontSize: '1rem' }}>Ingreso (Mes)</h3>
           </div>
         </div>
 
