@@ -10,7 +10,16 @@ const Turnos = () => {
 
   return (
     <div className="main-content">
-      <section id="content-header" style={{ minHeight: '100px', height: '450px', justifyContent: 'center' }}>
+      <section id="content-header" style={{ 
+          minHeight: '100px', 
+          height: '450px', 
+          position: 'relative', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'flex-end', // Empuja el contenido hacia abajo
+          padding: '0 40px 40px 40px', // Agregamos 40px al final para que no toque el borde
+          overflow: 'hidden' 
+}}>
         <div style={{ position: 'relative', zIndex: 2, padding: '40px' }}>
           <h1 id="main-title" style={{ color: 'white', textAlign: 'left', margin: 0 }}>Cronograma Semanal</h1>
           <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>

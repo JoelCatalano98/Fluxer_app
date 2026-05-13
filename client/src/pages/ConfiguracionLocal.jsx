@@ -49,7 +49,16 @@ const ConfiguracionLocal = () => {
 
   return (
     <div className="main-content">
-      <section id="content-header" style={{ minHeight: '100px', height: '450px', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 40px', overflow: 'hidden' }}>
+      <section id="content-header" style={{ 
+          minHeight: '100px', 
+          height: '450px', 
+          position: 'relative', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'flex-end', // Empuja el contenido hacia abajo
+          padding: '0 40px 40px 40px', // Agregamos 40px al final para que no toque el borde
+          overflow: 'hidden' 
+}}>
         <div style={{ position: 'relative', zIndex: 2 }}>
           <h1 id="main-title" style={{ color: 'white', textAlign: 'left', margin: 0 }}>Configuración Local</h1>
           <p style={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}>Reglas de negocio e identidad visual</p>
