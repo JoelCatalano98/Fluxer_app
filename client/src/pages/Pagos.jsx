@@ -5,10 +5,29 @@ import '../styles/utilidades/configuracion_pagos.css';
 const Pagos = () => {
   return (
     <div className="main-content">
-      <section id="content-header" style={{ minHeight: '100px', height: '150px', justifyContent: 'center' }}>
+      <section id="content-header" style={{ 
+          minHeight: '100px', 
+          height: '450px', 
+          position: 'relative', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'flex-end',
+          padding: '0 40px 40px 40px',
+          overflow: 'hidden' 
+      }}>
+<div style={{ position: 'relative', zIndex: 2 }}>
         <h1 id="main-title" style={{ color: 'white', textAlign: 'left', margin: 0 }}>Medios de Pago</h1>
         <p style={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}>Configura tus canales de cobro y recargos</p>
-        <img src="/img/welcome-background.png" alt="Fondo" style={{ height: '100%' }} />
+</div>
+      <img src="/img/welcome-background.png" alt="Fondo" style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          width: '100%', 
+          height: '100%', 
+          objectFit: 'cover', 
+          zIndex: 1 
+        }} />
       </section>
 
       <div className="contenedor-pagos">
