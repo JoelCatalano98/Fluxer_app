@@ -71,11 +71,6 @@ const Navbar = ({ onOpenCalendar }) => {
                   Morosos
                 </NavLink>
               </li>
-              <li>
-                <NavLink to="/abonos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Ver Planes
-                </NavLink>
-              </li>
             </ul>
           </details>
         </li>

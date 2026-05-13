@@ -4,10 +4,29 @@ import '../styles/utilidades/categorias_etiquetas.css';
 const Categorias = () => {
   return (
     <div className="main-content">
-      <section id="content-header" style={{ minHeight: '100px', height: '150px', justifyContent: 'center' }}>
+      <section id="content-header" style={{ 
+          minHeight: '100px', 
+          height: '450px', 
+          position: 'relative', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'flex-end', // Empuja el contenido hacia abajo
+          padding: '0 40px 40px 40px', // Agregamos 40px al final para que no toque el borde
+          overflow: 'hidden' 
+}}>
+<div style={{ position: 'relative', zIndex: 2 }}>
         <h1 id="main-title" style={{ color: 'white', textAlign: 'left', margin: 0 }}>Categorías y Etiquetas</h1>
         <p style={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}>Organiza y clasifica tus servicios y planes</p>
-        <img src="/img/welcome-background.png" alt="Fondo" style={{ height: '100%' }} />
+</div>
+        <img src="/img/welcome-background.png" alt="Fondo" style={{ 
+          position: 'absolute', 
+          top: 0, 
+          left: 0, 
+          width: '100%', 
+          height: '100%', 
+          objectFit: 'cover', 
+          zIndex: 1 
+        }} />
       </section>
 
       <div className="contenedor-categorias">

@@ -8,7 +8,6 @@ import Modal from './components/Modal';
 // Páginas
 import Dashboard from './pages/Dashboard';
 import Socios from './pages/Socios';
-import Abonos from './pages/Abonos';
 import Turnos from './pages/Turnos';
 import ConfiguracionLocal from './pages/ConfiguracionLocal';
 import GestionPlanes from './pages/GestionPlanes';
@@ -49,7 +48,6 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/socios" element={<Socios />} />
-            <Route path="/abonos" element={<Abonos />} />
             <Route path="/clientes-totales" element={<ClientesTotales />} />
             <Route path="/morosos" element={<Morosos />} />
             <Route path="/profesionales" element={<Profesionales />} />
