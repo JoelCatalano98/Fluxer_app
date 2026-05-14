@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Topbar from './components/Topbar';
@@ -25,8 +25,16 @@ import './styles/style.css';
 
 function AppContent() {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
+
+  // Cerrar sidebar al cambiar de ruta (solo en móviles/tablets)
+  useEffect(() => {
+    if (window.innerWidth <= 768) {
+      setIsSidebarOpen(false);
+    }
+  }, [location]);
 
   if (isLoginPage) {
     return (
@@ -37,13 +45,16 @@ function AppContent() {
   }
 
   return (
-    <div className="app-layout" style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+    <div className={`app-layout ${isSidebarOpen ? 'sidebar-open' : ''}`} style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
       {/* Sidebar - Ancho fijo */}
-      <Navbar onOpenCalendar={() => setIsCalendarOpen(true)} /> 
+      <Navbar onOpenCalendar={() => setIsCalendarOpen(true)} isOpen={isSidebarOpen} /> 
       
+      {/* Overlay para cerrar el menú en móviles */}
+      {isSidebarOpen && <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)}></div>}
+
       {/* Contenedor principal - Ocupa todo el resto */}
       <div className="main-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#f4f7f6', minWidth: 0 }}>
-        <Topbar />
+        <Topbar onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
         
         <main className="content-area" style={{ flex: 1, padding: '20px', width: '100%', boxSizing: 'border-box' }}>
           <Routes>

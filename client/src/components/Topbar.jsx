@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CircleHelp, LogOut, Menu, Send } from 'lucide-react';
 import Modal from './Modal';
 
-const Topbar = () => {
+const Topbar = ({ onToggleSidebar }) => {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -15,7 +15,7 @@ const Topbar = () => {
   return (
     <>
       <nav className="topbar">
-        <button id="menu-toggle" className="hamburger-btn">
+        <button id="menu-toggle" className="hamburger-btn" onClick={onToggleSidebar}>
           <Menu size={24} />
         </button>
         <div className="search-bar">

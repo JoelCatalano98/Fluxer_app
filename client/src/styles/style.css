@@ -584,12 +584,21 @@ body {
 }
 
 
-#menu-toggle {
+/* Botón de hamburguesa oculto en desktop */
+.hamburger-btn {
     display: none;
+    background: none;
+    border: none;
+    color: var(--accent-blue);
+    cursor: pointer;
+    padding: 0;
+    margin-right: 15px;
 }
 
-#menu-toggle {
-    display: none;
+@media (max-width: 768px) {
+    .hamburger-btn {
+        display: block;
+    }
 }
 
 @media screen and (max-width: 480px) {
@@ -612,8 +621,23 @@ body {
 
     /* Clase con JavaScript */
 
-    .sidebar.active {
+    .sidebar.active,
+    .sidebar.open {
         left: 0 !important;
+    }
+
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 1500;
+    }
+
+    .sidebar {
+        z-index: 2000 !important;
     }
 
     .sidebar .logo {

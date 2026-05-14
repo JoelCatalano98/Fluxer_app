@@ -7,9 +7,9 @@ import {
   Calendar
 } from 'lucide-react';
 
-const Navbar = ({ onOpenCalendar }) => {
+const Navbar = ({ onOpenCalendar, isOpen }) => {
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="logo">
         <h2 style={{ letterSpacing: '2px', color: '#00a8e8' }}>FLUXER</h2>
       </div>
