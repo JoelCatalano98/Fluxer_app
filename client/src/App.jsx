@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Topbar from './components/Topbar';
 import Footer from './components/Footer';
 import Modal from './components/Modal';
+import Calendar from './components/Calendar';
 
 // Páginas
 import Dashboard from './pages/Dashboard';
@@ -66,13 +67,10 @@ function AppContent() {
       <Modal 
         isOpen={isCalendarOpen} 
         onClose={() => setIsCalendarOpen(false)} 
-        title="Agenda de Turnos"
+        title="Agenda de Turnos Mensual"
       >
-        <div style={{ padding: '20px', textAlign: 'center' }}>
-          <p>Calendario Mensual de Fluxer</p>
-          <div style={{ height: '400px', background: '#f8f9fa', border: '1px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            Contenido del Calendario (Próximamente)
-          </div>
+        <div style={{ padding: '10px' }}>
+          <Calendar />
         </div>
       </Modal>
     </div>
