@@ -56,7 +56,7 @@ function AppContent() {
       <div className="main-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#f4f7f6', minWidth: 0 }}>
         <Topbar onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
         
-        <main className="content-area" style={{ flex: 1, padding: '20px', width: '100%', boxSizing: 'border-box' }}>
+        <main className="content-area" style={{ flex: 1, padding: '6px', width: '100%', boxSizing: 'border-box' }}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/socios" element={<Socios />} />

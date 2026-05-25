@@ -240,7 +240,7 @@ body {
 
 .recent-activity-section {
     margin-top: 20px;
-    padding: 0 30px 40px 30px;
+    padding: 0 20px 20px 20px;
 }
 
 .activity-title {
@@ -532,7 +532,7 @@ body {
 
 .recent-activity-section {
     margin-top: 20px;
-    padding: 0 30px 40px 30px;
+    padding: 0 10px 10px 10px;
 }
 
 .activity-title {
@@ -773,7 +773,84 @@ body {
 }
 
 @media screen and (max-width: 480px) {
-    /* ---  MENÚ LATERAL COMPACTO  --- */
+    /* ---  AJUSTES GENERALES DASHBOARD MOBILE  --- */
+
+    .main-content {
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    .dashboard-header {
+        height: 300px !important; /* Más alto como se pidió */
+        min-height: 300px !important;
+    }
+
+    .header-overlay {
+        padding: 20px !important; /* Padding mínimo */
+    }
+
+    .header-title {
+        font-size: 1.8rem !important;
+    }
+
+    .header-subtitle {
+        font-size: 1rem !important;
+    }
+
+    /* --- GRID DE CARDS 2x2 --- */
+
+    .dashboard-stats-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important; /* Estructura de 2 columnas */
+        gap: 10px !important;
+        padding: 10px !important; /* Margen mínimo */
+    }
+
+    .stat-card {
+        padding: 12px !important;
+        height: auto !important;
+        min-width: 0 !important;
+        gap: 10px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+    }
+
+    .stat-card svg { /* Para los iconos de Lucide */
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .stat-value {
+        font-size: 1.1rem !important;
+    }
+
+    .stat-label {
+        font-size: 0.75rem !important;
+        white-space: normal !important; /* Permitir que el texto baje si es largo */
+    }
+
+    /* --- TABLA CON SCROLL HORIZONTAL INTERNO --- */
+
+    .recent-activity-section {
+        padding: 0 5px 5px 0px 
+    }
+
+    .table-wrapper {
+        width: 100% !important;
+        overflow-x: auto !important; /* Habilita el scroll horizontal */
+        -webkit-overflow-scrolling: touch;
+        border-radius: 8px !important;
+    }
+
+    .data-table {
+        min-width: 600px !important; /* Fuerza el scroll al ser más ancha que la pantalla */
+    }
+
+    .data-table th, .data-table td {
+        padding: 12px 10px !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* ---  MENÚ LATERAL COMPACTO (Existente) --- */
 
     .sidebar {
         position: fixed !important;
@@ -793,6 +870,10 @@ body {
         height: 160px;
         min-height: 160px;
         width: 100%;
+        text-align: end;
+        display: flex;
+        justify-content: flex-end;
+    
     }
 
     
