@@ -4,83 +4,83 @@ import '../styles/style.css';
 const Dashboard = () => {
   return (
     <div className="main-content">
-      <section id="content-header" style={{ minHeight: '400px', height: '450px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'relative', zIndex: 2, padding: '40px' }}>
-          <h1 id="main-title" style={{ color: 'white', textAlign: 'left', margin: 0, fontSize: '2.5rem' }}>Panel de Control</h1>
-          <p style={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0', fontSize: '1.2rem' }}>Bienvenido a Fluxer Gestion.</p>
+      {/* Encabezado con imagen de fondo */}
+      <section id="content-header" className="dashboard-header">
+        <div className="header-overlay">
+          <h1 className="header-title">Panel de Control</h1>
+          <p className="header-subtitle">Bienvenido a Fluxer Gestion.</p>
         </div>
         <img 
           src="/img/welcome-background.png" 
           alt="Fondo" 
-          style={{ 
-            position: 'absolute', 
-            top: 0, 
-            left: 0, 
-            width: '100%', 
-            height: '100%', 
-            objectFit: 'cover', 
-            zIndex: 1 
-          }} 
+          className="header-bg-img"
         />
       </section>
       
-      <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', padding: '30px' }}>
-        <div className="card" style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '20px' }}>
+      {/* Grilla de estadísticas */}
+      <div className="dashboard-stats-grid">
+        <div className="stat-card">
           <Users size={48} color="#00a8e8" />
-          <div>
-            <span className="stat" style={{ fontSize: '1.8rem', fontWeight: '700', display: 'block' }}>120</span>
-            <h3 style={{ margin: 0, color: '#666', fontSize: '1rem' }}>Clientes Totales</h3>
+          <div className="stat-content">
+            <span className="stat-value">120</span>
+            <h3 className="stat-label">Clientes Totales</h3>
           </div>
         </div>
 
-        <div className="card" style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <div className="stat-card">
           <UserCheck size={48} color="#00a8e8" />
-          <div>
-            <span className="stat" style={{ fontSize: '1.8rem', fontWeight: '700', display: 'block' }}>15</span>
-            <h3 style={{ margin: 0, color: '#666', fontSize: '1rem' }}>Turnos Hoy</h3>
-          </div>
-        </div>
-        <div className="card" style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <UserCheck size={48} color="#00a8e8" />
-          <div>
-            <span className="stat" style={{ fontSize: '1.8rem', fontWeight: '700', display: 'block' }}>15</span>
-            <h3 style={{ margin: 0, color: '#666', fontSize: '1rem' }}>Ingreso (Mes)</h3>
+          <div className="stat-content">
+            <span className="stat-value">15</span>
+            <h3 className="stat-label">Turnos Hoy</h3>
           </div>
         </div>
 
-        <div className="card" style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <div className="stat-card">
+          <UserCheck size={48} color="#00a8e8" />
+          <div className="stat-content">
+            <span className="stat-value">15</span>
+            <h3 className="stat-label">Ingreso (Mes)</h3>
+          </div>
+        </div>
+
+        <div className="stat-card">
           <CircleAlert size={48} color="#e03131" />
-          <div>
-            <span className="stat" style={{ fontSize: '1.8rem', fontWeight: '700', display: 'block' }}>8</span>
-            <h3 style={{ margin: 0, color: '#666', fontSize: '1rem' }}>Morosos</h3>
+          <div className="stat-content">
+            <span className="stat-value">8</span>
+            <h3 className="stat-label">Morosos</h3>
           </div>
         </div>
       </div>
 
-      <div className="recent-activity" style={{ marginTop: '20px', padding: '0 30px 40px 30px' }}>
-        <h2 style={{ color: '#333', marginBottom: '20px', fontSize: '1.5rem' }}>Actividad Reciente</h2>
-        <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
-          <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      {/* Sección de Actividad Reciente */}
+      <div className="recent-activity-section">
+        <h2 className="activity-title">Actividad Reciente</h2>
+        <div className="table-wrapper">
+          <table className="data-table">
             <thead>
-              <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #eee' }}>
-                <th style={{ padding: '15px', textAlign: 'left' }}>Socio</th>
-                <th style={{ padding: '15px', textAlign: 'left' }}>Actividad</th>
-                <th style={{ padding: '15px', textAlign: 'left' }}>Hora</th>
-                <th style={{ padding: '15px', textAlign: 'left' }}>Estado</th>
+              <tr className="table-header-row">
+                <th>Socio</th>
+                <th>Actividad</th>
+                <th>Hora</th>
+                <th>Estado</th>
               </tr>
             </thead>
             <tbody>
-              <tr style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '15px' }}>Joel Silva</td>
-                <td style={{ padding: '15px' }}>Ingreso Sala Musculación</td>
-                <td style={{ padding: '15px' }}>08:15 AM</td>
-                <td style={{ padding: '15px' }}><span className="badge badge-success" style={{ background: '#d3f9d8', color: '#2b8a3e', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem' }}>OK</span></td>
+              <tr className="table-row">
+                <td>Joel Silva</td>
+                <td>Ingreso Sala Musculación</td>
+                <td>08:15 AM</td>
+                <td>
+                  <span className="badge badge-success-light">OK</span>
+                </td>
               </tr>
-              <tr style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '15px' }}>Tomás Silva</td>
-                <td style={{ padding: '15px' }}>Pago Mensualidad</td>
-                <td style={{ padding: '15px' }}>09:30 AM</td>
-                <td style={{ padding: '15px' }}><span className="badge badge-success" style={{ background: '#d3f9d8', color: '#2b8a3e', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem' }}>Pagado</span></td>
+              <tr className="table-row">
+                <td>Tomás Silva</td>
+                <td>Pago Mensualidad</td>
+                <td>09:30 AM</td>
+                <td>
+                  <span className="badge badge-success-light">Pagado</span>
+                </td>
               </tr>
             </tbody>
           </table>

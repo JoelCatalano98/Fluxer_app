@@ -148,82 +148,134 @@ body {
     flex-direction: column;
 }
 
-/* Imagen al 100% de ancho, más alta y sin bordes */ 
+/* --- DASHBOARD REFACTOR --- */
 
-#content-header {
+.dashboard-header {
     position: relative;
-    width: 100%; 
+    width: 100%;
     min-height: 400px;
-    height: 400px; 
-    margin: 0; 
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-left: 60px;
-    color: white;
+    height: 450px;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    background-color: var(--primary-dark); /* Fondo de respaldo */
 }
 
-#content-header img {
+.header-overlay {
+    position: relative;
+    z-index: 10;
+    padding: 40px 60px;
+}
+
+.header-title {
+    color: white;
+    text-align: left;
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.header-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 10px 0 0 0;
+    font-size: 1.2rem;
+}
+
+.header-bg-img {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
-    height: 150%;
+    height: 100%;
     object-fit: cover;
-    z-index: -1;
-    filter: brightness(0.4);
-    
+    z-index: 1;
+    filter: brightness(0.6); /* Un poco más brillante que antes */
 }
 
-/* --- CARDS --- */
+.dashboard-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    padding: 30px;
+}
 
-.dashboard-grid {
-    display: flex;
-    flex-wrap: wrap;
+.stat-card {
+    background: #ffffff !important; /* Forzamos fondo blanco */
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    display: flex !important;
+    flex-direction: row !important; /* Aseguramos formato horizontal (Icono | Texto) */
     align-items: center;
-    justify-content: center;
-    gap: 100px;
-    padding: 35px; 
+    gap: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.card {
-    flex: 0 1 280px; 
-    height: 200px;  
-    max-width:500px ;
-    background-color: var(--primary-dark);
-    color: white;
-    padding: 40px;
-    border-radius: 15px;
-    display: flex;
-    align-items: center;
-    gap: 30px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    transition: 0.3s;
-}
-
-.card:hover {
+.stat-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
-.card i {
-    font-size: 3rem;
-    color: var(--accent-blue);
+.stat-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
-.card .stat {
+.stat-value {
     font-size: 1.8rem;
     font-weight: 700;
-    display: block;
+    line-height: 1;
+    margin-bottom: 5px;
+    color: var(--primary-dark);
 }
 
-.card h3 {
+.stat-label {
     margin: 0;
-    font-size: 0.9rem;
-    color: #bbb;
-    font-weight: 400;
+    color: #666;
+    font-size: 0.95rem;
+    font-weight: 500;
+    white-space: nowrap;
 }
+
+.recent-activity-section {
+    margin-top: 20px;
+    padding: 0 30px 40px 30px;
+}
+
+.activity-title {
+    color: var(--primary-dark);
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.table-wrapper {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.table-header-row {
+    background: #f8f9fa;
+    border-bottom: 2px solid #eee;
+}
+
+.table-row {
+    border-bottom: 1px solid #eee;
+}
+
+.badge-success-light {
+    background: #d3f9d8;
+    color: #2b8a3e;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+/* --- RESTO DE ESTILOS --- */
 
 .recent-activity {
     margin-top: 40px;
@@ -393,6 +445,125 @@ body {
 .btn-submit-help:hover {
     background-color: #0086bc;
     transform: translateY(-2px);
+}
+
+/* --- DASHBOARD REFACTOR --- */
+
+.dashboard-header {
+    position: relative;
+    min-height: 400px;
+    height: 450px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+.header-overlay {
+    position: relative;
+    z-index: 2;
+    padding: 28px;
+}
+
+.header-title {
+    color: white;
+    text-align: left;
+    margin: 0;
+    font-size: 2.5rem;
+}
+
+.header-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 5px 0 0 0;
+    font-size: 1.2rem;
+}
+
+.header-bg-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+.dashboard-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex: 1;
+    min-width: 200px; /* Asegura flexibilidad en pantallas chicas según bitácora */
+    transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    display: block;
+    color: var(--primary-dark);
+}
+
+.stat-label {
+    margin: 0;
+    color: #666;
+    font-size: 1rem;
+    font-weight: 400;
+}
+
+.recent-activity-section {
+    margin-top: 20px;
+    padding: 0 30px 40px 30px;
+}
+
+.activity-title {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+}
+
+.table-wrapper {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.table-header-row {
+    background: #f8f9fa;
+    border-bottom: 2px solid #eee;
+}
+
+.table-row {
+    border-bottom: 1px solid #eee;
+}
+
+.badge-success-light {
+    background: #d3f9d8;
+    color: #2b8a3e;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
 }
 
 /*-- Responsive  */
@@ -618,7 +789,13 @@ body {
         box-shadow: 5px 0 15px rgba(0,0,0,0.5);
         overflow-y: auto !important;
     }
+    #content-header {
+        height: 160px;
+        min-height: 160px;
+        width: 100%;
+    }
 
+    
     /* Clase con JavaScript */
 
     .sidebar.active,
