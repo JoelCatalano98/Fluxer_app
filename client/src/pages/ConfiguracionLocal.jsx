@@ -49,136 +49,103 @@ const ConfiguracionLocal = () => {
 
   return (
     <div className="main-content">
-      <section id="content-header" style={{ 
-          minHeight: '100px', 
-          height: '450px', 
-          position: 'relative', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'flex-end', // Empuja el contenido hacia abajo
-          padding: '0 40px 40px 40px', // Agregamos 40px al final para que no toque el borde
-          overflow: 'hidden' 
-}}>
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <h1 id="main-title" style={{ color: 'white', textAlign: 'left', margin: 0 }}>Configuración Local</h1>
-          <p style={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}>Reglas de negocio e identidad visual</p>
+      {/* Encabezado Estandarizado */}
+      <section id="content-header" className="dashboard-header config-header">
+        <div className="header-overlay">
+          <h1 className="header-title">Configuración Local</h1>
+          <p className="header-subtitle">Reglas de negocio e identidad visual</p>
         </div>
-        <img src="/img/welcome-background.png" alt="Fondo" style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          objectFit: 'cover', 
-          zIndex: 1 
-        }} />
+        <img 
+          src="/img/welcome-background.png" 
+          alt="Fondo" 
+          className="header-bg-img"
+        />
       </section>
 
-      <div className="contenedor-configuracion" style={{ padding: '30px', maxWidth: '1400px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap', alignItems: 'stretch', justifyContent: 'flex-start' }}>
+      <div className="contenedor-configuracion">
+        <div className="grid-configuracion">
 
           {/* 1. DATOS DEL LOCAL (BRANDING) */}
-          <section className="seccion-configuracion" style={{ flex: '1 1 500px', background: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', minWidth: '650px', display: 'flex', flexDirection: 'column' }}>
-            <div className="cabecera-seccion" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '25px', borderBottom: '1px solid #f0f0f0', paddingBottom: '15px' }}>
-              <Palette size={24} color="#00a8e8" />
-              <h2 style={{ margin: 0, fontSize: '1.25rem' }}>1. Identidad y Branding</h2>
+          <section className="seccion-configuracion">
+            <div className="cabecera-seccion">
+              <Palette size={24} className="icon-blue" />
+              <h2>1. Identidad y Branding</h2>
             </div>
 
-            <div style={{ flex: 1 }}>
-              <div className="subida-logo" style={{ display: 'flex', gap: '25px', alignItems: 'center', marginBottom: '30px' }}>
-                <div className="vista-previa-logo" style={{ 
-                  width: '100px', 
-                  height: '100px', 
-                  border: '2px dashed #e0e0e0', 
-                  borderRadius: '15px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  overflow: 'hidden',
-                  backgroundColor: '#fafafa'
-                }}>
+            <div className="cuerpo-seccion">
+              <div className="subida-logo">
+                <div className="vista-previa-logo">
                   {config.logo ? (
-                    <img src={config.logo} alt="Logo Preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                    <img src={config.logo} alt="Logo Preview" />
                   ) : (
-                    <ShoppingBag size={40} color="#00a8e8" />
+                    <ShoppingBag size={40} className="icon-blue" />
                   )}
                 </div>
                 <div className="info-subida">
-                  <label className="btn-help" style={{ 
-                    cursor: 'pointer', 
-                    background: '#00a8e8', 
-                    color: 'white', 
-                    border: 'none', 
-                    padding: '10px 20px', 
-                    borderRadius: '8px', 
-                    display: 'inline-flex', 
-                    alignItems: 'center', 
-                    gap: '8px',
-                    fontWeight: '600'
-                  }}>
+                  <label className="btn-upload">
                     <Upload size={18} /> Subir Logo Personalizado
                     <input type="file" hidden onChange={handleLogoChange} />
                   </label>
-                  <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem', color: '#888' }}>Aparecerá en tickets y barra lateral.</p>
+                  <p className="p-ayuda">Aparecerá en tickets y barra lateral.</p>
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#444' }}>Nombre del Gimnasio</label>
-                  <input type="text" id="gymName" value={config.gymName} onChange={handleInputChange} placeholder="Ej: J.C. Fitness Center" style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }} />
+              <div className="formulario-config">
+                <div className="grupo-entrada full-width">
+                  <label htmlFor="gymName">Nombre del Gimnasio</label>
+                  <input type="text" id="gymName" value={config.gymName} onChange={handleInputChange} placeholder="Ej: J.C. Fitness Center" />
                 </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#444' }}>Dirección Física</label>
-                  <input type="text" id="address" value={config.address} onChange={handleInputChange} placeholder="Calle, Altura, Ciudad" style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }} />
+                <div className="grupo-entrada">
+                  <label htmlFor="address">Dirección Física</label>
+                  <input type="text" id="address" value={config.address} onChange={handleInputChange} placeholder="Calle, Altura, Ciudad" />
                 </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#444' }}>Teléfono</label>
-                  <input type="tel" id="phone" value={config.phone} onChange={handleInputChange} placeholder="+54 9 ..." style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }} />
+                <div className="grupo-entrada">
+                  <label htmlFor="phone">Teléfono</label>
+                  <input type="tel" id="phone" value={config.phone} onChange={handleInputChange} placeholder="+54 9 ..." />
                 </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#444', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div className="grupo-entrada">
+                  <label htmlFor="instagram" className="label-con-icono">
                     <Camera size={16} /> Instagram
                   </label>
-                  <input type="text" id="instagram" value={config.instagram} onChange={handleInputChange} placeholder="@usuario" style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }} />
+                  <input type="text" id="instagram" value={config.instagram} onChange={handleInputChange} placeholder="@usuario" />
                 </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#444', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div className="grupo-entrada">
+                  <label htmlFor="whatsapp" className="label-con-icono">
                     <MessageCircle size={16} /> WhatsApp Link
                   </label>
-                  <input type="text" id="whatsapp" value={config.whatsapp} onChange={handleInputChange} placeholder="wa.me/xxxx" style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }} />
+                  <input type="text" id="whatsapp" value={config.whatsapp} onChange={handleInputChange} placeholder="wa.me/xxxx" />
                 </div>
               </div>
             </div>
           </section>
 
           {/* 2. PARÁMETROS DE FUNCIONAMIENTO */}
-          <section className="seccion-configuracion" style={{ flex: '1 1 500px', background: 'white', padding: '25px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', minWidth: '650px', display: 'flex', flexDirection: 'column' }}>
-            <div className="cabecera-seccion" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '25px', borderBottom: '1px solid #f0f0f0', paddingBottom: '15px' }}>
-              <Briefcase size={24} color="#00a8e8" />
-              <h2 style={{ margin: 0, fontSize: '1.25rem' }}>2. Reglas de Negocio</h2>
+          <section className="seccion-configuracion">
+            <div className="cabecera-seccion">
+              <Briefcase size={24} className="icon-blue" />
+              <h2>2. Reglas de Negocio</h2>
             </div>
 
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#444' }}>Horario Operativo (Apertura)</label>
-                  <input type="time" id="openTime" value={config.openTime} onChange={handleInputChange} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }} />
+            <div className="cuerpo-seccion">
+              <div className="formulario-config">
+                <div className="grupo-entrada">
+                  <label htmlFor="openTime">Horario Operativo (Apertura)</label>
+                  <input type="time" id="openTime" value={config.openTime} onChange={handleInputChange} />
                 </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#444' }}>Horario Operativo (Cierre)</label>
-                  <input type="time" id="closeTime" value={config.closeTime} onChange={handleInputChange} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }} />
+                <div className="grupo-entrada">
+                  <label htmlFor="closeTime">Horario Operativo (Cierre)</label>
+                  <input type="time" id="closeTime" value={config.closeTime} onChange={handleInputChange} />
                 </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#444' }}>Capacidad Máxima por Hora</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <input type="number" id="maxCapacity" value={config.maxCapacity} onChange={handleInputChange} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }} />
-                    <span style={{ fontSize: '0.9rem', color: '#666' }}>socios</span>
+                <div className="grupo-entrada">
+                  <label htmlFor="maxCapacity">Capacidad Máxima por Hora</label>
+                  <div className="input-con-unidad">
+                    <input type="number" id="maxCapacity" value={config.maxCapacity} onChange={handleInputChange} />
+                    <span>socios</span>
                   </div>
                 </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: '#444' }}>Margen de Cancelación</label>
-                  <select id="cancelMargin" value={config.cancelMargin} onChange={handleInputChange} style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }}>
+                <div className="grupo-entrada">
+                  <label htmlFor="cancelMargin">Margen de Cancelación</label>
+                  <select id="cancelMargin" value={config.cancelMargin} onChange={handleInputChange}>
                     <option value="2">2 Horas antes</option>
                     <option value="4">4 Horas antes</option>
                     <option value="12">12 Horas antes</option>
@@ -187,38 +154,15 @@ const ConfiguracionLocal = () => {
                 </div>
               </div>
 
-              <div className="grupo-conmutador" style={{ 
-                marginTop: '30px', 
-                paddingTop: '20px', 
-                borderTop: '1px solid #eee',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-              }}>
+              <div className="grupo-conmutador">
                 <div className="info-conmutador">
-                  <h4 style={{ margin: '0 0 5px 0', fontSize: '1rem' }}>Bloqueo por Capacidad</h4>
-                  <p style={{ margin: 0, fontSize: '0.85rem', color: '#777' }}>Impedir anotaciones si se llega al límite establecido.</p>
+                  <h4>Bloqueo por Capacidad</h4>
+                  <p>Impedir anotaciones si se llega al límite establecido.</p>
                 </div>
-                <label className="interruptor" style={{ position: 'relative', display: 'inline-block', width: '50px', height: '26px' }}>
-                  <input type="checkbox" id="blockCapacity" checked={config.blockCapacity} onChange={handleInputChange} style={{ opacity: 0, width: 0, height: 0 }} />
-                  <span className="deslizador" style={{ 
-                    position: 'absolute', 
-                    cursor: 'pointer', 
-                    top: 0, left: 0, right: 0, bottom: 0, 
-                    backgroundColor: config.blockCapacity ? '#00a8e8' : '#ccc', 
-                    transition: '.4s', 
-                    borderRadius: '34px' 
-                  }}>
-                    <span style={{ 
-                      position: 'absolute', 
-                      content: '""', 
-                      height: '18px', width: '18px', 
-                      left: config.blockCapacity ? '28px' : '4px', 
-                      bottom: '4px', 
-                      backgroundColor: 'white', 
-                      transition: '.4s', 
-                      borderRadius: '50%' 
-                    }}></span>
+                <label className="interruptor">
+                  <input type="checkbox" id="blockCapacity" checked={config.blockCapacity} onChange={handleInputChange} />
+                  <span className="deslizador">
+                    <span className="perilla"></span>
                   </span>
                 </label>
               </div>
@@ -226,54 +170,11 @@ const ConfiguracionLocal = () => {
           </section>
         </div>
 
-        <div className="acciones-finales-configuracion" style={{ 
-          marginTop: '40px', 
-          display: 'flex', 
-          justifyContent: 'flex-start', 
-          gap: '15px',
-          paddingBottom: '30px',
-          width: 'auto',
-          border: 'none',
-          background: 'transparent'
-        }}>
-
-          <button 
-            type="button" 
-            onClick={handleDiscard}
-            style={{ 
-              padding: '12px 25px', 
-              border: '1px solid #ddd', 
-              background: 'white', 
-              borderRadius: '8px', 
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontWeight: '600',
-              color: '#666'
-            }}
-          >
+        <div className="acciones-finales-config">
+          <button type="button" className="btn-discard" onClick={handleDiscard}>
             <RotateCcw size={18} /> Descartar
           </button>
-          <button 
-            className="btn-help" 
-            onClick={handleSave}
-            style={{ 
-              minWidth: '220px', 
-              background: '#00a8e8', 
-              color: 'white', 
-              border: 'none', 
-              padding: '12px 30px', 
-              borderRadius: '8px', 
-              fontWeight: '700', 
-              cursor: 'pointer', 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              gap: '10px',
-              boxShadow: '0 4px 12px rgba(0, 168, 232, 0.25)'
-            }} 
-          >
+          <button type="button" className="btn-save-config" onClick={handleSave}>
             <CircleCheck size={20} /> Aplicar y Guardar
           </button>
         </div>

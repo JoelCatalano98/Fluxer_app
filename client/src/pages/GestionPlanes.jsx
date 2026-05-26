@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CirclePlus, Pencil, Trash, Check, X, Save, List, LayoutGrid } from 'lucide-react';
+import { CirclePlus, Pencil, Trash, Check, X, Save, List, LayoutGrid, AlertTriangle } from 'lucide-react';
 import Modal from '../components/Modal';
 import '../styles/style.css';
 import '../styles/Servicios/gestion_planes.css';
@@ -7,7 +7,11 @@ import '../styles/clientes/listados_gestion.css';
 
 const GestionPlanes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [viewMode, setViewMode] = useState('cards'); // 'cards' o 'list'
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [planToDelete, setPlanToDelete] = useState(null);
+  
   const [nuevoPlan, setNuevoPlan] = useState({
     nombre: '',
     etiqueta: '',
@@ -15,6 +19,13 @@ const GestionPlanes = () => {
     frecuencia: 'Mensual',
     beneficios: ''
   });
+
+  const [planes, setPlanes] = useState([
+    { id: '1', codigo: '#PLN-001', nombre: 'Musculación', precio: '15000', etiqueta: 'Básico', observaciones: '3 veces por semana', estado: 'Activo', beneficios: 'Acceso a sala de pesas\n3 veces por semana' },
+    { id: '2', codigo: '#PLN-002', nombre: 'Full Entrenamiento', precio: '22000', etiqueta: 'Recomendado', observaciones: 'Acceso libre total', estado: 'Activo', beneficios: 'Sala de pesas libre\nRutinas específicas\nSeguimiento mensual' },
+    { id: '3', codigo: '#PLN-003', nombre: 'Pilates Por Clase', precio: '22000', etiqueta: 'Especial', observaciones: 'Pago por sesión', estado: 'Activo', beneficios: 'Sala de pilates\nEquipamiento completo\nInstructor guiado' },
+    { id: '4', codigo: '#PLN-004', nombre: 'Crosfit/Mensual', precio: '22000', etiqueta: 'Intenso', observaciones: 'Entrenamiento funcional', estado: 'Activo', beneficios: 'Box de Crosfit\nWODs diarios\nComunidad activa' },
+  ]);
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
@@ -24,23 +35,58 @@ const GestionPlanes = () => {
     }));
   };
 
+  const openCreateModal = () => {
+    setEditingPlan(null);
+    setNuevoPlan({
+      nombre: '',
+      etiqueta: '',
+      precio: '',
+      frecuencia: 'Mensual',
+      beneficios: ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (plan) => {
+    setEditingPlan(plan);
+    setNuevoPlan({
+      nombre: plan.nombre,
+      etiqueta: plan.etiqueta || '',
+      precio: plan.precio.replace('$', '').replace('.', ''),
+      frecuencia: plan.frecuencia || 'Mensual',
+      beneficios: plan.beneficios || ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const openDeleteConfirm = (plan) => {
+    setPlanToDelete(plan);
+    setIsDeleteConfirmOpen(true);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Nuevo plan:", nuevoPlan);
-    alert("¡Plan creado con éxito! (Simulado)");
+    if (editingPlan) {
+      setPlanes(planes.map(p => p.id === editingPlan.id ? { ...p, ...nuevoPlan, precio: nuevoPlan.precio } : p));
+      alert("¡Plan actualizado con éxito!");
+    } else {
+      const newId = (planes.length + 1).toString();
+      setPlanes([...planes, { ...nuevoPlan, id: newId, codigo: `#PLN-00${newId}`, estado: 'Activo', observaciones: nuevoPlan.beneficios.split('\n')[0] }]);
+      alert("¡Plan creado con éxito!");
+    }
     setIsModalOpen(false);
   };
 
-  const planesMock = [
-    { id: '1', codigo: '#PLN-001', nombre: 'Musculación', precio: '$15.000', observaciones: '3 veces por semana', estado: 'Activo' },
-    { id: '2', codigo: '#PLN-002', nombre: 'Full Entrenamiento', precio: '$22.000', observaciones: 'Acceso libre total', estado: 'Activo' },
-    { id: '3', codigo: '#PLN-003', nombre: 'Pilates Por Clase', precio: '$22.000', observaciones: 'Pago por sesión', estado: 'Activo' },
-    { id: '4', codigo: '#PLN-004', nombre: 'Crosfit/Mensual', precio: '$22.000', observaciones: 'Entrenamiento funcional', estado: 'Activo' },
-  ];
+  const handleConfirmDelete = () => {
+    setPlanes(planes.filter(p => p.id !== planToDelete.id));
+    setIsDeleteConfirmOpen(false);
+    setPlanToDelete(null);
+    alert("Plan eliminado correctamente");
+  };
 
   return (
     <div className="main-content">
-      {/* Encabezado con imagen de fondo (Consistente con Dashboard) */}
+      {/* Encabezado con imagen de fondo */}
       <section id="content-header" className="dashboard-header">
         <div className="header-overlay">
           <h1 className="header-title">Gestión de Planes</h1>
@@ -57,7 +103,7 @@ const GestionPlanes = () => {
       <div className="planes-actions-bar">
         <button 
           className="btn-create-plan" 
-          onClick={() => setIsModalOpen(true)}
+          onClick={openCreateModal}
         >
           <CirclePlus size={18} /> <span>Crear Nuevo Plan</span>
         </button>
@@ -75,66 +121,22 @@ const GestionPlanes = () => {
 
       {viewMode === 'cards' ? (
         <div className="cuadricula-planes">
-          {/* Mockup de planes (podrían ser mapeados de planesMock en el futuro) */}
-          <div className="tarjeta-plan">
-            <div className="etiqueta-plan">Básico</div>
-            <h3>Musculación</h3>
-            <p className="precio">$15.000 <span>/mes</span></p>
-            <ul className="caracteristicas-plan">
-              <li><Check size={14} color="#40c057" /> Acceso a sala de pesas</li>
-              <li><Check size={14} color="#40c057" /> 3 veces por semana</li>
-              <li className="deshabilitado"><X size={14} color="#e03131" /> Rutinas personalizadas</li>
-            </ul>
-            <div className="acciones-plan">
-              <button className="btn-icon-edit"><Pencil size={14} /></button>
-              <button className="btn-icon-delete"><Trash size={14} /></button>
+          {planes.map((plan) => (
+            <div key={plan.id} className={`tarjeta-plan ${plan.etiqueta === 'Recomendado' ? 'destacado' : ''}`}>
+              {plan.etiqueta && <div className="etiqueta-plan">{plan.etiqueta}</div>}
+              <h3>{plan.nombre}</h3>
+              <p className="precio">${parseInt(plan.precio).toLocaleString('es-AR')} <span>/mes</span></p>
+              <ul className="caracteristicas-plan">
+                {plan.beneficios.split('\n').map((b, i) => (
+                  <li key={i}><Check size={14} color="#40c057" /> {b}</li>
+                ))}
+              </ul>
+              <div className="acciones-plan">
+                <button className="btn-icon-edit" onClick={() => openEditModal(plan)}><Pencil size={14} /></button>
+                <button className="btn-icon-delete" onClick={() => openDeleteConfirm(plan)}><Trash size={14} /></button>
+              </div>
             </div>
-          </div>
-
-          <div className="tarjeta-plan destacado">
-            <div className="etiqueta-plan">Recomendado</div>
-            <h3>Full Entrenamiento</h3>
-            <p className="precio">$22.000 <span>/mes</span></p>
-            <ul className="caracteristicas-plan">
-              <li><Check size={14} color="#40c057" /> Sala de pesas libre</li>
-              <li><Check size={14} color="#40c057" /> Rutinas específicas</li>
-              <li><Check size={14} color="#40c057" /> Seguimiento mensual</li>
-            </ul>
-            <div className="acciones-plan">
-              <button className="btn-icon-edit"><Pencil size={14} /></button>
-              <button className="btn-icon-delete"><Trash size={14} /></button>
-            </div>
-          </div>
-
-          <div className="tarjeta-plan">
-            <div className="etiqueta-plan">Especial</div>
-            <h3>Pilates Por Clase</h3>
-            <p className="precio">$22.000 <span>/mes</span></p>
-            <ul className="caracteristicas-plan">
-              <li><Check size={14} color="#40c057" /> Sala de pilates</li>
-              <li><Check size={14} color="#40c057" /> Equipamiento completo</li>
-              <li><Check size={14} color="#40c057" /> Instructor guiado</li>
-            </ul>
-            <div className="acciones-plan">
-              <button className="btn-icon-edit"><Pencil size={14} /></button>
-              <button className="btn-icon-delete"><Trash size={14} /></button>
-            </div>
-          </div>
-
-          <div className="tarjeta-plan">
-            <div className="etiqueta-plan">Intenso</div>
-            <h3>Crosfit/Mensual</h3>
-            <p className="precio">$22.000 <span>/mes</span></p>
-            <ul className="caracteristicas-plan">
-              <li><Check size={14} color="#40c057" /> Box de Crosfit</li>
-              <li><Check size={14} color="#40c057" /> WODs diarios</li>
-              <li><Check size={14} color="#40c057" /> Comunidad activa</li>
-            </ul>
-            <div className="acciones-plan">
-              <button className="btn-icon-edit"><Pencil size={14} /></button>
-              <button className="btn-icon-delete"><Trash size={14} /></button>
-            </div>
-          </div>
+          ))}
         </div>
       ) : (
         <div className="listado-planes-container">
@@ -143,10 +145,11 @@ const GestionPlanes = () => {
     <p className="listado-subtitle">Gestiona las membresías y paquetes de servicios.</p>
   </div>
   
-  {/*  El contenedor con scroll envuelve DIRECTAMENTE a la tabla */}
-  <div className="contenedor-scroll"> 
+  {/* Reemplazamos table-wrapper por contenedor-scroll para habilitar el desplazamiento */}
+  <div className="contenedor-scroll ">
     
-    <table className="tabla-cronograma"> 
+    {/* Cambiamos data-table por tabla-cronograma para heredar el min-width de 900px */}
+    <table className="tabla-cronograma table-wrapper">
       <thead>
         <tr>
           <th className="columna-fija">Nombre del Plan</th>
@@ -158,11 +161,11 @@ const GestionPlanes = () => {
         </tr>
       </thead>
       <tbody>
-        {planesMock.map((plan) => (
+        {planes.map((plan) => (
           <tr key={plan.id}>
             <td className="columna-fija"><strong>{plan.nombre}</strong></td>
             <td>{plan.codigo}</td>
-            <td>{plan.precio}</td>
+            <td>${parseInt(plan.precio).toLocaleString('es-AR')}</td>
             <td>{plan.observaciones}</td>
             <td>
               <span className={`badge ${plan.estado === 'Activo' ? 'badge-success-light' : 'badge-danger-light'}`}>
@@ -171,9 +174,12 @@ const GestionPlanes = () => {
             </td>
             <td>
               <div className="acciones-tabla">
-                {/* 3. Cambié los nombres de los botones para que usen las clases que ya programaste en tu CSS */}
-                <button className="boton-editar" title="Editar"><Pencil size={14} /></button>
-                <button className="boton-eliminar" title="Eliminar"><Trash size={14} /></button>
+                <button className="btn-icon-edit" title="Editar" onClick={() => openEditModal(plan)}>
+                  <Pencil size={14} />
+                </button>
+                <button className="btn-icon-delete" title="Eliminar" onClick={() => openDeleteConfirm(plan)}>
+                  <Trash size={14} />
+                </button>
               </div>
             </td>
           </tr>
@@ -184,10 +190,11 @@ const GestionPlanes = () => {
 </div>
       )}
 
+      {/* Modal Crear/Editar */}
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        title="Crear Nuevo Plan de Abono"
+        title={editingPlan ? "Editar Plan de Abono" : "Crear Nuevo Plan de Abono"}
       >
         <div id="modalNuevoPlan">
           <form className="plan-form" onSubmit={handleSubmit}>
@@ -223,10 +230,39 @@ const GestionPlanes = () => {
                 <X size={18} /> <span>Cancelar</span>
               </button>
               <button type="submit" className="btn-save">
-                <Save size={18} /> <span>Guardar Plan</span>
+                <Save size={18} /> <span>{editingPlan ? "Actualizar Plan" : "Guardar Plan"}</span>
               </button>
             </div>
           </form>
+        </div>
+      </Modal>
+
+      {/* Modal Confirmar Eliminación */}
+      <Modal 
+        isOpen={isDeleteConfirmOpen} 
+        onClose={() => setIsDeleteConfirmOpen(false)} 
+        title="Confirmar eliminación"
+      >
+        <div className="confirm-modal-content">
+          <AlertTriangle size={48} className="confirm-icon" />
+          <p className="confirm-message">
+            ¿Estás seguro de que deseas eliminar el plan <strong>{planToDelete?.nombre}</strong>?
+          </p>
+          <p className="confirm-warning">Esta acción no se puede deshacer.</p>
+          <div className="confirm-actions">
+            <button 
+              className="btn-cancel" 
+              onClick={() => setIsDeleteConfirmOpen(false)}
+            >
+              Cancelar
+            </button>
+            <button 
+              className="btn-confirm-delete"
+              onClick={handleConfirmDelete}
+            >
+              Eliminar Plan
+            </button>
+          </div>
         </div>
       </Modal>
     </div>

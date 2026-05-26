@@ -275,6 +275,56 @@
     cursor: pointer;
 }
 
+.btn-save:hover {
+    background-color: #2f9e44;
+}
+
+/* --- MODAL DE CONFIRMACIÓN --- */
+.confirm-modal-content {
+    text-align: center;
+    padding: 20px;
+}
+
+.confirm-icon {
+    color: #ff6b6b;
+    margin-bottom: 15px;
+}
+
+.confirm-message {
+    font-size: 1.1rem;
+    color: var(--primary-dark);
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.confirm-warning {
+    color: #666;
+    margin-bottom: 25px;
+    font-size: 0.95rem;
+}
+
+.confirm-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn-confirm-delete {
+    padding: 10px 25px;
+    border-radius: 8px;
+    border: none;
+    background: #ff6b6b;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-confirm-delete:hover {
+    background: #fa5252;
+    transform: translateY(-2px);
+}
+
 /* --- RESPONSIVE 480PX --- */
 @media screen and (max-width: 480px) {
     .planes-actions-bar {

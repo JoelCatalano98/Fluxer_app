@@ -8,168 +8,167 @@ const Turnos = () => {
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isAnotarModalOpen, setIsAnotarModalOpen] = useState(false);
 
+  // Estado para las filas de horarios (La franja horaria es la clave)
+  const [filasTurnos, setFilasTurnos] = useState([
+    { hora: '07:00 - 08:00', lunes: '8 pers.', martes: '-', miercoles: '12 pers.', jueves: '-', viernes: '-', sabado: '-' },
+    { hora: '08:00 - 09:00', lunes: '3 pers.', martes: '-', miercoles: '10 pers.', jueves: '-', viernes: '-', sabado: '-' },
+    { hora: '09:00 - 10:00', lunes: '6 pers.', martes: '-', miercoles: '15 pers.', jueves: '-', viernes: '-', sabado: '-' },
+    { hora: '10:00 - 11:00', lunes: '1 pers.', martes: '-', miercoles: '16 pers.', jueves: '-', viernes: '-', sabado: '-' },
+    { hora: '11:00 - 12:00', lunes: '9 pers.', martes: '-', miercoles: '12 pers.', jueves: '-', viernes: '-', sabado: '-' },
+  ]);
+
+  const [nuevoHorario, setNuevoHorario] = useState({ inicio: '', fin: '' });
+
+  const handleAddHorario = (e) => {
+    e.preventDefault();
+    if (!nuevoHorario.inicio || !nuevoHorario.fin) return;
+    
+    const nuevaFranja = `${nuevoHorario.inicio} - ${nuevoHorario.fin}`;
+    
+    // Evitar duplicados
+    if (filasTurnos.find(f => f.hora === nuevaFranja)) {
+      alert("Esta franja horaria ya existe");
+      return;
+    }
+
+    const nuevaFila = {
+      hora: nuevaFranja,
+      lunes: '-', martes: '-', miercoles: '-', jueves: '-', viernes: '-', sabado: '-'
+    };
+
+    // Ordenar las filas por hora de inicio después de agregar
+    const nuevasFilas = [...filasTurnos, nuevaFila].sort((a, b) => 
+      a.hora.localeCompare(b.hora)
+    );
+
+    setFilasTurnos(nuevasFilas);
+    setNuevoHorario({ inicio: '', fin: '' });
+    setIsConfigModalOpen(false);
+    alert("¡Nuevo horario agregado con éxito!");
+  };
+
   return (
     <div className="main-content">
-      <section id="content-header" style={{ 
-          minHeight: '100px', 
-          height: '450px', 
-          position: 'relative', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'flex-end', // Empuja el contenido hacia abajo
-          padding: '0 40px 40px 40px', // Agregamos 40px al final para que no toque el borde
-          overflow: 'hidden' 
-}}>
-        <div style={{ position: 'relative', zIndex: 2, padding: '40px' }}>
-          <h1 id="main-title" style={{ color: 'white', textAlign: 'left', margin: 0 }}>Cronograma Semanal</h1>
-          <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
+      {/* Encabezado */}
+      <section id="content-header" className="dashboard-header">
+        <div className="header-overlay">
+          <h1 className="header-title">Cronograma Semanal</h1>
+          <div className="header-actions">
             <button 
-              className="btn-help" 
+              className="btn-config-horarios" 
               onClick={() => setIsConfigModalOpen(true)}
-              style={{ background: 'rgba(255,255,255,0.2)', border: '1px solid white', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}
             >
-              <Settings size={16} /> Configurar Horarios
+              <Settings size={16} /> <span>Crear Nuevo Horario</span>
             </button>
             <button 
-              className="btn-help" 
+              className="btn-anotar-cliente" 
               onClick={() => setIsAnotarModalOpen(true)}
-              style={{ background: '#00a8e8', border: 'none', color: 'white', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}
             >
-              <Plus size={16} /> Anotar Cliente
+              <Plus size={16} /> <span>Anotar Cliente</span>
             </button>
           </div>
         </div>
         <img 
           src="/img/welcome-background.png" 
           alt="Fondo" 
-          style={{ 
-            position: 'absolute', 
-            top: 0, 
-            left: 0, 
-            width: '100%', 
-            height: '100%', 
-            objectFit: 'cover', 
-            zIndex: 1 
-          }} 
+          className="header-bg-img"
         />
       </section>
 
-      <div className="contenedor-scroll" style={{ padding: '30px' }}>
-        <table className="tabla-cronograma">
-          <thead>
-            <tr>
-              <th className="columna-fija">Hora</th>
-              <th>Lunes</th>
-              <th>Martes</th>
-              <th>Miércoles</th>
-              <th>Jueves</th>
-              <th>Viernes</th>
-              <th>Sábado</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="etiqueta-hora columna-fija">07:00 - 08:00</td>
-              <td><div className="caja-turno"><span>8 pers.</span><button className="btn-view" style={{ border: 'none', background: 'none', color: '#00a8e8' }}><Eye size={14} /></button></div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="caja-turno activo">12 pers.</div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="turno-vacio">-</div></td>
-            </tr>
-            <tr>
-              <td className="etiqueta-hora columna-fija">08:00 - 09:00</td>
-              <td><div className="caja-turno"><span>3 pers.</span><button className="btn-view" style={{ border: 'none', background: 'none', color: '#00a8e8' }}><Eye size={14} /></button></div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="caja-turno activo">10 pers.</div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="turno-vacio">-</div></td>
-            </tr>
-            <tr>
-              <td className="etiqueta-hora columna-fija">09:00 - 10:00</td>
-              <td><div className="caja-turno"><span>6 pers.</span><button className="btn-view" style={{ border: 'none', background: 'none', color: '#00a8e8' }}><Eye size={14} /></button></div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="caja-turno activo">15 pers.</div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="turno-vacio">-</div></td>
-            </tr>
-            <tr>
-              <td className="etiqueta-hora columna-fija">10:00 - 11:00</td>
-              <td><div className="caja-turno"><span>1 pers.</span><button className="btn-view" style={{ border: 'none', background: 'none', color: '#00a8e8' }}><Eye size={14} /></button></div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="caja-turno activo">16 pers.</div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="turno-vacio">-</div></td>
-            </tr>
-            <tr>
-              <td className="etiqueta-hora columna-fija">11:00 - 12:00</td>
-              <td><div className="caja-turno"><span>9 pers.</span><button className="btn-view" style={{ border: 'none', background: 'none', color: '#00a8e8' }}><Eye size={14} /></button></div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="caja-turno activo">12 pers.</div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="turno-vacio">-</div></td>
-              <td><div className="turno-vacio">-</div></td>
-            </tr>
-          </tbody>
-        </table>
+      {/* Tabla Dinámica */}
+      <div className="table-section">
+        <div className="contenedor-scroll">
+          <table className="data-table tabla-turnos">
+            <thead>
+              <tr>
+                <th className="columna-fija">Hora</th>
+                <th>Lunes</th>
+                <th>Martes</th>
+                <th>Miércoles</th>
+                <th>Jueves</th>
+                <th>Viernes</th>
+                <th>Sábado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filasTurnos.map((fila, index) => (
+                <tr key={index}>
+                  <td className="etiqueta-hora columna-fija">{fila.hora}</td>
+                  {[ 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'].map(dia => (
+                    <td key={dia}>
+                      {fila[dia] !== '-' ? (
+                        <div className={`caja-turno ${fila[dia].includes('1') && !fila[dia].includes('pers.') ? 'activo' : ''}`}>
+                          <span>{fila[dia]}</span>
+                          <button className="btn-view-turno"><Eye size={14} /></button>
+                        </div>
+                      ) : (
+                        <div className="turno-vacio">-</div>
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Modal: Configurar Horarios */}
+      {/* Modal: Crear Nuevo Horario (Fila) */}
       <Modal 
         isOpen={isConfigModalOpen} 
         onClose={() => setIsConfigModalOpen(false)} 
-        title={<span><CalendarCheck size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> Horarios Operativos</span>}
+        title={<span><CalendarCheck size={20} className="modal-title-icon" /> Agregar Franja Horaria</span>}
       >
-        <form className="modal-body" onSubmit={(e) => { e.preventDefault(); alert('¡Horarios configurados!'); setIsConfigModalOpen(false); }}>
-          <div className="grupo-campo" style={{ marginBottom: '20px' }}>
-            <label style={{ display: 'block', marginBottom: '10px', fontWeight: '600' }}>Días de Trabajo</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-              {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(dia => (
-                <label key={dia} style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', background: '#f8f9fa', padding: '5px 10px', borderRadius: '4px', border: '1px solid #ddd' }}>
-                  <input type="checkbox" defaultChecked={dia !== 'Dom'} /> {dia}
-                </label>
-              ))}
+        <form className="turnos-form" onSubmit={handleAddHorario}>
+          <div className="form-section">
+            <p style={{ marginBottom: '15px', color: '#666' }}>Define una nueva franja horaria para el cronograma semanal.</p>
+            <div className="form-row">
+              <div className="grupo-entrada">
+                <label>Hora Inicio</label>
+                <input 
+                  type="time" 
+                  value={nuevoHorario.inicio} 
+                  onChange={(e) => setNuevoHorario({...nuevoHorario, inicio: e.target.value})}
+                  required 
+                />
+              </div>
+              <div className="grupo-entrada">
+                <label>Hora Fin</label>
+                <input 
+                  type="time" 
+                  value={nuevoHorario.fin} 
+                  onChange={(e) => setNuevoHorario({...nuevoHorario, fin: e.target.value})}
+                  required 
+                />
+              </div>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-            <div className="grupo-campo">
-              <label htmlFor="hora_inicio" style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>Apertura</label>
-              <input type="time" id="hora_inicio" defaultValue="07:00" style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }} />
-            </div>
-            <div className="grupo-campo">
-              <label htmlFor="hora_fin" style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>Cierre</label>
-              <input type="time" id="hora_fin" defaultValue="21:00" style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }} />
-            </div>
-          </div>
-          <div style={{ marginTop: '25px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-            <button type="button" className="btn-secondary" onClick={() => setIsConfigModalOpen(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}>
+          <div className="pie-formulario">
+            <button type="button" className="btn-cancel" onClick={() => setIsConfigModalOpen(false)}>
               Cancelar
             </button>
-            <button type="submit" className="btn-primary" style={{ padding: '10px 25px', borderRadius: '8px', border: 'none', background: '#00a8e8', color: 'white', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Save size={18} /> Guardar
+            <button type="submit" className="btn-save">
+              <Plus size={18} /> <span>Agregar al Cronograma</span>
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Modal: Anotar Cliente */}
+      {/* Modal: Anotar Cliente (Sigue igual por ahora) */}
       <Modal 
         isOpen={isAnotarModalOpen} 
         onClose={() => setIsAnotarModalOpen(false)} 
-        title={<span><UserPlus size={20} style={{ verticalAlign: 'middle', marginRight: '8px' }} /> Anotar Cliente</span>}
+        title={<span><UserPlus size={20} className="modal-title-icon" /> Anotar Cliente</span>}
       >
-        <form className="modal-body" onSubmit={(e) => { e.preventDefault(); alert('¡Cliente anotado!'); setIsAnotarModalOpen(false); }}>
-          <div className="grupo-campo" style={{ marginBottom: '15px' }}>
-            <label htmlFor="buscar_cliente" style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>Buscar Cliente</label>
-            <input type="text" id="buscar_cliente" placeholder="Nombre o DNI..." required style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }} />
+        <form className="turnos-form" onSubmit={(e) => { e.preventDefault(); alert('¡Cliente anotado!'); setIsAnotarModalOpen(false); }}>
+          <div className="grupo-entrada">
+            <label htmlFor="buscar_cliente">Buscar Cliente</label>
+            <input type="text" id="buscar_cliente" placeholder="Nombre o DNI..." required />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-            <div className="grupo-campo">
-              <label htmlFor="dia_turno" style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>Día</label>
-              <select id="dia_turno" style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}>
+          <div className="form-row">
+            <div className="grupo-entrada">
+              <label htmlFor="dia_turno">Día</label>
+              <select id="dia_turno">
                 <option value="lunes">Lunes</option>
                 <option value="martes">Martes</option>
                 <option value="miercoles">Miércoles</option>
@@ -178,23 +177,21 @@ const Turnos = () => {
                 <option value="sabado">Sábado</option>
               </select>
             </div>
-            <div className="grupo-campo">
-              <label htmlFor="hora_turno" style={{ display: 'block', marginBottom: '5px', fontWeight: '600' }}>Horario</label>
-              <select id="hora_turno" style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}>
-                <option>07:00 - 08:00</option>
-                <option>08:00 - 09:00</option>
-                <option>09:00 - 10:00</option>
-                <option>10:00 - 11:00</option>
-                <option>11:00 - 12:00</option>
+            <div className="grupo-entrada">
+              <label htmlFor="hora_turno">Horario</label>
+              <select id="hora_turno">
+                {filasTurnos.map((f, i) => (
+                  <option key={i} value={f.hora}>{f.hora}</option>
+                ))}
               </select>
             </div>
           </div>
-          <div style={{ marginTop: '25px', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-            <button type="button" className="btn-secondary" onClick={() => setIsAnotarModalOpen(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}>
+          <div className="pie-formulario">
+            <button type="button" className="btn-cancel" onClick={() => setIsAnotarModalOpen(false)}>
               Cancelar
             </button>
-            <button type="submit" className="btn-primary" style={{ padding: '10px 25px', borderRadius: '8px', border: 'none', background: '#40c057', color: 'white', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Plus size={18} /> Confirmar
+            <button type="submit" className="btn-save btn-confirm">
+              <Plus size={18} /> <span>Confirmar</span>
             </button>
           </div>
         </form>

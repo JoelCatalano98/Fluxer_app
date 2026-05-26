@@ -1,147 +1,202 @@
-.tabla-cronograma {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 8px; 
+/* --- HEADER ACTIONS --- */
+.header-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
 }
 
-.tabla-cronograma th {
-    background: #f8f9fa;
-    padding: 15px;
+.btn-config-horarios {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid white;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
     border-radius: 8px;
-    color: #333;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+.btn-config-horarios:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.btn-anotar-cliente {
+    background: var(--accent-blue);
+    border: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+.btn-anotar-cliente:hover {
+    background: #0086bc;
+    transform: translateY(-2px);
+}
+
+/* --- TABLA DE TURNOS (CRONOGRAMA) --- */
+.table-section {
+    padding: 30px;
+}
+
+/* Sobrescribimos el espaciado para el cronograma */
+.tabla-turnos {
+    border-spacing: 8px !important; 
+    border-collapse: separate !important;
 }
 
 .etiqueta-hora {
-    font-weight: bold;
-    color: #666;
-    background: #eee;
-    border-radius: 8px;
+    font-weight: 700;
+    color: var(--primary-dark);
     text-align: center;
-    width: 120px;
-}
-
-.cabecera-contenido {
-    position: relative;
-    width: 100%;
-    min-height: 200px;
-    height: 100px;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-left: 60px;
-    color: white;
-    overflow: hidden;
-}
-
-.acciones-cabecera {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 15px;
+    font-size: 0.9rem;
+    min-width: 120px;
 }
 
 .caja-turno {
     background: #e1f0ff; 
-    border-left: 4px solid #0099ff;
-    padding: 10px;
-    border-radius: 6px;
+    border-left: 4px solid var(--accent-blue);
+    padding: 12px;
+    border-radius: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    min-height: 50px;
+    min-height: 55px;
+    min-width: 130px;
+}
+
+.caja-turno span {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.btn-view-turno {
+    border: none;
+    background: none;
+    color: var(--accent-blue);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: 0.2s;
+}
+
+.btn-view-turno:hover {
+    background: rgba(0, 168, 232, 0.1);
 }
 
 .turno-vacio {
-    color: #ccc;
+    color: #bbb;
     text-align: center;
-    border: 1px dashed #242323;
-    border-radius: 6px;
-    padding: 10px;
+    border: 1px dashed #ddd;
+    border-radius: 8px;
+    padding: 12px;
+    background: #fcfcfc;
 }
 
 .caja-turno.activo {
-    background: #d4edda; 
-    border-left-color: #28a745;
+    background: #ebfbee; 
+    border-left-color: #40c057;
 }
 
-.grupo-seleccion {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+/* --- FORMULARIOS DE TURNOS (MODALES) --- */
+.turnos-form {
+    width: 100%;
+}
+
+.form-section {
+    margin-bottom: 20px;
+}
+
+.section-label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: #444;
+}
+
+.days-grid {
+    display: flex;
+    flex-wrap: wrap;
     gap: 10px;
-    margin-top: 10px;
 }
 
-.item-seleccion {
+.day-checkbox-label {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    cursor: pointer;
+    background: #f8f9fa;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #eee;
     font-size: 0.9rem;
-    cursor: pointer;
+    transition: 0.2s;
 }
 
-.item-seleccion input {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
+.day-checkbox-label:hover {
+    border-color: var(--accent-blue);
+    background: #f0f7ff;
 }
 
-
-
-/* --- CONTENEDOR PARA EL DESPLAZAMIENTO --- */
-
-.contenedor-scroll {
-    width: 100%;
-    overflow-x: auto; /* Permite deslizar para el costado */
-    padding: 20px;
-    background: #fff;
-    -webkit-overflow-scrolling: touch; 
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
 }
 
-.tabla-cronograma {
-    width: 100%;
-    min-width: 900px;
-    border-collapse: separate;
-    border-spacing: 8px;
+.modal-title-icon {
+    vertical-align: middle;
+    margin-right: 8px;
+    color: var(--accent-blue);
 }
 
-/* ---HORA FIJA --- */
-
-.columna-fija {
-    position: sticky;
-    left: 0; 
-    z-index: 10; 
-    background: #f1f3f5 !important; 
-    box-shadow: 2px 0 5px rgba(0,0,0,0.1); 
+.btn-confirm {
+    background-color: #40c057 !important;
 }
 
-/* --- Responsive --- */
+.btn-confirm:hover {
+    background-color: #2f9e44 !important;
+}
 
+/* --- RESPONSIVE 480PX --- */
 @media screen and (max-width: 480px) {
-    #content-header {
-        height: auto !important;
-        padding: 20px !important;
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .acciones-header {
+    .header-actions {
         flex-direction: column;
         width: 100%;
+        gap: 10px;
     }
 
-    .acciones-header button {
+    .btn-config-horarios, .btn-anotar-cliente {
         width: 100%;
+        justify-content: center;
     }
 
+    .table-section {
+        padding: 0px 5px;
+    }
 
     .etiqueta-hora {
-        width: 80px !important;
         font-size: 0.8rem;
+        min-width: 90px;
     }
 
-    /*  imagen de fondo  oculta */
-    .img-fondo {
-        display: none;
+    .caja-turno {
+        padding: 8px;
+        min-height: 45px;
+        min-width: 110px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
     }
 }
