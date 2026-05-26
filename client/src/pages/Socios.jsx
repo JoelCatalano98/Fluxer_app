@@ -1,18 +1,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { UserPlus, Save, X, Pencil, Trash } from 'lucide-react';
+import { UserPlus, Save, X, Pencil, Trash, AlertTriangle, Search } from 'lucide-react';
 import Modal from '../components/Modal';
 
-// Importamos los estilos globales y específicos
+// Importamos los estilos
 import '../styles/style.css';
 import '../styles/clientes/listados_gestion.css';
-import '../styles/clientes/formularios_clientes.css';
+import '../styles/clientes/socios.css';
 
 const Socios = () => {
   const [socios, setSocios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [socioToDelete, setSocioToDelete] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
   const [nuevoSocio, setNuevoSocio] = useState({
     nombre: '',
     apellido: '',
@@ -24,23 +28,26 @@ const Socios = () => {
     observaciones: ''
   });
 
+  // Función para obtener socios (con datos de respaldo si el servidor no responde)
   const fetchSocios = useCallback(async () => {
     try {
       setLoading(true);
       const res = await axios.get('http://localhost:5000/api/socios');
       setSocios(res.data);
     } catch (error) {
-      console.error("Error fetching socios:", error);
+      console.warn("Servidor no disponible, cargando datos de prueba.");
+      // Datos de respaldo para la demo
+      setSocios([
+        { _id: '1', nombre: 'Joel', apellido: 'Silva', dni: '35123456', email: 'joel@example.com', telefono: '341-555-0011', plan: 'Premium', fecha_inicio: '2024-05-01' },
+        { _id: '2', nombre: 'Tomás', apellido: 'García', dni: '38123456', email: 'tomas@example.com', telefono: '341-555-0022', plan: 'Básico', fecha_inicio: '2024-05-15' },
+      ]);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchSocios();
-    }, 0);
-    return () => clearTimeout(timer);
+    fetchSocios();
   }, [fetchSocios]);
 
   const handleInputChange = (e) => {
@@ -53,7 +60,10 @@ const Socios = () => {
 
   const handleOpenForm = (socio = null) => {
     if (socio) {
-      setNuevoSocio(socio);
+      setNuevoSocio({
+        ...socio,
+        _id: socio._id // Aseguramos el ID para edición
+      });
       setIsEditing(true);
     } else {
       setNuevoSocio({
@@ -75,65 +85,72 @@ const Socios = () => {
     e.preventDefault();
     try {
       if (isEditing) {
-        console.log("Actualizando socio:", nuevoSocio);
-        alert('¡Socio actualizado con éxito! (Simulado)');
+        // Simulación de actualización local
+        setSocios(socios.map(s => s._id === nuevoSocio._id ? { ...nuevoSocio } : s));
+        alert('¡Socio actualizado con éxito!');
       } else {
-        console.log("Creando socio:", nuevoSocio);
-        alert('¡Socio registrado con éxito! (Simulado)');
+        // Simulación de creación local
+        const fakeId = Math.random().toString(36).substr(2, 9);
+        const socioCreado = { ...nuevoSocio, _id: fakeId };
+        setSocios([...socios, socioCreado]);
+        alert('¡Socio registrado con éxito!');
       }
       setShowForm(false);
-      fetchSocios();
     } catch (error) {
-      console.error("Error saving socio:", error);
+      console.error("Error al guardar socio:", error);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este socio?')) {
-      try {
-        console.log("Eliminando socio:", id);
-        alert('Socio eliminado (Simulado)');
-        fetchSocios();
-      } catch (error) {
-        console.error("Error deleting socio:", error);
-      }
-    }
+  const openDeleteConfirm = (socio) => {
+    setSocioToDelete(socio);
+    setIsDeleteConfirmOpen(true);
   };
+
+  const handleConfirmDelete = () => {
+    setSocios(socios.filter(s => s._id !== socioToDelete._id));
+    setIsDeleteConfirmOpen(false);
+    setSocioToDelete(null);
+    alert("Socio eliminado correctamente");
+  };
+
+  // Filtrado de socios por nombre, apellido o DNI
+  const sociosFiltrados = socios.filter(socio => {
+    const busqueda = searchTerm.toLowerCase();
+    return (
+      socio.nombre.toLowerCase().includes(busqueda) ||
+      socio.apellido.toLowerCase().includes(busqueda) ||
+      socio.dni.includes(busqueda)
+    );
+  });
 
   return (
     <div className="main-content">
-      <section id="content-header" style={{ 
-          minHeight: '100px', 
-          height: '450px', 
-          position: 'relative', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'flex-end',
-          padding: '0 40px 40px 40px',
-          overflow: 'hidden' 
-}}>
-  <div style={{ position: 'relative', zIndex: 2 }}>
-      <h1 id="main-title" style={{ color: 'white', textAlign: 'left', margin: 0 }}>Gestión de Socios </h1>
-      <p style={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}> Da de alta y administra tus socios</p>
-  </div>
-  <img src="/img/welcome-background.png" alt="Fondo" style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          objectFit: 'cover', 
-          zIndex: 1 
-  }} />
-</section>
+      {/* Encabezado Estandarizado */}
+      <section id="content-header" className="dashboard-header">
+        <div className="header-overlay">
+          <h1 className="header-title">Gestión de Socios</h1>
+          <p className="header-subtitle">Administra la base de miembros y sus abonos.</p>
+        </div>
+        <img 
+          src="/img/welcome-background.png" 
+          alt="Fondo" 
+          className="header-bg-img" 
+        />
+      </section>
 
-      <div style={{ padding: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px', alignItems: 'center' }}>
-          <div className="search-bar" style={{ width: '300px', margin: 0 }}>
-            <input type="text" placeholder="Buscar socio..." />
+      <div className="socios-container">
+        <div className="socios-actions">
+          <div className="search-bar search-box">
+            <Search size={18} className="search-icon" />
+            <input 
+              type="text" 
+              placeholder="Buscar por nombre o DNI..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-          <button className="btn-primary" onClick={() => handleOpenForm()} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#00a8e8', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
-            <UserPlus size={20} /> Nuevo Socio
+          <button className="btn-nuevo-socio" onClick={() => handleOpenForm()}>
+            <UserPlus size={20} /> <span>Nuevo Socio</span>
           </button>
         </div>
 
@@ -142,7 +159,7 @@ const Socios = () => {
             <thead>
               <tr>
                 <th className="columna-fija">Cod. Cliente</th>
-                <th>Nombre Cliente</th>
+                <th>Nombre Completo</th>
                 <th>DNI</th>
                 <th>Teléfono</th>
                 <th>Plan / Abono</th>
@@ -152,85 +169,125 @@ const Socios = () => {
             <tbody>
               {loading ? (
                 <tr><td colSpan="6" style={{ textAlign: 'center' }}>Cargando socios...</td></tr>
-              ) : socios.length > 0 ? (
-                socios.map(socio => (
+              ) : sociosFiltrados.length > 0 ? (
+                sociosFiltrados.map(socio => (
                   <tr key={socio._id}>
                     <td className="columna-fija">#SOC-{socio._id.slice(-4)}</td>
                     <td><strong>{socio.nombre} {socio.apellido}</strong></td>
                     <td>{socio.dni}</td>
                     <td>{socio.telefono || 'N/A'}</td>
-                    <td><span className="etiqueta-plan" style={{ background: '#e1f0ff', color: '#00a8e8', padding: '4px 8px', borderRadius: '4px' }}>{socio.plan || 'Básico'}</span></td>
                     <td>
-                      <div style={{ display: 'flex', gap: '10px' }}>
-                        <button className="btn-help" onClick={() => handleOpenForm(socio)} title="Editar" style={{ border: 'none', background: '#e1f0ff', color: '#00a8e8', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}><Pencil size={14} /></button>
-                        <button className="btn-help" onClick={() => handleDelete(socio._id)} title="Eliminar" style={{ border: 'none', background: '#fff1f1', color: '#e03131', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}><Trash size={14} /></button>
+                      <span className="etiqueta-plan-socio">
+                        {socio.plan || 'Básico'}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="acciones-tabla">
+                        <button className="btn-accion-edit" onClick={() => handleOpenForm(socio)} title="Editar">
+                          <Pencil size={14} />
+                        </button>
+                        <button className="btn-accion-delete" onClick={() => openDeleteConfirm(socio)} title="Eliminar">
+                          <Trash size={14} />
+                        </button>
                       </div>
                     </td>
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan="6" style={{ textAlign: 'center' }}>No se encontraron socios.</td></tr>
+                <tr><td colSpan="6" style={{ textAlign: 'center' }}>No se encontraron socios que coincidan con la búsqueda.</td></tr>
               )}
             </tbody>
           </table>
         </div>
 
-        <Modal isOpen={showForm} onClose={() => setShowForm(false)} title={isEditing ? "Editar Socio" : "Nuevo Socio"}>
-          <div className="contenedor-formulario" style={{ padding: '0', boxShadow: 'none' }}>
-            <div className="cabecera-formulario">
-              <p>{isEditing ? "Modifica los datos del socio." : "Completa los datos personales y de abono del nuevo socio."}</p>
-            </div>
+        {/* Modal Crear/Editar */}
+        <Modal 
+          isOpen={showForm} 
+          onClose={() => setShowForm(false)} 
+          title={isEditing ? "Editar Socio" : "Registrar Nuevo Socio"}
+        >
+          <div className="contenedor-form-socio">
+            <p className="instrucciones-form">
+              {isEditing ? "Modifica los datos del socio seleccionado." : "Completa la ficha del nuevo miembro del gimnasio."}
+            </p>
 
-            <form className="formulario-fluxer" onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '100%', padding: '0', boxShadow: 'none' }}>
-              <div className="cuadricula-formulario">
-                <div className="grupo-campo">
-                  <label htmlFor="nombre">Nombre Completo</label>
-                  <input type="text" id="nombre" value={nuevoSocio.nombre} onChange={handleInputChange} placeholder="Ej: Juan Pérez" required />
-                </div>
-                <div className="grupo-campo">
-                  <label htmlFor="apellido">Apellido</label>
-                  <input type="text" id="apellido" value={nuevoSocio.apellido} onChange={handleInputChange} placeholder="Ej: Pérez" required />
-                </div>
-                <div className="grupo-campo">
-                  <label htmlFor="dni">DNI / Identificación</label>
-                  <input type="text" id="dni" value={nuevoSocio.dni} onChange={handleInputChange} placeholder="Sin puntos ni guiones" required />
-                </div>
-                <div className="grupo-campo">
-                  <label htmlFor="email">Correo Electrónico</label>
-                  <input type="email" id="email" value={nuevoSocio.email} onChange={handleInputChange} placeholder="usuario@email.com" />
-                </div>
-                <div className="grupo-campo">
-                  <label htmlFor="telefono">Teléfono / WhatsApp</label>
-                  <input type="tel" id="telefono" value={nuevoSocio.telefono} onChange={handleInputChange} placeholder="+54 9 ..." />
-                </div>
-                <div className="grupo-campo">
-                  <label htmlFor="plan">Plan / Abono</label>
-                  <select id="plan" value={nuevoSocio.plan} onChange={handleInputChange}>
-                    <option value="">Seleccionar plan...</option>
-                    <option value="basic">Básico</option>
-                    <option value="premium">Premium</option>
-                  </select>
-                </div>
-                <div className="grupo-campo">
-                  <label htmlFor="fecha_inicio">Fecha de Inicio</label>
-                  <input type="date" id="fecha_inicio" value={nuevoSocio.fecha_inicio} onChange={handleInputChange} />
-                </div>
+            <form className="formulario-socio" onSubmit={handleSubmit}>
+              <div className="grupo-entrada-socio">
+                <label htmlFor="nombre">Nombre</label>
+                <input type="text" id="nombre" value={nuevoSocio.nombre} onChange={handleInputChange} placeholder="Ej: Juan" required />
               </div>
-              
-              <div className="grupo-campo ancho-completo">
+              <div className="grupo-entrada-socio">
+                <label htmlFor="apellido">Apellido</label>
+                <input type="text" id="apellido" value={nuevoSocio.apellido} onChange={handleInputChange} placeholder="Ej: Pérez" required />
+              </div>
+              <div className="grupo-entrada-socio">
+                <label htmlFor="dni">DNI / Identificación</label>
+                <input type="text" id="dni" value={nuevoSocio.dni} onChange={handleInputChange} placeholder="Sin puntos" required />
+              </div>
+              <div className="grupo-entrada-socio">
+                <label htmlFor="email">Email</label>
+                <input type="email" id="email" value={nuevoSocio.email} onChange={handleInputChange} placeholder="usuario@email.com" />
+              </div>
+              <div className="grupo-entrada-socio">
+                <label htmlFor="telefono">Teléfono / WhatsApp</label>
+                <input type="tel" id="telefono" value={nuevoSocio.telefono} onChange={handleInputChange} placeholder="+54 9 ..." />
+              </div>
+              <div className="grupo-entrada-socio">
+                <label htmlFor="plan">Plan / Abono</label>
+                <select id="plan" value={nuevoSocio.plan} onChange={handleInputChange} required>
+                  <option value="">Seleccionar...</option>
+                  <option value="Básico">Básico</option>
+                  <option value="Premium">Premium</option>
+                  <option value="Familiar">Familiar</option>
+                </select>
+              </div>
+              <div className="grupo-entrada-socio">
+                <label htmlFor="fecha_inicio">Fecha de Inicio</label>
+                <input type="date" id="fecha_inicio" value={nuevoSocio.fecha_inicio} onChange={handleInputChange} />
+              </div>
+              <div className="grupo-entrada-socio ancho-total">
                 <label htmlFor="observaciones">Observaciones</label>
-                <textarea id="observaciones" rows="3" value={nuevoSocio.observaciones} onChange={handleInputChange} placeholder="Información adicional relevante..."></textarea>
+                <textarea id="observaciones" rows="2" value={nuevoSocio.observaciones} onChange={handleInputChange} placeholder="Notas médicas, deudas, etc..."></textarea>
               </div>
 
-              <div className="acciones-formulario">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
-                  <X size={18} style={{ marginRight: '5px' }} /> Cancelar
+              <div className="pie-form-socio ancho-total">
+                <button type="button" className="btn-cancel" onClick={() => setShowForm(false)}>
+                  <X size={18} /> Cancelar
                 </button>
-                <button type="submit" className="btn-primary">
-                  <Save size={18} style={{ marginRight: '5px' }} /> {isEditing ? "Actualizar" : "Guardar"} Cliente
+                <button type="submit" className="btn-save">
+                  <Save size={18} /> {isEditing ? "Actualizar" : "Registrar"} Socio
                 </button>
               </div>
             </form>
+          </div>
+        </Modal>
+
+        {/* Modal Confirmar Eliminación */}
+        <Modal 
+          isOpen={isDeleteConfirmOpen} 
+          onClose={() => setIsDeleteConfirmOpen(false)} 
+          title="Confirmar eliminación"
+        >
+          <div className="confirm-modal-content">
+            <AlertTriangle size={48} className="confirm-icon" />
+            <p className="confirm-message">
+              ¿Estás seguro de que deseas eliminar al socio <strong>{socioToDelete?.nombre} {socioToDelete?.apellido}</strong>?
+            </p>
+            <p className="confirm-warning">Esta acción no se puede deshacer.</p>
+            <div className="confirm-actions">
+              <button 
+                className="btn-cancel" 
+                onClick={() => setIsDeleteConfirmOpen(false)}
+              >
+                Cancelar
+              </button>
+              <button 
+                className="btn-confirm-delete"
+                onClick={handleConfirmDelete}
+              >
+                Eliminar Socio
+              </button>
+            </div>
           </div>
         </Modal>
       </div>

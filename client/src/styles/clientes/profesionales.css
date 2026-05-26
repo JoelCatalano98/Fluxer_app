@@ -1,0 +1,159 @@
+/* --- CONTENEDOR Y CABECERA --- */
+.profesionales-container {
+    padding: 20px 30px;
+}
+
+.profesionales-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    marginBottom: 25px;
+}
+
+.profesionales-actions h2 {
+    color: var(--primary-dark);
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.btn-crear-profesional {
+    width: auto;
+    height: auto;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: var(--accent-blue);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: 0 4px 10px rgba(0, 168, 232, 0.2);
+    transition: 0.3s;
+}
+
+.btn-crear-profesional:hover {
+    background-color: #0086bc;
+    transform: translateY(-2px);
+}
+
+/* --- TABLA Y ACCIONES --- */
+.acciones-tabla {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-edit-prof {
+    border: none;
+    background: #e1f0ff;
+    color: var(--accent-blue);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-edit-prof:hover {
+    background: #cce5ff;
+}
+
+.btn-delete-prof {
+    border: none;
+    background: #fff1f1;
+    color: #e03131;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-delete-prof:hover {
+    background: #ffe3e3;
+}
+
+/* --- FORMULARIO REGISTRO (MODAL) --- */
+.profesional-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px; /* Reducido de 20px */
+}
+
+.profesional-form .grupo-entrada {
+    display: flex;
+    flex-direction: column;
+    gap: 5px; /* Controlamos el espacio entre label e input */
+}
+
+.profesional-form .grupo-entrada label {
+    display: block;
+    font-weight: 600;
+    color: #444;
+    font-size: 0.85rem; /* Apenas más chico */
+}
+
+.profesional-form .grupo-entrada input {
+    width: 100%;
+    padding: 10px; /* Reducido de 12px */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fcfcfc;
+    font-family: inherit;
+    font-size: 0.9rem;
+}
+
+.p-instrucciones {
+    color: #666;
+    margin-bottom: 15px; /* Reducido de 20px */
+    font-size: 0.85rem;
+}
+
+.pie-formulario {
+    margin-top: 20px; /* Reducido de 30px */
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 15px; /* Reducido de 20px */
+}
+@media screen and (max-width: 480px) {
+    .profesionales-container {
+        padding: 5px;
+    }
+
+    #content-header {
+        height: 160px;
+        min-height: 160px;
+        width: 100%;
+        text-align: end;
+        display: flex;
+        justify-content: flex-end;
+    
+    }
+
+    .profesionales-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .btn-crear-profesional {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .profesional-form {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .pie-formulario {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .pie-formulario button {
+        width: 100%;
+        justify-content: center;
+    }
+}

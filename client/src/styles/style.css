@@ -512,7 +512,8 @@ th.columna-fija {
     height: 450px;
     overflow: hidden;
     display: flex;
-    align-items: center;
+    align-content: flex-end;
+    flex-wrap: wrap;
 }
 
 .header-overlay {
