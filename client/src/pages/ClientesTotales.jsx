@@ -71,7 +71,7 @@ const ClientesTotales = () => {
         }} />
       </section>
 
-      <div style={{ padding: '20px' }}>
+      <div style={{ padding: '5px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center' }}>
           <div>
             <h1 style={{ color: '#333', margin: 0, fontSize: '2rem' }}>Clientes Totales</h1>
@@ -102,6 +102,19 @@ const ClientesTotales = () => {
               <tr>
                 <td className="columna-fija">#001</td>
                 <td><strong>Joel Silva</strong></td>
+                <td>12.345.678</td>
+                <td>341-555-0123</td>
+                <td><span className="etiqueta-plan" style={{ background: '#e1f0ff', color: '#00a8e8', padding: '4px 8px', borderRadius: '4px' }}>Premium</span></td>
+                <td>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className="btn-help" title="Editar" style={{ border: 'none', background: '#e1f0ff', color: '#00a8e8', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}><Pencil size={14} /></button>
+                    <button className="btn-help" title="Eliminar" style={{ border: 'none', background: '#fff1f1', color: '#e03131', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}><Trash size={14} /></button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td className="columna-fija">#002</td>
+                <td><strong>juan perez</strong></td>
                 <td>12.345.678</td>
                 <td>341-555-0123</td>
                 <td><span className="etiqueta-plan" style={{ background: '#e1f0ff', color: '#00a8e8', padding: '4px 8px', borderRadius: '4px' }}>Premium</span></td>

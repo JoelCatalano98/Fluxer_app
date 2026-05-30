@@ -2,42 +2,26 @@
 import { OctagonAlert, Eye, Banknote } from 'lucide-react'; // Cambié CashStack por Banknote
 import '../styles/style.css';
 import '../styles/clientes/listados_gestion.css';
+import '../styles/clientes/morosos.css';
 
 const Morosos = () => {
   return (
     <div className="main-content">
-      <section id="content-header" style={{ 
-          minHeight: '100px', 
-          height: '450px', 
-          position: 'relative', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'flex-end', // Empuja el contenido hacia abajo
-          padding: '0 40px 40px 40px', // Agregamos 40px al final para que no toque el borde
-          overflow: 'hidden' 
-}}>
-  <div style={{ position: 'relative', zIndex: 2 }}>
-        <h1 id="main-title" style={{ color: 'white', textAlign: 'left', margin: 0 }}>Gestión de Clientes morosos</h1>
-        <p style={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}>Controlá los clientes con pagos atrasados</p>
-  </div>
-      <img src="/img/welcome-background.png" alt="Fondo" style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          objectFit: 'cover', 
-          zIndex: 1 
-        }} />
+      <section id="content-header" className="morosos-header">
+        <div className="header-info-container">
+          <h1 id="main-title">Gestión de Clientes morosos</h1>
+          <p>Controlá los clientes con pagos atrasados</p>
+        </div>
+        <img src="/img/welcome-background.png" alt="Fondo" className="header-bg-img" />
       </section>
 
-      <div style={{ padding: '10px 5px' }}>
-        <div className="header-planes-abonos" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '20px 0' }}>
-          <div>
-            <h1 style={{ color: '#333', margin: 0, fontSize: '2rem' }}>Clientes Morosos</h1>
-            <p style={{ color: '#666', margin: '5px 0 0 0' }}>Listado de socios con pagos pendientes y atrasos.</p>
+      <div className="morosos-main-container">
+        <div className="morosos-list-header">
+          <div className="morosos-title-section">
+            <h1>Clientes Morosos</h1>
+            <p>Listado de socios con pagos pendientes y atrasos.</p>
           </div>
-          <div className="badge-debt" style={{ background: '#fff5f5', color: '#e03131', border: '1px solid #ffa8a8', padding: '10px 20px', borderRadius: '8px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="badge-debt">
             <OctagonAlert size={20} /> Total Deuda: $45.200
           </div>
         </div>
@@ -58,14 +42,66 @@ const Morosos = () => {
               <tr className="fila-moroso">
                 <td>#045</td>
                 <td className="columna-fija"><strong>Carlos Méndez</strong></td>
-                <td><span style={{ color: '#e03131', fontWeight: 600 }}>$12.500</span></td>
-                <td><span className="etiqueta-deuda" style={{ background: '#fff5f5', color: '#e03131', padding: '4px 8px', borderRadius: '4px' }}>15 días</span></td>
+                <td><span className="deuda-monto">$12.500</span></td>
+                <td><span className="etiqueta-deuda">15 días</span></td>
                 <td>10/03/2026</td>
                 <td>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button className="btn-help" title="Ver Detalle" style={{ border: 'none', background: '#e1f0ff', color: '#00a8e8', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}><Eye size={14} /></button>
-                    {/* Cambié el <i> por el componente Banknote de Lucide */}
-                    <button className="btn-help" title="Registrar Pago" style={{ border: 'none', background: '#ebfbee', color: '#40c057', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}>
+                  <div className="acciones-flex">
+                    <button className="btn-accion-moroso btn-detalle" title="Ver Detalle">
+                      <Eye size={14} />
+                    </button>
+                    <button className="btn-accion-moroso btn-pago" title="Registrar Pago">
+                      <Banknote size={14} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr className="fila-moroso">
+                <td>#045</td>
+                <td className="columna-fija"><strong>Carlos Méndez</strong></td>
+                <td><span className="deuda-monto">$12.500</span></td>
+                <td><span className="etiqueta-deuda">15 días</span></td>
+                <td>10/03/2026</td>
+                <td>
+                  <div className="acciones-flex">
+                    <button className="btn-accion-moroso btn-detalle" title="Ver Detalle">
+                      <Eye size={14} />
+                    </button>
+                    <button className="btn-accion-moroso btn-pago" title="Registrar Pago">
+                      <Banknote size={14} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr className="fila-moroso">
+                <td>#045</td>
+                <td className="columna-fija"><strong>Carlos Méndez</strong></td>
+                <td><span className="deuda-monto">$12.500</span></td>
+                <td><span className="etiqueta-deuda">15 días</span></td>
+                <td>10/03/2026</td>
+                <td>
+                  <div className="acciones-flex">
+                    <button className="btn-accion-moroso btn-detalle" title="Ver Detalle">
+                      <Eye size={14} />
+                    </button>
+                    <button className="btn-accion-moroso btn-pago" title="Registrar Pago">
+                      <Banknote size={14} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr className="fila-moroso">
+                <td>#045</td>
+                <td className="columna-fija"><strong>Carlos Méndez</strong></td>
+                <td><span className="deuda-monto">$12.500</span></td>
+                <td><span className="etiqueta-deuda">15 días</span></td>
+                <td>10/03/2026</td>
+                <td>
+                  <div className="acciones-flex">
+                    <button className="btn-accion-moroso btn-detalle" title="Ver Detalle">
+                      <Eye size={14} />
+                    </button>
+                    <button className="btn-accion-moroso btn-pago" title="Registrar Pago">
                       <Banknote size={14} />
                     </button>
                   </div>

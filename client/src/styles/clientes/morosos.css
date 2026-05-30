@@ -1,0 +1,111 @@
+/* morosos.css - Estilos específicos para la pantalla de Morosos */
+
+#content-header.morosos-header {
+    min-height: 100px;
+    height: 450px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 40px 40px 40px;
+    overflow: hidden;
+}
+
+.header-info-container {
+    position: relative;
+    z-index: 2;
+}
+
+.header-info-container h1 {
+    color: white;
+    text-align: left;
+    margin: 0;
+}
+
+.header-info-container p {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 5px 0 0 0;
+}
+
+.header-bg-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+}
+
+.morosos-main-container {
+    padding: 10px 5px;
+}
+
+.morosos-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.morosos-title-section h1 {
+    color: #333;
+    margin: 0;
+    font-size: 2rem;
+}
+
+.morosos-title-section p {
+    color: #666;
+    margin: 5px 0 0 0;
+}
+
+.badge-debt {
+    background: #fff5f5;
+    color: #e03131;
+    border: 1px solid #ffa8a8;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Tabla y Filas */
+.deuda-monto {
+    color: #e03131;
+    font-weight: 600;
+}
+
+.etiqueta-deuda {
+    background: #fff5f5;
+    color: #e03131;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+/* Acciones */
+.acciones-flex {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-accion-moroso {
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-detalle {
+    background: #e1f0ff;
+    color: #00a8e8;
+}
+
+.btn-pago {
+    background: #ebfbee;
+    color: #40c057;
+}

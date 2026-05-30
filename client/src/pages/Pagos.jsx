@@ -3,6 +3,7 @@ import { CirclePlus, Banknote, Landmark, Save, CreditCard, Smartphone, X, Trash,
 import Modal from '../components/Modal';
 import '../styles/style.css';
 import '../styles/utilidades/configuracion_pagos.css';
+import '../styles/utilidades/pagos.css';
 
 const Pagos = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -71,37 +72,19 @@ const Pagos = () => {
 
   return (
     <div className="main-content">
-      <section id="content-header" style={{ 
-          minHeight: '100px', 
-          height: '450px', 
-          position: 'relative', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'flex-end',
-          padding: '0 40px 40px 40px',
-          overflow: 'hidden' 
-      }}>
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <h1 id="main-title" style={{ color: 'white', textAlign: 'left', margin: 0 }}>Medios de Pago</h1>
-          <p style={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}>Configura tus canales de cobro y recargos</p>
+      <section id="content-header" className="pagos-header">
+        <div className="pagos-header-info">
+          <h1 id="main-title">Medios de Pago</h1>
+          <p>Configura tus canales de cobro y recargos</p>
         </div>
-        <img src="/img/welcome-background.png" alt="Fondo" style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          objectFit: 'cover', 
-          zIndex: 1 
-        }} />
+        <img src="/img/welcome-background.png" alt="Fondo" className="pagos-header-bg" />
       </section>
 
       <div className="contenedor-pagos">
-        <div style={{ padding: '0 0 20px 0' }}>
+        <div style={{ paddingBottom: '20px' }}>
           <button 
-            className="btn-primary" 
+            className="btn-nuevo-pago" 
             onClick={() => setIsModalOpen(true)}
-            style={{ width: 'auto', height: 'auto', padding: '10px 20px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#00a8e8', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
           >
             <CirclePlus size={18} /> Nuevo Medio de Pago
           </button>
@@ -112,14 +95,14 @@ const Pagos = () => {
             <article key={metodo.id} className="tarjeta-pago activo">
               <div className="cabecera-tarjeta-pago">
                 <div className="info-metodo">
-                  <div style={{ background: '#e1f0ff', color: '#00a8e8', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '10px' }}>
+                  <div className="info-metodo-icon">
                     {metodo.icon}
                   </div>
                   <h3>{metodo.nombre}</h3>
                 </div>
                 <button 
+                  className="btn-eliminar-pago"
                   onClick={() => handleOpenDeleteConfirm(metodo)}
-                  style={{ border: 'none', background: '#ffe3e3', color: '#e03131', padding: '8px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   title="Eliminar Medio"
                 >
                   <Trash size={16} />
@@ -128,7 +111,7 @@ const Pagos = () => {
 
               <div className="cuerpo-tarjeta-pago">
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
-                    <div className={`etiqueta-comision ${metodo.valor >= 0 ? 'comision-positiva' : 'comision-negativa'}`} style={{ fontSize: '0.9rem', padding: '5px 15px' }}>
+                    <div className={`etiqueta-comision ${metodo.valor >= 0 ? 'comision-positiva' : 'comision-negativa'} etiqueta-comision-personalizada`}>
                         {metodo.valor >= 0 ? `+${metodo.valor}% Recargo` : `${metodo.valor}% Descuento`}
                     </div>
                 </div>
@@ -152,11 +135,10 @@ const Pagos = () => {
                 </div>
               </div>
 
-              <div className="pie-tarjeta-pago" style={{ gap: '10px' }}>
+              <div className="pie-tarjeta-pago">
                 <button 
-                  className="btn-help" 
+                  className="btn-guardar-cambios" 
                   onClick={() => handleSaveMethod(metodo.id)}
-                  style={{ background: '#00a8e8', color: 'white', border: 'none', padding: '10px 25px', borderRadius: '8px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', fontWeight: '600', width: '100%', justifyContent: 'center' }}
                 >
                   <Save size={18} /> Guardar Cambios
                 </button>
@@ -172,10 +154,10 @@ const Pagos = () => {
         onClose={() => setIsModalOpen(false)} 
         title="Nuevo Medio de Pago"
       >
-        <form onSubmit={handleCreateMethod} style={{ padding: '10px' }}>
-          <div className="cuadricula-formulario" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-            <div className="grupo-campo" style={{ gridColumn: '1 / -1' }}>
-              <label htmlFor="nombre" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Nombre del Medio</label>
+        <form onSubmit={handleCreateMethod} className="form-nuevo-pago">
+          <div className="grid-formulario-pagos">
+            <div className="grupo-campo grid-full-width">
+              <label htmlFor="nombre">Nombre del Medio</label>
               <input 
                 type="text" 
                 id="nombre" 
@@ -183,16 +165,14 @@ const Pagos = () => {
                 onChange={handleNewMethodChange} 
                 placeholder="Ej: PayPal, Cheque, etc." 
                 required 
-                style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }}
               />
             </div>
             <div className="grupo-campo">
-              <label htmlFor="tipo" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Tipo de Medio</label>
+              <label htmlFor="tipo">Tipo de Medio</label>
               <select 
                 id="tipo" 
                 value={nuevoMetodo.tipo} 
                 onChange={handleNewMethodChange}
-                style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: 'white' }}
               >
                 <option value="Efectivo">Efectivo</option>
                 <option value="Banco">Banco / CBU</option>
@@ -202,53 +182,53 @@ const Pagos = () => {
               </select>
             </div>
             <div className="grupo-campo">
-              <label htmlFor="recargo" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Recargo (%)</label>
-              <input 
-                type="number" 
-                id="recargo" 
-                value={nuevoMetodo.recargo} 
-                onChange={handleNewMethodChange} 
-                placeholder="0" 
-                style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }}
-              />
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <div style={{ flex: 1 }}>
+                  <label htmlFor="recargo">Recargo %</label>
+                  <input 
+                    type="number" 
+                    id="recargo" 
+                    value={nuevoMetodo.recargo} 
+                    onChange={handleNewMethodChange} 
+                    placeholder="0" 
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label htmlFor="descuento">Desc. %</label>
+                  <input 
+                    type="number" 
+                    id="descuento" 
+                    value={nuevoMetodo.descuento} 
+                    onChange={handleNewMethodChange} 
+                    placeholder="0" 
+                  />
+                </div>
+              </div>
             </div>
-            <div className="grupo-campo">
-              <label htmlFor="descuento" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Descuento (%)</label>
-              <input 
-                type="number" 
-                id="descuento" 
-                value={nuevoMetodo.descuento} 
-                onChange={handleNewMethodChange} 
-                placeholder="0" 
-                style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }}
-              />
-            </div>
-            <div className="grupo-campo" style={{ gridColumn: '1 / -1' }}>
-              <label htmlFor="detalle" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>CBU / Alias / Instrucciones</label>
+            <div className="grupo-campo grid-full-width">
+              <label htmlFor="detalle">CBU / Alias / Instrucciones</label>
               <textarea 
                 id="detalle" 
                 value={nuevoMetodo.detalle} 
                 onChange={handleNewMethodChange} 
                 placeholder="CBU: 000... / Alias: mi.gym.mp" 
                 rows="2"
-                style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }}
               ></textarea>
             </div>
-            <div className="grupo-campo" style={{ gridColumn: '1 / -1' }}>
-              <label htmlFor="observaciones" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Observaciones</label>
+            <div className="grupo-campo grid-full-width">
+              <label htmlFor="observaciones">Observaciones</label>
               <textarea 
                 id="observaciones" 
                 value={nuevoMetodo.observaciones} 
                 onChange={handleNewMethodChange} 
                 placeholder="Notas internas..." 
                 rows="2"
-                style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }}
               ></textarea>
             </div>
           </div>
-          <div className="acciones-formulario" style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-            <button type="button" className="btn-secondary" onClick={() => setIsModalOpen(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}>Cancelar</button>
-            <button type="submit" className="btn-primary" style={{ padding: '10px 25px', borderRadius: '8px', border: 'none', background: '#00a8e8', color: 'white', fontWeight: '600', cursor: 'pointer' }}>Crear Medio</button>
+          <div className="acciones-formulario-pagos">
+            <button type="button" className="btn-modal-cancelar" onClick={() => setIsModalOpen(false)}>Cancelar</button>
+            <button type="submit" className="btn-modal-confirmar">Crear Medio</button>
           </div>
         </form>
       </Modal>
@@ -260,14 +240,14 @@ const Pagos = () => {
         title="Confirmar eliminación"
       >
         <div style={{ padding: '10px', textAlign: 'center' }}>
-          <AlertCircle size={48} color="#ff6b6b" style={{ marginBottom: '15px' }} />
+          <AlertCircle size={48} color="#ff6b6b" style={{ marginBottom: '15px', marginLeft: 'auto', marginRight: 'auto' }} />
           <p style={{ fontSize: '1.1rem', color: '#333', marginBottom: '10px' }}>
             ¿Estás seguro de que quieres eliminar el medio de pago <strong>{selectedMethod?.nombre}</strong>?
           </p>
           <p style={{ fontSize: '0.9rem', color: '#666' }}>Esta acción no se puede deshacer.</p>
-          <div className="acciones-formulario" style={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '15px' }}>
-            <button type="button" className="btn-secondary" onClick={() => setIsDeleteConfirmOpen(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}>Cancelar</button>
-            <button type="button" onClick={handleConfirmDelete} style={{ padding: '10px 25px', borderRadius: '8px', border: 'none', background: '#ff6b6b', color: 'white', fontWeight: '600', cursor: 'pointer' }}>Eliminar Medio</button>
+          <div className="acciones-formulario-pagos" style={{ justifyContent: 'center' }}>
+            <button type="button" className="btn-modal-cancelar" onClick={() => setIsDeleteConfirmOpen(false)}>Cancelar</button>
+            <button type="button" className="btn-modal-eliminar" onClick={handleConfirmDelete}>Eliminar Medio</button>
           </div>
         </div>
       </Modal>

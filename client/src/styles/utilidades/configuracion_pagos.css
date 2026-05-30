@@ -152,3 +152,13 @@
         grid-template-columns: 1fr; /* 1 columna en móviles */
     }
 }
+@media (max-width: 480px) {
+
+.cuadricula-pagos {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(6, 1fr); 
+    gap: 20px;
+    margin-top: 20px;
+}
+}

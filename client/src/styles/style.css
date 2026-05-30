@@ -984,6 +984,7 @@ th.columna-fija {
         text-align: end;
         display: flex;
         justify-content: flex-end;
+        align-items: flex-start;
     
     }
 
