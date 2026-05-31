@@ -14,27 +14,202 @@ datasource db {
 // ==========================================
 
 model Usuario {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  password String
-  rol      String @default("ADMIN")
+  id Int @id @default(autoincrement())
 
-  @@map("usuarios") // Esto fuerza a que la tabla en MySQL se llame en minúscula y plural
+  email String @unique
+
+  password String
+
+  rol String @default("ADMIN")
+
+  @@map("usuarios")
 }
 
 model ConfiguracionLocal {
-  id                       Int      @id @default(autoincrement())
-  logo_url                 String?  // El "?" significa que es opcional (puede ser NULL)
-  nombre                   String?
-  direccion                String?
-  telefono                 String?
-  instagram                String?
-  whatsapp                 String?
-  hora_apertura            DateTime? @db.Time
-  hora_cierre              DateTime? @db.Time
-  capacidad_max_hora       Int       @default(0)
-  margen_cancelacion_horas Int       @default(0)
-  bloqueo_capacidad        Boolean   @default(false)
+  id Int @id @default(autoincrement())
+
+  logo_url String?
+
+  nombre String?
+
+  direccion String?
+
+  telefono String?
+
+  instagram String?
+
+  whatsapp String?
+
+  hora_apertura DateTime? @db.Time
+
+  hora_cierre DateTime? @db.Time
+
+  capacidad_max_hora Int @default(0)
+
+  margen_cancelacion_horas Int @default(0)
+
+  bloqueo_capacidad Boolean @default(false)
 
   @@map("configuracion_local")
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum EstadoPago {
+  ALDIA
+
+  MOROSO
+}
+
+enum EstadoCliente {
+  ACTIVO
+
+  INACTIVO
+}
+
+// ==========================================
+// PLANES
+// ==========================================
+
+model Plan {
+  id Int @id @default(autoincrement())
+
+  nombre String
+
+  etiqueta String?
+
+  precio Decimal @db.Decimal(10, 2)
+
+  frecuencia String
+
+  caracteristicas String? @db.Text
+
+  categoriaId Int?
+
+  categoria Categoria? @relation(fields: [categoriaId], references: [id])
+
+  clientes Cliente[]
+
+  @@map("planes")
+}
+
+// ==========================================
+// CLIENTES / SOCIOS
+// ==========================================
+
+model Cliente {
+  id Int @id @default(autoincrement())
+
+  codigo_socio String @unique
+
+  nombre String
+
+  apellido String
+
+  dni_cuit String @unique
+
+  email String? @unique
+
+  telefono String?
+
+  fecha_inicio DateTime? @db.Date
+
+  observaciones String? @db.Text
+
+  estado_pago EstadoPago @default(ALDIA)
+
+  estado_cliente EstadoCliente @default(ACTIVO)
+
+  planId Int?
+
+  plan Plan? @relation(fields: [planId], references: [id])
+
+  turnos TurnoCliente[]
+
+  @@map("clientes")
+}
+
+// ==========================================
+// PROFESIONALES
+// ==========================================
+
+model Profesional {
+  id Int @id @default(autoincrement())
+
+  nombre String
+
+  apellido String
+
+  dni String @unique
+
+  especialidad String?
+
+  matricula String?
+
+  email String? @unique
+
+  telefono String?
+
+  activo Boolean @default(true)
+
+  @@map("profesionales")
+}
+
+// ==========================================
+// HORARIOS
+// ==========================================
+
+model HorarioConfig {
+  id Int @id @default(autoincrement())
+
+  dia_semana Int
+
+  hora_inicio DateTime @db.Time
+
+  hora_fin DateTime @db.Time
+
+  turnos TurnoCliente[]
+
+  @@map("horarios_config")
+}
+
+// ==========================================
+// TURNOS
+// ==========================================
+
+model TurnoCliente {
+  id Int @id @default(autoincrement())
+
+  fecha DateTime @db.Date
+
+  horarioId Int
+
+  clienteId Int
+
+  horario HorarioConfig @relation(fields: [horarioId], references: [id])
+
+  cliente Cliente @relation(fields: [clienteId], references: [id])
+
+  @@unique([fecha, horarioId, clienteId])
+  @@map("turnos_clientes")
+}
+
+// ==========================================
+// CATEGORÍAS
+// ==========================================
+
+model Categoria {
+  id Int @id @default(autoincrement())
+
+  nombre String
+
+  rubro_sector String?
+
+  color String?
+
+  planes Plan[]
+
+  @@map("categorias")
 }
