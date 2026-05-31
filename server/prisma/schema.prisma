@@ -1,0 +1,40 @@
+// server/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// MÓDULO 1: AUTENTICACIÓN Y CONFIGURACIÓN
+// ==========================================
+
+model Usuario {
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String
+  rol      String @default("ADMIN")
+
+  @@map("usuarios") // Esto fuerza a que la tabla en MySQL se llame en minúscula y plural
+}
+
+model ConfiguracionLocal {
+  id                       Int      @id @default(autoincrement())
+  logo_url                 String?  // El "?" significa que es opcional (puede ser NULL)
+  nombre                   String?
+  direccion                String?
+  telefono                 String?
+  instagram                String?
+  whatsapp                 String?
+  hora_apertura            DateTime? @db.Time
+  hora_cierre              DateTime? @db.Time
+  capacidad_max_hora       Int       @default(0)
+  margen_cancelacion_horas Int       @default(0)
+  bloqueo_capacidad        Boolean   @default(false)
+
+  @@map("configuracion_local")
+}
