@@ -12,8 +12,8 @@ app.get('/', (req, res) => {
     res.send('Servidor de Fluxer (Refactored) funcionando correctamente! 🚀');
 });
 
-// Aquí se importarán e inyectarán las rutas más adelante
-// const userRoutes = require('./routes/userRoutes');
-// app.use('/api/users', userRoutes);
+// Rutas de la API
+const clientesRoutes = require('./routes/clientes.routes');
+app.use('/api/clientes', clientesRoutes);
 
 module.exports = app;
