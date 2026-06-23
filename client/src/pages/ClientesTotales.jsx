@@ -23,7 +23,8 @@ const ClientesTotales = () => {
     codigo_socio: '',
     planId: '',
     fecha_inicio: new Date().toISOString().split('T')[0],
-    observaciones: ''
+    observaciones: '',
+    estado_pago: 'ALDIA'
   });
 
   const fetchClientes = useCallback(async () => {
@@ -69,7 +70,8 @@ const ClientesTotales = () => {
         codigo_socio: cliente.codigo_socio || '',
         planId: cliente.planId || '',
         fecha_inicio: cliente.fecha_inicio ? new Date(cliente.fecha_inicio).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        observaciones: cliente.observaciones || ''
+        observaciones: cliente.observaciones || '',
+        estado_pago: cliente.estado_pago || 'ALDIA'
       });
       setIsEditing(true);
     } else {
@@ -84,7 +86,8 @@ const ClientesTotales = () => {
         codigo_socio: '',
         planId: '',
         fecha_inicio: new Date().toISOString().split('T')[0],
-        observaciones: ''
+        observaciones: '',
+        estado_pago: 'ALDIA'
       });
       setIsEditing(false);
     }
@@ -294,6 +297,21 @@ const ClientesTotales = () => {
                   />
                   <label htmlFor="es_socio" style={{ cursor: 'pointer', marginBottom: 0 }}>¿Es Socio? (Acceso a Planes)</label>
                 </div>
+
+                {isEditing && (
+                  <div className="grupo-campo">
+                    <label htmlFor="estado_pago">Estado de Pago</label>
+                    <select 
+                      id="estado_pago" 
+                      value={formCliente.estado_pago} 
+                      onChange={handleInputChange}
+                      style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                    >
+                      <option value="ALDIA">Al Día</option>
+                      <option value="MOROSO">Moroso</option>
+                    </select>
+                  </div>
+                )}
 
                 {formCliente.es_socio && (
                   <>
