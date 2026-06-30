@@ -6,7 +6,33 @@ import '../styles/clientes/listados_gestion.css';
 import '../styles/clientes/formularios_clientes.css';
 
 const ClientesTotales = () => {
+  const [clientes, setClientes] = useState([
+    {
+      codigo: '#001',
+      nombre: 'Joel Silva',
+      dni: '12.345.678',
+      email: 'joel@email.com',
+      telefono: '341-555-0123',
+      plan: 'premium',
+      fecha_inicio: '2026-01-01',
+      observaciones: 'Cliente inicial'
+    },
+    {
+      codigo: '#002',
+      nombre: 'juan perez',
+      dni: '12.345.678',
+      email: 'juan@email.com',
+      telefono: '341-555-0123',
+      plan: 'premium',
+      fecha_inicio: '2026-01-02',
+      observaciones: 'Cliente inicial 2'
+    }
+  ]);
+
   const [showForm, setShowForm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingCodigo, setEditingCodigo] = useState(null);
+
   const [nuevoCliente, setNuevoCliente] = useState({
     codigo: '',
     nombre: '',
@@ -26,12 +52,9 @@ const ClientesTotales = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Cliente guardado:", nuevoCliente);
-    alert("¡Cliente guardado con éxito! (Simulado)");
-    setShowForm(false);
-    // Reiniciar formulario
+  const handleNewCliente = () => {
+    setIsEditing(false);
+    setEditingCodigo(null);
     setNuevoCliente({
       codigo: '',
       nombre: '',
@@ -42,6 +65,58 @@ const ClientesTotales = () => {
       fecha_inicio: new Date().toISOString().split('T')[0],
       observaciones: ''
     });
+    setShowForm(true);
+  };
+
+  const handleEdit = (cliente) => {
+    setIsEditing(true);
+    setEditingCodigo(cliente.codigo);
+    setNuevoCliente({ ...cliente });
+    setShowForm(true);
+  };
+
+  const handleDelete = (codigo) => {
+    if (window.confirm("¿Estás seguro de que deseas eliminar este cliente?")) {
+      setClientes(prev => prev.filter(c => c.codigo !== codigo));
+    }
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setIsEditing(false);
+    setEditingCodigo(null);
+    setNuevoCliente({
+      codigo: '',
+      nombre: '',
+      dni: '',
+      email: '',
+      telefono: '',
+      plan: '',
+      fecha_inicio: new Date().toISOString().split('T')[0],
+      observaciones: ''
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (isEditing) {
+      if (nuevoCliente.codigo !== editingCodigo && clientes.some(c => c.codigo === nuevoCliente.codigo)) {
+        alert("El código de cliente ya existe. Por favor, use otro.");
+        return;
+      }
+      setClientes(prev => prev.map(c => c.codigo === editingCodigo ? nuevoCliente : c));
+      alert("¡Cliente editado con éxito!");
+    } else {
+      if (clientes.some(c => c.codigo === nuevoCliente.codigo)) {
+        alert("El código de cliente ya existe. Por favor, use otro.");
+        return;
+      }
+      setClientes(prev => [...prev, nuevoCliente]);
+      alert("¡Cliente guardado con éxito!");
+    }
+    
+    handleCloseForm();
   };
 
   return (
@@ -79,7 +154,7 @@ const ClientesTotales = () => {
           </div>
           <button 
             className="btn-primary" 
-            onClick={() => setShowForm(true)}
+            onClick={handleNewCliente}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#00a8e8', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
           >
             <UserPlus size={20} /> Nuevo Cliente
@@ -99,37 +174,52 @@ const ClientesTotales = () => {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td className="columna-fija">#001</td>
-                <td><strong>Joel Silva</strong></td>
-                <td>12.345.678</td>
-                <td>341-555-0123</td>
-                <td><span className="etiqueta-plan" style={{ background: '#e1f0ff', color: '#00a8e8', padding: '4px 8px', borderRadius: '4px' }}>Premium</span></td>
-                <td>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button className="btn-help" title="Editar" style={{ border: 'none', background: '#e1f0ff', color: '#00a8e8', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}><Pencil size={14} /></button>
-                    <button className="btn-help" title="Eliminar" style={{ border: 'none', background: '#fff1f1', color: '#e03131', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}><Trash size={14} /></button>
-                  </div>
-                </td>
-              </tr>
-              <tr>
-                <td className="columna-fija">#002</td>
-                <td><strong>juan perez</strong></td>
-                <td>12.345.678</td>
-                <td>341-555-0123</td>
-                <td><span className="etiqueta-plan" style={{ background: '#e1f0ff', color: '#00a8e8', padding: '4px 8px', borderRadius: '4px' }}>Premium</span></td>
-                <td>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button className="btn-help" title="Editar" style={{ border: 'none', background: '#e1f0ff', color: '#00a8e8', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}><Pencil size={14} /></button>
-                    <button className="btn-help" title="Eliminar" style={{ border: 'none', background: '#fff1f1', color: '#e03131', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}><Trash size={14} /></button>
-                  </div>
-                </td>
-              </tr>
+              {clientes.map(cliente => (
+                <tr key={cliente.codigo}>
+                  <td className="columna-fija">{cliente.codigo}</td>
+                  <td><strong>{cliente.nombre}</strong></td>
+                  <td>{cliente.dni}</td>
+                  <td>{cliente.telefono}</td>
+                  <td>
+                    <span 
+                      className="etiqueta-plan" 
+                      style={{ 
+                        background: cliente.plan === 'premium' ? '#e1f0ff' : cliente.plan === 'basic' ? '#e6fcf5' : '#f1f3f5', 
+                        color: cliente.plan === 'premium' ? '#00a8e8' : cliente.plan === 'basic' ? '#0ca678' : '#495057', 
+                        padding: '4px 8px', 
+                        borderRadius: '4px' 
+                      }}
+                    >
+                      {cliente.plan === 'premium' ? 'Premium' : cliente.plan === 'basic' ? 'Básico' : 'Sin Plan'}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button 
+                        className="btn-help" 
+                        title="Editar" 
+                        onClick={() => handleEdit(cliente)}
+                        style={{ border: 'none', background: '#e1f0ff', color: '#00a8e8', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button 
+                        className="btn-help" 
+                        title="Eliminar" 
+                        onClick={() => handleDelete(cliente.codigo)}
+                        style={{ border: 'none', background: '#fff1f1', color: '#e03131', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                      >
+                        <Trash size={14} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
 
-        <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Nuevo Cliente">
+        <Modal isOpen={showForm} onClose={handleCloseForm} title={isEditing ? "Editar Cliente" : "Nuevo Cliente"}>
           <div className="contenedor-formulario" style={{ padding: '0', boxShadow: 'none' }}>
             <form className="formulario-fluxer" onSubmit={handleSubmit} style={{ width: '100%', maxWidth: '100%', padding: '0', boxShadow: 'none' }}>
               <div className="cuadricula-formulario">
@@ -173,7 +263,7 @@ const ClientesTotales = () => {
               </div>
 
               <div className="acciones-formulario">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
+                <button type="button" className="btn-secondary" onClick={handleCloseForm}>
                   <X size={18} style={{ marginRight: '5px' }} /> Cancelar
                 </button>
                 <button type="submit" className="btn-primary">
