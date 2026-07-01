@@ -4,6 +4,7 @@ import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import TableActions from '../components/TableActions';
+import { useForm } from '../hooks/useForm';
 import '../styles/style.css';
 import '../styles/clientes/listados_gestion.css';
 import '../styles/clientes/formularios_clientes.css';
@@ -18,7 +19,8 @@ const ClientesTotales = () => {
       telefono: '341-555-0123',
       plan: 'premium',
       fecha_inicio: '2026-01-01',
-      observaciones: 'Cliente inicial'
+      observaciones: 'Cliente inicial',
+      isMoroso: false
     },
     {
       codigo: '#002',
@@ -28,7 +30,8 @@ const ClientesTotales = () => {
       telefono: '341-555-0123',
       plan: 'premium',
       fecha_inicio: '2026-01-02',
-      observaciones: 'Cliente inicial 2'
+      observaciones: 'Cliente inicial 2',
+      isMoroso: false
     }
   ]);
 
@@ -38,7 +41,8 @@ const ClientesTotales = () => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [clienteToDelete, setClienteToDelete] = useState(null);
 
-  const [nuevoCliente, setNuevoCliente] = useState({
+  // Hook useForm para controlar el formulario de Clientes
+  const [formValues, handleInputChange, resetForm, setFormValues] = useForm({
     codigo: '',
     nombre: '',
     dni: '',
@@ -46,37 +50,24 @@ const ClientesTotales = () => {
     telefono: '',
     plan: '',
     fecha_inicio: new Date().toISOString().split('T')[0],
-    observaciones: ''
+    observaciones: '',
+    isMoroso: false
   });
-
-  const handleInputChange = (e) => {
-    const { id, value } = e.target;
-    setNuevoCliente(prev => ({
-      ...prev,
-      [id]: value
-    }));
-  };
 
   const handleNewCliente = () => {
     setIsEditing(false);
     setEditingCodigo(null);
-    setNuevoCliente({
-      codigo: '',
-      nombre: '',
-      dni: '',
-      email: '',
-      telefono: '',
-      plan: '',
-      fecha_inicio: new Date().toISOString().split('T')[0],
-      observaciones: ''
-    });
+    resetForm();
     setShowForm(true);
   };
 
   const handleEdit = (cliente) => {
     setIsEditing(true);
     setEditingCodigo(cliente.codigo);
-    setNuevoCliente({ ...cliente });
+    setFormValues({
+      ...cliente,
+      isMoroso: cliente.isMoroso || false
+    });
     setShowForm(true);
   };
 
@@ -96,34 +87,26 @@ const ClientesTotales = () => {
     setShowForm(false);
     setIsEditing(false);
     setEditingCodigo(null);
-    setNuevoCliente({
-      codigo: '',
-      nombre: '',
-      dni: '',
-      email: '',
-      telefono: '',
-      plan: '',
-      fecha_inicio: new Date().toISOString().split('T')[0],
-      observaciones: ''
-    });
+    resetForm();
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    console.log('Datos del cliente enviados:', formValues); // Log de datos controlados con isMoroso
     
     if (isEditing) {
-      if (nuevoCliente.codigo !== editingCodigo && clientes.some(c => c.codigo === nuevoCliente.codigo)) {
+      if (formValues.codigo !== editingCodigo && clientes.some(c => c.codigo === formValues.codigo)) {
         alert("El código de cliente ya existe. Por favor, use otro.");
         return;
       }
-      setClientes(prev => prev.map(c => c.codigo === editingCodigo ? nuevoCliente : c));
+      setClientes(prev => prev.map(c => c.codigo === editingCodigo ? formValues : c));
       alert("¡Cliente editado con éxito!");
     } else {
-      if (clientes.some(c => c.codigo === nuevoCliente.codigo)) {
+      if (clientes.some(c => c.codigo === formValues.codigo)) {
         alert("El código de cliente ya existe. Por favor, use otro.");
         return;
       }
-      setClientes(prev => [...prev, nuevoCliente]);
+      setClientes(prev => [...prev, formValues]);
       alert("¡Cliente guardado con éxito!");
     }
     
@@ -211,27 +194,27 @@ const ClientesTotales = () => {
               <div className="cuadricula-formulario">
                 <div className="grupo-campo">
                   <label htmlFor="codigo">Cod. Cliente</label>
-                  <input type="text" id="codigo" value={nuevoCliente.codigo} onChange={handleInputChange} placeholder="Ej: #002" required />
+                  <input type="text" id="codigo" name="codigo" value={formValues.codigo} onChange={handleInputChange} placeholder="Ej: #002" required />
                 </div>
                 <div className="grupo-campo">
                   <label htmlFor="nombre">Nombre Completo</label>
-                  <input type="text" id="nombre" value={nuevoCliente.nombre} onChange={handleInputChange} placeholder="Ej: Juan Pérez" required />
+                  <input type="text" id="nombre" name="nombre" value={formValues.nombre} onChange={handleInputChange} placeholder="Ej: Juan Pérez" required />
                 </div>
                 <div className="grupo-campo">
                   <label htmlFor="dni">DNI / CUIT</label>
-                  <input type="text" id="dni" value={nuevoCliente.dni} onChange={handleInputChange} placeholder="Sin puntos ni guiones" required />
+                  <input type="text" id="dni" name="dni" value={formValues.dni} onChange={handleInputChange} placeholder="Sin puntos ni guiones" required />
                 </div>
                 <div className="grupo-campo">
                   <label htmlFor="email">Correo Electrónico</label>
-                  <input type="email" id="email" value={nuevoCliente.email} onChange={handleInputChange} placeholder="usuario@email.com" />
+                  <input type="email" id="email" name="email" value={formValues.email} onChange={handleInputChange} placeholder="usuario@email.com" />
                 </div>
                 <div className="grupo-campo">
                   <label htmlFor="telefono">Teléfono / WhatsApp</label>
-                  <input type="tel" id="telefono" value={nuevoCliente.telefono} onChange={handleInputChange} placeholder="+54 9 ..." />
+                  <input type="tel" id="telefono" name="telefono" value={formValues.telefono} onChange={handleInputChange} placeholder="+54 9 ..." />
                 </div>
                 <div className="grupo-campo">
                   <label htmlFor="plan">Plan / Abono</label>
-                  <select id="plan" value={nuevoCliente.plan} onChange={handleInputChange}>
+                  <select id="plan" name="plan" value={formValues.plan} onChange={handleInputChange}>
                     <option value="">Seleccionar plan...</option>
                     <option value="basic">Básico</option>
                     <option value="premium">Premium</option>
@@ -239,13 +222,28 @@ const ClientesTotales = () => {
                 </div>
                 <div className="grupo-campo">
                   <label htmlFor="fecha_inicio">Fecha de Inicio</label>
-                  <input type="date" id="fecha_inicio" value={nuevoCliente.fecha_inicio} onChange={handleInputChange} />
+                  <input type="date" id="fecha_inicio" name="fecha_inicio" value={formValues.fecha_inicio} onChange={handleInputChange} />
                 </div>
               </div>
               
               <div className="grupo-campo ancho-completo">
                 <label htmlFor="observaciones">Observaciones</label>
-                <textarea id="observaciones" rows="3" value={nuevoCliente.observaciones} onChange={handleInputChange} placeholder="Información adicional relevante..."></textarea>
+                <textarea id="observaciones" name="observaciones" rows="3" value={formValues.observaciones} onChange={handleInputChange} placeholder="Información adicional relevante..."></textarea>
+              </div>
+
+              <div className="form-check mb-3" style={{ paddingLeft: '20px', marginBottom: '20px' }}>
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id="isMoroso"
+                  name="isMoroso"
+                  checked={formValues.isMoroso || false}
+                  onChange={handleInputChange}
+                  style={{ width: '18px', height: '18px', marginRight: '8px', cursor: 'pointer', verticalAlign: 'middle' }}
+                />
+                <label className="form-check-label" htmlFor="isMoroso" style={{ fontWeight: '600', cursor: 'pointer', verticalAlign: 'middle' }}>
+                  ¿Es moroso?
+                </label>
               </div>
 
               <div className="acciones-formulario">
