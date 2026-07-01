@@ -24,20 +24,25 @@ import Login from './pages/Login';
 import './styles/style.css';
 
 function AppContent() {
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
 
+  // Suscripción reactiva para rastrear el ancho de pantalla
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Cerrar sidebar al cambiar de ruta (solo en móviles/tablets)
   useEffect(() => {
-    if (window.innerWidth <= 768) {
-      const handle = setTimeout(() => {
-        setIsSidebarOpen(false);
-      }, 0);
-      return () => clearTimeout(handle);
+    if (windowWidth <= 768) {
+      setIsSidebarOpen(false);
     }
-  }, [location]);
+  }, [location, windowWidth]);
 
   if (isLoginPage) {
     return (

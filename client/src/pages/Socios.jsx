@@ -49,10 +49,7 @@ const Socios = () => {
   }, []);
 
   useEffect(() => {
-    const handle = setTimeout(() => {
-      fetchSocios();
-    }, 0);
-    return () => clearTimeout(handle);
+    fetchSocios();
   }, [fetchSocios]);
 
   const handleInputChange = (e) => {
