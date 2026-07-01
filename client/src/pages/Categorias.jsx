@@ -3,17 +3,16 @@ import { SquarePlus, Zap, CirclePlus, X, Trash, Pencil, AlertCircle } from 'luci
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import { useConfirmModal } from '../hooks/useConfirmModal';
 import '../styles/style.css';
 import '../styles/utilidades/categorias_etiquetas.css';
 
 const Categorias = () => {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-  
+
+  // selectedCategory se usa solo para el modal de crear/editar (form)
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedPlanIndex, setSelectedPlanIndex] = useState(null);
-  
+
   const [nuevaCategoria, setNuevaCategoria] = useState({
     nombre: '',
     color: '#00a8e8',
@@ -23,6 +22,14 @@ const Categorias = () => {
   const [assignment, setAssignment] = useState({
     planId: ''
   });
+
+  // --- Hooks de modales de confirmación / selección ---
+  // Asignar plan: item = categoría seleccionada
+  const assignPlanModal = useConfirmModal();
+  // Eliminar plan de una categoría: item = categoría, extra = índice del plan
+  const deletePlanModal = useConfirmModal();
+  // Eliminar categoría completa: item = categoría
+  const deleteCategoryModal = useConfirmModal();
 
   // Mock de planes
   const planesMock = [
@@ -37,27 +44,33 @@ const Categorias = () => {
     { id: '1', nombre: 'CrossFit', color: '#00a8e8', rubro: 'Fitness', planes: ['Full Entrenamiento', 'Crosfit/Mensual'] },
     { id: '2', nombre: 'Psicología', color: '#40c057', rubro: 'Salud', planes: [] },
   ]);
+
   const handleEditCategory = (category) => {
-  if (!category) return;
+    if (!category) return;
 
-  setSelectedCategory(category);
-  setNuevaCategoria({
-    nombre: category.nombre,
-    color: category.color,
-    rubro: category.rubro || ''
-  });
+    setSelectedCategory(category);
+    setNuevaCategoria({
+      nombre: category.nombre,
+      color: category.color,
+      rubro: category.rubro || ''
+    });
 
-  setIsCategoryModalOpen(true);
-};
+    setIsCategoryModalOpen(true);
+  };
 
-const handleDeleteCategory = (categoryId) => {
-  if (!categoryId) return;
+  // Ahora abre el modal de confirmación en vez de window.confirm
+  const handleDeleteCategory = (category) => {
+    if (!category) return;
+    deleteCategoryModal.openModal(category);
+  };
 
-  const confirmDelete = window.confirm('¿Eliminar esta categoría?');
-  if (!confirmDelete) return;
+  const handleConfirmDeleteCategory = () => {
+    const category = deleteCategoryModal.selectedItem;
+    if (!category) return;
 
-  setCategories(prev => prev.filter(cat => cat.id !== categoryId));
-};
+    setCategories(prev => prev.filter(cat => cat.id !== category.id));
+    deleteCategoryModal.closeModal();
+  };
 
   const handleCategoryInputChange = (e) => {
     const { id, value } = e.target;
@@ -73,50 +86,53 @@ const handleDeleteCategory = (categoryId) => {
     };
     setCategories([...categories, newCat]);
     setIsCategoryModalOpen(false);
+    setSelectedCategory(null);
     setNuevaCategoria({ nombre: '', color: '#00a8e8', rubro: '' });
     alert("Categoría creada con éxito");
   };
 
   const handleOpenAssignModal = (category) => {
-    setSelectedCategory(category);
-    setIsAssignModalOpen(true);
+    assignPlanModal.openModal(category);
   };
 
   const handleAssignPlan = (e) => {
     e.preventDefault();
     if (!assignment.planId) return;
-    
+
+    const category = assignPlanModal.selectedItem;
+    if (!category) return;
+
     const plan = planesMock.find(p => p.id === assignment.planId);
     setCategories(categories.map(cat => {
-      if (cat.id === selectedCategory.id) {
+      if (cat.id === category.id) {
         return { ...cat, planes: [...cat.planes, plan.nombre] };
       }
       return cat;
     }));
-    
-    setIsAssignModalOpen(false);
+
+    assignPlanModal.closeModal();
     setAssignment({ planId: '' });
-    alert(`Plan asignado a ${selectedCategory.nombre}`);
+    alert(`Plan asignado a ${category.nombre}`);
   };
 
   const handleOpenDeleteConfirm = (category, planIndex) => {
-    setSelectedCategory(category);
-    setSelectedPlanIndex(planIndex);
-    setIsDeleteConfirmOpen(true);
+    deletePlanModal.openModal(category, planIndex);
   };
 
   const handleConfirmDelete = () => {
+    const category = deletePlanModal.selectedItem;
+    const planIndex = deletePlanModal.extraData;
+    if (!category || planIndex === null) return;
+
     setCategories(categories.map(cat => {
-      if (cat.id === selectedCategory.id) {
+      if (cat.id === category.id) {
         const newPlanes = [...cat.planes];
-        newPlanes.splice(selectedPlanIndex, 1);
+        newPlanes.splice(planIndex, 1);
         return { ...cat, planes: newPlanes };
       }
       return cat;
     }));
-    setIsDeleteConfirmOpen(false);
-    setSelectedCategory(null);
-    setSelectedPlanIndex(null);
+    deletePlanModal.closeModal();
   };
 
   return (
@@ -158,7 +174,11 @@ const handleDeleteCategory = (categoryId) => {
       <div style={{ padding: '20px 30px' }}>
         <button 
           className="btn-primary" 
-          onClick={() => setIsCategoryModalOpen(true)}
+          onClick={() => {
+            setSelectedCategory(null);
+            setNuevaCategoria({ nombre: '', color: '#00a8e8', rubro: '' });
+            setIsCategoryModalOpen(true);
+          }}
           style={{ width: 'auto', height: 'auto', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#00a8e8', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
         >
           <SquarePlus size={20} /> Nueva Categoría
@@ -229,7 +249,7 @@ const handleDeleteCategory = (categoryId) => {
               </button>
 
               <button
-                onClick={() => handleDeleteCategory(category.id)}
+                onClick={() => handleDeleteCategory(category)}
                 style={{
                   border: 'none',
                   background: 'none',
@@ -248,11 +268,11 @@ const handleDeleteCategory = (categoryId) => {
       </div>
       
 
-      {/* Modal Nueva Categoría */}
+      {/* Modal Nueva/Editar Categoría */}
       <Modal 
         isOpen={isCategoryModalOpen} 
         onClose={() => setIsCategoryModalOpen(false)} 
-        title="Nueva Categoría"
+        title={selectedCategory ? 'Editar Categoría' : 'Nueva Categoría'}
       >
         <form onSubmit={handleCreateCategory} style={{ padding: '10px' }}>
           <div className="cuadricula-formulario" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '15px' }}>
@@ -295,17 +315,19 @@ const handleDeleteCategory = (categoryId) => {
           </div>
           <div className="acciones-formulario" style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
             <button type="button" className="btn-secondary" onClick={() => setIsCategoryModalOpen(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}>Cancelar</button>
-            <button type="submit" className="btn-primary" style={{ padding: '10px 25px', borderRadius: '8px', border: 'none', background: '#00a8e8', color: 'white', fontWeight: '600', cursor: 'pointer' }}>Crear Categoría</button>
+            <button type="submit" className="btn-primary" style={{ padding: '10px 25px', borderRadius: '8px', border: 'none', background: '#00a8e8', color: 'white', fontWeight: '600', cursor: 'pointer' }}>
+              {selectedCategory ? 'Guardar Cambios' : 'Crear Categoría'}
+            </button>
           </div>
         </form>
       </Modal>
       
 
-      {/* Modal Asignar Plan */}
+      {/* Modal Asignar Plan (conectado a assignPlanModal) */}
       <Modal 
-        isOpen={isAssignModalOpen} 
-        onClose={() => setIsAssignModalOpen(false)} 
-        title={`Asignar plan a ${selectedCategory?.nombre}`}
+        isOpen={assignPlanModal.isOpen} 
+        onClose={() => assignPlanModal.closeModal()} 
+        title={`Asignar plan a ${assignPlanModal.selectedItem?.nombre}`}
       >
         <form onSubmit={handleAssignPlan} style={{ padding: '10px' }}>
           <div className="grupo-campo">
@@ -324,23 +346,48 @@ const handleDeleteCategory = (categoryId) => {
             </select>
           </div>
           <div className="acciones-formulario" style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid #eee', paddingTop: '20px' }}>
-            <button type="button" className="btn-secondary" onClick={() => setIsAssignModalOpen(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}>Cancelar</button>
+            <button type="button" className="btn-secondary" onClick={() => assignPlanModal.closeModal()} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}>Cancelar</button>
             <button type="submit" className="btn-primary" style={{ padding: '10px 25px', borderRadius: '8px', border: 'none', background: '#00a8e8', color: 'white', fontWeight: '600', cursor: 'pointer' }}>Asignar Plan</button>
           </div>
         </form>
       </Modal>
 
-      {/* Modal Confirmar Eliminación de Plan */}
+      {/* Modal Confirmar Eliminación de Plan (conectado a deletePlanModal) */}
       <ConfirmDeleteModal
-        isOpen={isDeleteConfirmOpen}
+        isOpen={deletePlanModal.isOpen}
         title="Confirmar eliminación"
-        message={<>¿Estás seguro de que quieres eliminar el plan <strong>{selectedCategory?.planes[selectedPlanIndex]}</strong> de la categoría <strong>{selectedCategory?.nombre}</strong>?</>}
+        message={<>¿Estás seguro de que quieres eliminar el plan <strong>{deletePlanModal.selectedItem?.planes[deletePlanModal.extraData]}</strong> de la categoría <strong>{deletePlanModal.selectedItem?.nombre}</strong>?</>}
         warning="Esta acción no se puede deshacer."
         icon={<AlertCircle size={48} color="#ff6b6b" style={{ marginBottom: '15px' }} />}
-        onCancel={() => setIsDeleteConfirmOpen(false)}
+        onCancel={() => deletePlanModal.closeModal()}
         onConfirm={handleConfirmDelete}
         cancelLabel="Cancelar"
         confirmLabel="Eliminar Plan"
+        containerClassName=""
+        containerStyle={{ padding: '10px', textAlign: 'center' }}
+        messageClassName=""
+        messageStyle={{ fontSize: '1.1rem', color: '#333', marginBottom: '10px' }}
+        warningClassName=""
+        warningStyle={{ fontSize: '0.9rem', color: '#666' }}
+        actionsClassName="acciones-formulario"
+        actionsStyle={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '15px' }}
+        cancelClassName="btn-secondary"
+        cancelStyle={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}
+        confirmClassName=""
+        confirmStyle={{ padding: '10px 25px', borderRadius: '8px', border: 'none', background: '#ff6b6b', color: 'white', fontWeight: '600', cursor: 'pointer' }}
+      />
+
+      {/* Modal Confirmar Eliminación de Categoría (conectado a deleteCategoryModal) */}
+      <ConfirmDeleteModal
+        isOpen={deleteCategoryModal.isOpen}
+        title="Confirmar eliminación"
+        message={<>¿Estás seguro de que quieres eliminar la categoría <strong>{deleteCategoryModal.selectedItem?.nombre}</strong>?</>}
+        warning="Esta acción no se puede deshacer y quitará todos los planes asignados a esta categoría."
+        icon={<AlertCircle size={48} color="#ff6b6b" style={{ marginBottom: '15px' }} />}
+        onCancel={() => deleteCategoryModal.closeModal()}
+        onConfirm={handleConfirmDeleteCategory}
+        cancelLabel="Cancelar"
+        confirmLabel="Eliminar Categoría"
         containerClassName=""
         containerStyle={{ padding: '10px', textAlign: 'center' }}
         messageClassName=""
