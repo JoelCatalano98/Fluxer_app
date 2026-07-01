@@ -34,10 +34,9 @@ const Socios = () => {
   // Función para obtener socios (con datos de respaldo si el servidor no responde)
   const fetchSocios = useCallback(async () => {
     try {
-      setLoading(true);
       const res = await axios.get('http://localhost:5000/api/socios');
       setSocios(res.data);
-    } catch (error) {
+    } catch {
       console.warn("Servidor no disponible, cargando datos de prueba.");
       // Datos de respaldo para la demo
       setSocios([
@@ -50,7 +49,10 @@ const Socios = () => {
   }, []);
 
   useEffect(() => {
-    fetchSocios();
+    const handle = setTimeout(() => {
+      fetchSocios();
+    }, 0);
+    return () => clearTimeout(handle);
   }, [fetchSocios]);
 
   const handleInputChange = (e) => {

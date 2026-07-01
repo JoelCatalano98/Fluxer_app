@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CirclePlus, Banknote, Landmark, Save, CreditCard, Smartphone, X, Trash, AlertCircle } from 'lucide-react';
+import { CirclePlus, Banknote, Landmark, Save, CreditCard, Smartphone, Trash, AlertCircle } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';

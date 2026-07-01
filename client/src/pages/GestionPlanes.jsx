@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CirclePlus, Pencil, Trash, Check, X, Save, List, LayoutGrid, AlertTriangle } from 'lucide-react';
+import { CirclePlus, Check, X, Save, List, LayoutGrid, AlertTriangle } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
@@ -128,10 +128,13 @@ const GestionPlanes = () => {
                   <li key={i}><Check size={14} color="#40c057" /> {b}</li>
                 ))}
               </ul>
-              <div className="acciones-plan">
-                <button className="btn-icon-edit" onClick={() => openEditModal(plan)}><Pencil size={14} /></button>
-                <button className="btn-icon-delete" onClick={() => openDeleteConfirm(plan)}><Trash size={14} /></button>
-              </div>
+              <TableActions
+                onEdit={() => openEditModal(plan)}
+                onDelete={() => openDeleteConfirm(plan)}
+                containerClassName="acciones-plan"
+                editClassName="btn-icon-edit"
+                deleteClassName="btn-icon-delete"
+              />
             </div>
           ))}
         </div>

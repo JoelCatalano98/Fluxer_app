@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { UserPlus, Save, X } from 'lucide-react';
+import { UserPlus, Save, X, AlertTriangle } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import TableActions from '../components/TableActions';
 import '../styles/style.css';
 import '../styles/clientes/listados_gestion.css';
@@ -34,6 +35,8 @@ const ClientesTotales = () => {
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingCodigo, setEditingCodigo] = useState(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [clienteToDelete, setClienteToDelete] = useState(null);
 
   const [nuevoCliente, setNuevoCliente] = useState({
     codigo: '',
@@ -77,10 +80,16 @@ const ClientesTotales = () => {
     setShowForm(true);
   };
 
-  const handleDelete = (codigo) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar este cliente?")) {
-      setClientes(prev => prev.filter(c => c.codigo !== codigo));
-    }
+  const openDeleteConfirm = (cliente) => {
+    setClienteToDelete(cliente);
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setClientes(prev => prev.filter(c => c.codigo !== clienteToDelete.codigo));
+    setIsDeleteConfirmOpen(false);
+    setClienteToDelete(null);
+    alert("Cliente eliminado correctamente");
   };
 
   const handleCloseForm = () => {
@@ -207,7 +216,7 @@ const ClientesTotales = () => {
                   <td>
                     <TableActions
                       onEdit={() => handleEdit(cliente)}
-                      onDelete={() => handleDelete(cliente.codigo)}
+                      onDelete={() => openDeleteConfirm(cliente)}
                       containerClassName=""
                       containerStyle={{ display: 'flex', gap: '10px' }}
                       editClassName="btn-help"
@@ -278,6 +287,18 @@ const ClientesTotales = () => {
             </form>
           </div>
         </Modal>
+
+        <ConfirmDeleteModal
+          isOpen={isDeleteConfirmOpen}
+          title="Confirmar eliminación"
+          message={<>¿Estás seguro de que deseas eliminar al cliente <strong>{clienteToDelete?.nombre}</strong>?</>}
+          warning="Esta acción no se puede deshacer."
+          icon={<AlertTriangle size={48} className="confirm-icon" />}
+          onCancel={() => setIsDeleteConfirmOpen(false)}
+          onConfirm={handleConfirmDelete}
+          cancelLabel="Cancelar"
+          confirmLabel="Eliminar Cliente"
+        />
       </div>
     </div>
   );

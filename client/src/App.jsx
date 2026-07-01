@@ -32,7 +32,10 @@ function AppContent() {
   // Cerrar sidebar al cambiar de ruta (solo en móviles/tablets)
   useEffect(() => {
     if (window.innerWidth <= 768) {
-      setIsSidebarOpen(false);
+      const handle = setTimeout(() => {
+        setIsSidebarOpen(false);
+      }, 0);
+      return () => clearTimeout(handle);
     }
   }, [location]);
 

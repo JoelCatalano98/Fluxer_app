@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SquarePlus, Save, Zap, CirclePlus, X, Trash, Pencil, AlertCircle } from 'lucide-react';
+import { SquarePlus, Zap, CirclePlus, X, Trash, Pencil, AlertCircle } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';

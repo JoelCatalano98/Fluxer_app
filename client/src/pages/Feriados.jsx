@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Lock, Trash2, Calendar, AlertTriangle, Save, X } from 'lucide-react'; 
+import { Plus, Lock, Trash2, AlertTriangle, Save } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
@@ -64,7 +64,6 @@ const Feriados = () => {
   };
 
   const formatDate = (dateString) => {
-    const options = { day: '2-digit', month: 'long' };
     const date = new Date(dateString + 'T00:00:00');
     return {
       dia: date.getDate().toString().padStart(2, '0'),
