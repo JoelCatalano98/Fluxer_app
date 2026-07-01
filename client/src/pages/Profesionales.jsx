@@ -100,8 +100,6 @@ const Profesionales = () => {
     <div className="main-content">
       {/* Encabezado Estandarizado */}
       <PageHeader
-        id={null}
-        className="dashboard-header content-header"
         title="Staff Profesional"
         subtitle="Listado completo de médicos, técnicos y entrenadores."
         image="/img/welcome-background.png"

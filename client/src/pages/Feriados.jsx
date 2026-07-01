@@ -74,37 +74,9 @@ const Feriados = () => {
   return (
     <div className="main-content">
       <PageHeader
-        className=""
-        contentClassName=""
-        titleId="main-title"
-        titleClassName=""
-        subtitleClassName=""
         title="Calendario Operativo"
         subtitle="Días no laborables y cierres temporales"
         image="/img/welcome-background.png"
-        style={{ 
-          minHeight: '100px', 
-          height: '450px', 
-          position: 'relative', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'flex-end',
-          padding: '0 40px 40px 40px',
-          overflow: 'hidden' 
-        }}
-        contentStyle={{ position: 'relative', zIndex: 2 }}
-        titleStyle={{ color: 'white', textAlign: 'left', margin: 0 }}
-        subtitleStyle={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}
-        imageClassName=""
-        imageStyle={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          objectFit: 'cover', 
-          zIndex: 1 
-        }}
       />
 
       <div className="contenedor-feriados">

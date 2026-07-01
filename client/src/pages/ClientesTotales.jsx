@@ -133,37 +133,9 @@ const ClientesTotales = () => {
   return (
     <div className="main-content">
       <PageHeader
-        className=""
-        contentClassName=""
-        titleId="main-title"
-        titleClassName=""
-        subtitleClassName=""
         title="Gestión de Clientes"
         subtitle="Verifica el total de tus Clientes"
         image="/img/welcome-background.png"
-        style={{ 
-          minHeight: '100px', 
-          height: '450px', 
-          position: 'relative', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'flex-end', // Empuja el contenido hacia abajo
-          padding: '0 40px 40px 40px', // Agregamos 40px al final para que no toque el borde
-          overflow: 'hidden' 
-        }}
-        contentStyle={{ position: 'relative', zIndex: 2 }}
-        titleStyle={{ color: 'white', textAlign: 'left', margin: 0 }}
-        subtitleStyle={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}
-        imageClassName=""
-        imageStyle={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          objectFit: 'cover', 
-          zIndex: 1 
-        }}
       />
 
       <div style={{ padding: '5px' }}>

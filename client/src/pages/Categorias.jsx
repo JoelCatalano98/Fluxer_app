@@ -138,37 +138,9 @@ const Categorias = () => {
   return (
     <div className="main-content">
       <PageHeader
-        className=""
-        contentClassName=""
-        titleId="main-title"
-        titleClassName=""
-        subtitleClassName=""
         title="Categorías y Etiquetas"
         subtitle="Organiza y clasifica tus servicios y planes"
         image="/img/welcome-background.png"
-        style={{ 
-          minHeight: '100px', 
-          height: '450px', 
-          position: 'relative', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'flex-end',
-          padding: '0 40px 40px 40px',
-          overflow: 'hidden' 
-        }}
-        contentStyle={{ position: 'relative', zIndex: 2 }}
-        titleStyle={{ color: 'white', textAlign: 'left', margin: 0 }}
-        subtitleStyle={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}
-        imageClassName=""
-        imageStyle={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          objectFit: 'cover', 
-          zIndex: 1 
-        }}
       />
 
       <div style={{ padding: '20px 30px' }}>

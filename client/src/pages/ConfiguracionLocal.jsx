@@ -52,7 +52,6 @@ const ConfiguracionLocal = () => {
     <div className="main-content">
       {/* Encabezado Estandarizado */}
       <PageHeader
-        className="dashboard-header config-header"
         title="Configuración Local"
         subtitle="Reglas de negocio e identidad visual"
         image="/img/welcome-background.png"

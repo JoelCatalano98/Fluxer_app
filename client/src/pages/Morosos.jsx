@@ -16,11 +16,6 @@ const Morosos = () => {
   return (
     <div className="main-content">
       <PageHeader
-        className="morosos-header"
-        contentClassName="header-info-container"
-        titleId="main-title"
-        titleClassName=""
-        subtitleClassName=""
         title="Gestión de Clientes morosos"
         subtitle="Controlá los clientes con pagos atrasados"
         image="/img/welcome-background.png"

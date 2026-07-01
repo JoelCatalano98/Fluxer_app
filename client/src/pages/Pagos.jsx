@@ -75,15 +75,9 @@ const Pagos = () => {
   return (
     <div className="main-content">
       <PageHeader
-        className="pagos-header"
-        contentClassName="pagos-header-info"
-        titleId="main-title"
-        titleClassName=""
-        subtitleClassName=""
         title="Medios de Pago"
         subtitle="Configura tus canales de cobro y recargos"
         image="/img/welcome-background.png"
-        imageClassName="pagos-header-bg"
       />
 
       <div className="contenedor-pagos">
