@@ -37,6 +37,27 @@ const Categorias = () => {
     { id: '1', nombre: 'CrossFit', color: '#00a8e8', rubro: 'Fitness', planes: ['Full Entrenamiento', 'Crosfit/Mensual'] },
     { id: '2', nombre: 'Psicología', color: '#40c057', rubro: 'Salud', planes: [] },
   ]);
+  const handleEditCategory = (category) => {
+  if (!category) return;
+
+  setSelectedCategory(category);
+  setNuevaCategoria({
+    nombre: category.nombre,
+    color: category.color,
+    rubro: category.rubro || ''
+  });
+
+  setIsCategoryModalOpen(true);
+};
+
+const handleDeleteCategory = (categoryId) => {
+  if (!categoryId) return;
+
+  const confirmDelete = window.confirm('¿Eliminar esta categoría?');
+  if (!confirmDelete) return;
+
+  setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+};
 
   const handleCategoryInputChange = (e) => {
     const { id, value } = e.target;
@@ -183,14 +204,49 @@ const Categorias = () => {
                   )}
                 </div>
               </div>
-              <div style={{ padding: '10px 20px', background: '#f9f9f9', borderTop: '1px solid #f0f0f0', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                 <button style={{ border: 'none', background: 'none', color: '#888', cursor: 'pointer' }} title="Editar"><Pencil size={16} /></button>
-                 <button style={{ border: 'none', background: 'none', color: '#ff6b6b', cursor: 'pointer' }} title="Eliminar"><Trash size={16} /></button>
+              <div
+                style={{
+                  padding: '10px 20px',
+                  background: '#f9f9f9',
+                  borderTop: '1px solid #f0f0f0',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  gap: '10px'
+                }}
+              >
+              <button
+                onClick={() => handleEditCategory(category)}
+                style={{
+                  border: 'none',
+                  background: 'none',
+                  color: '#888',
+                  cursor: 'pointer',
+                  padding: '4px'
+                }}
+                title="Editar"
+              >
+                <Pencil size={16} />
+              </button>
+
+              <button
+                onClick={() => handleDeleteCategory(category.id)}
+                style={{
+                  border: 'none',
+                  background: 'none',
+                  color: '#ff6b6b',
+                  cursor: 'pointer',
+                  padding: '4px'
+                }}
+                title="Eliminar"
+              >
+                <Trash size={16} />
+              </button>
               </div>
             </div>
           ))}
         </div>
       </div>
+      
 
       {/* Modal Nueva Categoría */}
       <Modal 
@@ -243,6 +299,7 @@ const Categorias = () => {
           </div>
         </form>
       </Modal>
+      
 
       {/* Modal Asignar Plan */}
       <Modal 
