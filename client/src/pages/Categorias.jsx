@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { SquarePlus, Save, Zap, CirclePlus, X, Trash, Pencil, AlertCircle } from 'lucide-react';
 import Modal from '../components/Modal';
+import PageHeader from '../components/PageHeader';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import '../styles/style.css';
 import '../styles/utilidades/categorias_etiquetas.css';
 
@@ -98,7 +100,16 @@ const Categorias = () => {
 
   return (
     <div className="main-content">
-      <section id="content-header" style={{ 
+      <PageHeader
+        className=""
+        contentClassName=""
+        titleId="main-title"
+        titleClassName=""
+        subtitleClassName=""
+        title="Categorías y Etiquetas"
+        subtitle="Organiza y clasifica tus servicios y planes"
+        image="/img/welcome-background.png"
+        style={{ 
           minHeight: '100px', 
           height: '450px', 
           position: 'relative', 
@@ -107,12 +118,12 @@ const Categorias = () => {
           justifyContent: 'flex-end',
           padding: '0 40px 40px 40px',
           overflow: 'hidden' 
-      }}>
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <h1 id="main-title" style={{ color: 'white', textAlign: 'left', margin: 0 }}>Categorías y Etiquetas</h1>
-          <p style={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}>Organiza y clasifica tus servicios y planes</p>
-        </div>
-        <img src="/img/welcome-background.png" alt="Fondo" style={{ 
+        }}
+        contentStyle={{ position: 'relative', zIndex: 2 }}
+        titleStyle={{ color: 'white', textAlign: 'left', margin: 0 }}
+        subtitleStyle={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}
+        imageClassName=""
+        imageStyle={{ 
           position: 'absolute', 
           top: 0, 
           left: 0, 
@@ -120,8 +131,8 @@ const Categorias = () => {
           height: '100%', 
           objectFit: 'cover', 
           zIndex: 1 
-        }} />
-      </section>
+        }}
+      />
 
       <div style={{ padding: '20px 30px' }}>
         <button 
@@ -263,23 +274,29 @@ const Categorias = () => {
       </Modal>
 
       {/* Modal Confirmar Eliminación de Plan */}
-      <Modal 
-        isOpen={isDeleteConfirmOpen} 
-        onClose={() => setIsDeleteConfirmOpen(false)} 
+      <ConfirmDeleteModal
+        isOpen={isDeleteConfirmOpen}
         title="Confirmar eliminación"
-      >
-        <div style={{ padding: '10px', textAlign: 'center' }}>
-          <AlertCircle size={48} color="#ff6b6b" style={{ marginBottom: '15px' }} />
-          <p style={{ fontSize: '1.1rem', color: '#333', marginBottom: '10px' }}>
-            ¿Estás seguro de que quieres eliminar el plan <strong>{selectedCategory?.planes[selectedPlanIndex]}</strong> de la categoría <strong>{selectedCategory?.nombre}</strong>?
-          </p>
-          <p style={{ fontSize: '0.9rem', color: '#666' }}>Esta acción no se puede deshacer.</p>
-          <div className="acciones-formulario" style={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '15px' }}>
-            <button type="button" className="btn-secondary" onClick={() => setIsDeleteConfirmOpen(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}>Cancelar</button>
-            <button type="button" onClick={handleConfirmDelete} style={{ padding: '10px 25px', borderRadius: '8px', border: 'none', background: '#ff6b6b', color: 'white', fontWeight: '600', cursor: 'pointer' }}>Eliminar Plan</button>
-          </div>
-        </div>
-      </Modal>
+        message={<>¿Estás seguro de que quieres eliminar el plan <strong>{selectedCategory?.planes[selectedPlanIndex]}</strong> de la categoría <strong>{selectedCategory?.nombre}</strong>?</>}
+        warning="Esta acción no se puede deshacer."
+        icon={<AlertCircle size={48} color="#ff6b6b" style={{ marginBottom: '15px' }} />}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        cancelLabel="Cancelar"
+        confirmLabel="Eliminar Plan"
+        containerClassName=""
+        containerStyle={{ padding: '10px', textAlign: 'center' }}
+        messageClassName=""
+        messageStyle={{ fontSize: '1.1rem', color: '#333', marginBottom: '10px' }}
+        warningClassName=""
+        warningStyle={{ fontSize: '0.9rem', color: '#666' }}
+        actionsClassName="acciones-formulario"
+        actionsStyle={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '15px' }}
+        cancelClassName="btn-secondary"
+        cancelStyle={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}
+        confirmClassName=""
+        confirmStyle={{ padding: '10px 25px', borderRadius: '8px', border: 'none', background: '#ff6b6b', color: 'white', fontWeight: '600', cursor: 'pointer' }}
+      />
     </div>
   );
 };

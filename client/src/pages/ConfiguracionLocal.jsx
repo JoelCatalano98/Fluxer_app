@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Palette, Upload, ShoppingBag, CircleCheck, Briefcase, Camera, MessageCircle, RotateCcw } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
 import '../styles/style.css';
 import '../styles/Servicios/configuracion_local.css';
 
@@ -50,17 +51,12 @@ const ConfiguracionLocal = () => {
   return (
     <div className="main-content">
       {/* Encabezado Estandarizado */}
-      <section id="content-header" className="dashboard-header config-header">
-        <div className="header-overlay">
-          <h1 className="header-title">Configuración Local</h1>
-          <p className="header-subtitle">Reglas de negocio e identidad visual</p>
-        </div>
-        <img 
-          src="/img/welcome-background.png" 
-          alt="Fondo" 
-          className="header-bg-img"
-        />
-      </section>
+      <PageHeader
+        className="dashboard-header config-header"
+        title="Configuración Local"
+        subtitle="Reglas de negocio e identidad visual"
+        image="/img/welcome-background.png"
+      />
 
       <div className="contenedor-configuracion">
         <div className="grid-configuracion">

@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { UserPlus, Save, X, Pencil, Trash, AlertTriangle, Search } from 'lucide-react';
+import { UserPlus, Save, X, AlertTriangle, Search } from 'lucide-react';
 import Modal from '../components/Modal';
+import PageHeader from '../components/PageHeader';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import TableActions from '../components/TableActions';
 
 // Importamos los estilos
 import '../styles/style.css';
@@ -126,17 +129,11 @@ const Socios = () => {
   return (
     <div className="main-content">
       {/* Encabezado Estandarizado */}
-      <section id="content-header" className="dashboard-header">
-        <div className="header-overlay">
-          <h1 className="header-title">Gestión de Socios</h1>
-          <p className="header-subtitle">Administra la base de miembros y sus abonos.</p>
-        </div>
-        <img 
-          src="/img/welcome-background.png" 
-          alt="Fondo" 
-          className="header-bg-img" 
-        />
-      </section>
+      <PageHeader
+        title="Gestión de Socios"
+        subtitle="Administra la base de miembros y sus abonos."
+        image="/img/welcome-background.png"
+      />
 
       <div className="socios-container">
         <div className="socios-actions">
@@ -182,14 +179,14 @@ const Socios = () => {
                       </span>
                     </td>
                     <td>
-                      <div className="acciones-tabla">
-                        <button className="btn-accion-edit" onClick={() => handleOpenForm(socio)} title="Editar">
-                          <Pencil size={14} />
-                        </button>
-                        <button className="btn-accion-delete" onClick={() => openDeleteConfirm(socio)} title="Eliminar">
-                          <Trash size={14} />
-                        </button>
-                      </div>
+                      <TableActions
+                        onEdit={() => handleOpenForm(socio)}
+                        onDelete={() => openDeleteConfirm(socio)}
+                        editClassName="btn-accion-edit"
+                        deleteClassName="btn-accion-delete"
+                        editTitle="Editar"
+                        deleteTitle="Eliminar"
+                      />
                     </td>
                   </tr>
                 ))
@@ -263,33 +260,17 @@ const Socios = () => {
         </Modal>
 
         {/* Modal Confirmar Eliminación */}
-        <Modal 
-          isOpen={isDeleteConfirmOpen} 
-          onClose={() => setIsDeleteConfirmOpen(false)} 
+        <ConfirmDeleteModal
+          isOpen={isDeleteConfirmOpen}
           title="Confirmar eliminación"
-        >
-          <div className="confirm-modal-content">
-            <AlertTriangle size={48} className="confirm-icon" />
-            <p className="confirm-message">
-              ¿Estás seguro de que deseas eliminar al socio <strong>{socioToDelete?.nombre} {socioToDelete?.apellido}</strong>?
-            </p>
-            <p className="confirm-warning">Esta acción no se puede deshacer.</p>
-            <div className="confirm-actions">
-              <button 
-                className="btn-cancel" 
-                onClick={() => setIsDeleteConfirmOpen(false)}
-              >
-                Cancelar
-              </button>
-              <button 
-                className="btn-confirm-delete"
-                onClick={handleConfirmDelete}
-              >
-                Eliminar Socio
-              </button>
-            </div>
-          </div>
-        </Modal>
+          message={<>¿Estás seguro de que deseas eliminar al socio <strong>{socioToDelete?.nombre} {socioToDelete?.apellido}</strong>?</>}
+          warning="Esta acción no se puede deshacer."
+          icon={<AlertTriangle size={48} className="confirm-icon" />}
+          onCancel={() => setIsDeleteConfirmOpen(false)}
+          onConfirm={handleConfirmDelete}
+          cancelLabel="Cancelar"
+          confirmLabel="Eliminar Socio"
+        />
       </div>
     </div>
   );

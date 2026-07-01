@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Pencil, Trash, UserPlus, Save, X } from 'lucide-react';
+import { UserPlus, Save, X } from 'lucide-react';
 import Modal from '../components/Modal';
+import PageHeader from '../components/PageHeader';
+import TableActions from '../components/TableActions';
 import '../styles/style.css';
 import '../styles/clientes/listados_gestion.css';
 import '../styles/clientes/formularios_clientes.css';
@@ -121,7 +123,16 @@ const ClientesTotales = () => {
 
   return (
     <div className="main-content">
-      <section id="content-header" style={{ 
+      <PageHeader
+        className=""
+        contentClassName=""
+        titleId="main-title"
+        titleClassName=""
+        subtitleClassName=""
+        title="Gestión de Clientes"
+        subtitle="Verifica el total de tus Clientes"
+        image="/img/welcome-background.png"
+        style={{ 
           minHeight: '100px', 
           height: '450px', 
           position: 'relative', 
@@ -130,12 +141,12 @@ const ClientesTotales = () => {
           justifyContent: 'flex-end', // Empuja el contenido hacia abajo
           padding: '0 40px 40px 40px', // Agregamos 40px al final para que no toque el borde
           overflow: 'hidden' 
-}}>
-  <div style={{ position: 'relative', zIndex: 2 }}>
-        <h1 id="main-title" style={{ color: 'white', textAlign: 'left', margin: 0 }}>Gestión de Clientes</h1>
-        <p style={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}>Verifica el total de tus Clientes</p>
-  </div>
-        <img src="/img/welcome-background.png" alt="Fondo" style={{ 
+        }}
+        contentStyle={{ position: 'relative', zIndex: 2 }}
+        titleStyle={{ color: 'white', textAlign: 'left', margin: 0 }}
+        subtitleStyle={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}
+        imageClassName=""
+        imageStyle={{ 
           position: 'absolute', 
           top: 0, 
           left: 0, 
@@ -143,8 +154,8 @@ const ClientesTotales = () => {
           height: '100%', 
           objectFit: 'cover', 
           zIndex: 1 
-        }} />
-      </section>
+        }}
+      />
 
       <div style={{ padding: '5px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center' }}>
@@ -194,24 +205,18 @@ const ClientesTotales = () => {
                     </span>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <button 
-                        className="btn-help" 
-                        title="Editar" 
-                        onClick={() => handleEdit(cliente)}
-                        style={{ border: 'none', background: '#e1f0ff', color: '#00a8e8', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                      >
-                        <Pencil size={14} />
-                      </button>
-                      <button 
-                        className="btn-help" 
-                        title="Eliminar" 
-                        onClick={() => handleDelete(cliente.codigo)}
-                        style={{ border: 'none', background: '#fff1f1', color: '#e03131', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                      >
-                        <Trash size={14} />
-                      </button>
-                    </div>
+                    <TableActions
+                      onEdit={() => handleEdit(cliente)}
+                      onDelete={() => handleDelete(cliente.codigo)}
+                      containerClassName=""
+                      containerStyle={{ display: 'flex', gap: '10px' }}
+                      editClassName="btn-help"
+                      deleteClassName="btn-help"
+                      editTitle="Editar"
+                      deleteTitle="Eliminar"
+                      editStyle={{ border: 'none', background: '#e1f0ff', color: '#00a8e8', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                      deleteStyle={{ border: 'none', background: '#fff1f1', color: '#e03131', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                    />
                   </td>
                 </tr>
               ))}

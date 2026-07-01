@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Settings, Plus, Eye, X, Save, CalendarCheck, UserPlus } from 'lucide-react';
+import { Settings, Plus, Eye, CalendarCheck, UserPlus } from 'lucide-react';
 import Modal from '../components/Modal';
+import PageHeader from '../components/PageHeader';
 import '../styles/style.css';
 import '../styles/Servicios/horarios_cronograma.css';
 
@@ -50,30 +51,25 @@ const Turnos = () => {
   return (
     <div className="main-content">
       {/* Encabezado */}
-      <section id="content-header" className="dashboard-header">
-        <div className="header-overlay">
-          <h1 className="header-title">Cronograma Semanal</h1>
-          <div className="header-actions">
-            <button 
-              className="btn-config-horarios" 
-              onClick={() => setIsConfigModalOpen(true)}
-            >
-              <Settings size={16} /> <span>Crear Nuevo Horario</span>
-            </button>
-            <button 
-              className="btn-anotar-cliente" 
-              onClick={() => setIsAnotarModalOpen(true)}
-            >
-              <Plus size={16} /> <span>Anotar Cliente</span>
-            </button>
-          </div>
+      <PageHeader
+        title="Cronograma Semanal"
+        image="/img/welcome-background.png"
+      >
+        <div className="header-actions">
+          <button 
+            className="btn-config-horarios" 
+            onClick={() => setIsConfigModalOpen(true)}
+          >
+            <Settings size={16} /> <span>Crear Nuevo Horario</span>
+          </button>
+          <button 
+            className="btn-anotar-cliente" 
+            onClick={() => setIsAnotarModalOpen(true)}
+          >
+            <Plus size={16} /> <span>Anotar Cliente</span>
+          </button>
         </div>
-        <img 
-          src="/img/welcome-background.png" 
-          alt="Fondo" 
-          className="header-bg-img"
-        />
-      </section>
+      </PageHeader>
 
       {/* Tabla Dinámica */}
       <div className="table-section">

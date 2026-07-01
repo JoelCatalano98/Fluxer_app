@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { Pencil, Trash, UserPlus, X, Save, AlertTriangle } from 'lucide-react';
+import { UserPlus, X, Save, AlertTriangle } from 'lucide-react';
 import Modal from '../components/Modal';
+import PageHeader from '../components/PageHeader';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import TableActions from '../components/TableActions';
 import '../styles/style.css';
 import '../styles/clientes/listados_gestion.css';
 import '../styles/clientes/profesionales.css';
@@ -96,17 +99,13 @@ const Profesionales = () => {
   return (
     <div className="main-content">
       {/* Encabezado Estandarizado */}
-      <section className="dashboard-header content-header">
-        <div className="header-overlay">
-          <h1 className="header-title">Staff Profesional</h1>
-          <p className="header-subtitle">Listado completo de médicos, técnicos y entrenadores.</p>
-        </div>
-        <img 
-          src="/img/welcome-background.png" 
-          alt="Fondo" 
-          className="header-bg-img" 
-        />
-      </section>
+      <PageHeader
+        id={null}
+        className="dashboard-header content-header"
+        title="Staff Profesional"
+        subtitle="Listado completo de médicos, técnicos y entrenadores."
+        image="/img/welcome-background.png"
+      />
 
       <div className="profesionales-container">
         <div className="profesionales-actions">
@@ -142,14 +141,14 @@ const Profesionales = () => {
                     <span className="badge badge-success-light">{prof.estado}</span>
                   </td>
                   <td>
-                    <div className="acciones-tabla">
-                      <button className="btn-edit-prof" title="Editar" onClick={() => openEditModal(prof)}>
-                        <Pencil size={14} />
-                      </button>
-                      <button className="btn-delete-prof" title="Eliminar" onClick={() => openDeleteConfirm(prof)}>
-                        <Trash size={14} />
-                      </button>
-                    </div>
+                    <TableActions
+                      onEdit={() => openEditModal(prof)}
+                      onDelete={() => openDeleteConfirm(prof)}
+                      editClassName="btn-edit-prof"
+                      deleteClassName="btn-delete-prof"
+                      editTitle="Editar"
+                      deleteTitle="Eliminar"
+                    />
                   </td>
                 </tr>
               ))}
@@ -207,33 +206,17 @@ const Profesionales = () => {
       </Modal>
 
       {/* Modal Confirmar Eliminación */}
-      <Modal 
-        isOpen={isDeleteConfirmOpen} 
-        onClose={() => setIsDeleteConfirmOpen(false)} 
+      <ConfirmDeleteModal
+        isOpen={isDeleteConfirmOpen}
         title="Confirmar eliminación"
-      >
-        <div className="confirm-modal-content">
-          <AlertTriangle size={48} className="confirm-icon" />
-          <p className="confirm-message">
-            ¿Estás seguro de que deseas eliminar al profesional <strong>{profesionalToDelete?.nombre}</strong>?
-          </p>
-          <p className="confirm-warning">Esta acción no se puede deshacer.</p>
-          <div className="confirm-actions">
-            <button 
-              className="btn-cancel" 
-              onClick={() => setIsDeleteConfirmOpen(false)}
-            >
-              Cancelar
-            </button>
-            <button 
-              className="btn-confirm-delete"
-              onClick={handleConfirmDelete}
-            >
-              Eliminar Staff
-            </button>
-          </div>
-        </div>
-      </Modal>
+        message={<>¿Estás seguro de que deseas eliminar al profesional <strong>{profesionalToDelete?.nombre}</strong>?</>}
+        warning="Esta acción no se puede deshacer."
+        icon={<AlertTriangle size={48} className="confirm-icon" />}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        cancelLabel="Cancelar"
+        confirmLabel="Eliminar Staff"
+      />
     </div>
   );
 };
