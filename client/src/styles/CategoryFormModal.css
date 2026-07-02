@@ -1,0 +1,76 @@
+.category-form {
+  padding: 10px;
+}
+
+.category-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+}
+
+.category-form-grid .grupo-campo label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.category-form-grid .grupo-campo input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.color-picker-wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.color-picker-wrapper input[type="color"] {
+  width: 50px;
+  height: 40px;
+  padding: 2px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.color-picker-wrapper span {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.category-form .acciones-formulario {
+  margin-top: 30px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.category-form .acciones-formulario .btn-secondary {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.category-form .acciones-formulario .btn-primary {
+  padding: 10px 25px;
+  border-radius: 8px;
+  border: none;
+  background: #00a8e8;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.category-form .acciones-formulario .btn-primary:hover {
+  background: #008cc2;
+}

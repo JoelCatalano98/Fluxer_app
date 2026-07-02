@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Plus, Lock, Trash2, Calendar, AlertTriangle, Save, X } from 'lucide-react'; 
+import { Plus, Lock, Trash2, AlertTriangle, Save } from 'lucide-react';
 import Modal from '../components/Modal';
+import PageHeader from '../components/PageHeader';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import '../styles/style.css';
 import '../styles/utilidades/calendario_feriados.css';
 
@@ -62,7 +64,6 @@ const Feriados = () => {
   };
 
   const formatDate = (dateString) => {
-    const options = { day: '2-digit', month: 'long' };
     const date = new Date(dateString + 'T00:00:00');
     return {
       dia: date.getDate().toString().padStart(2, '0'),
@@ -72,30 +73,11 @@ const Feriados = () => {
 
   return (
     <div className="main-content">
-      <section id="content-header" style={{ 
-          minHeight: '100px', 
-          height: '450px', 
-          position: 'relative', 
-          display: 'flex', 
-          flexDirection: 'column', 
-          justifyContent: 'flex-end',
-          padding: '0 40px 40px 40px',
-          overflow: 'hidden' 
-      }}>
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <h1 id="main-title" style={{ color: 'white', textAlign: 'left', margin: 0 }}>Calendario Operativo</h1>
-          <p style={{ color: 'rgba(255,255,255,0.8)', margin: '5px 0 0 0' }}>Días no laborables y cierres temporales</p>
-        </div>
-        <img src="/img/welcome-background.png" alt="Fondo" style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          objectFit: 'cover', 
-          zIndex: 1 
-        }} />
-      </section>
+      <PageHeader
+        title="Calendario Operativo"
+        subtitle="Días no laborables y cierres temporales"
+        image="/img/welcome-background.png"
+      />
 
       <div className="contenedor-feriados">
         <div className="acciones-feriados" style={{ marginBottom: '30px' }}>
@@ -227,23 +209,29 @@ const Feriados = () => {
       </Modal>
 
       {/* Modal Confirmar Eliminación */}
-      <Modal 
-        isOpen={isDeleteConfirmOpen} 
-        onClose={() => setIsDeleteConfirmOpen(false)} 
+      <ConfirmDeleteModal
+        isOpen={isDeleteConfirmOpen}
         title="Confirmar eliminación"
-      >
-        <div style={{ padding: '10px', textAlign: 'center' }}>
-          <AlertTriangle size={50} color="#ff6b6b" style={{ marginBottom: '15px' }} />
-          <p style={{ fontSize: '1.2rem', color: '#333', marginBottom: '10px', fontWeight: '600' }}>
-            ¿Eliminar "{selectedFeriado?.motivo}"?
-          </p>
-          <p style={{ fontSize: '0.95rem', color: '#666' }}>Esta acción habilitará nuevamente el cronograma para estas fechas.</p>
-          <div className="acciones-formulario" style={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '15px' }}>
-            <button type="button" className="btn-secondary" onClick={() => setIsDeleteConfirmOpen(false)} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}>Cancelar</button>
-            <button type="button" onClick={handleConfirmDelete} style={{ padding: '10px 30px', borderRadius: '8px', border: 'none', background: '#ff6b6b', color: 'white', fontWeight: '600', cursor: 'pointer' }}>Eliminar Definitivamente</button>
-          </div>
-        </div>
-      </Modal>
+        message={<>¿Eliminar "{selectedFeriado?.motivo}"?</>}
+        warning="Esta acción habilitará nuevamente el cronograma para estas fechas."
+        icon={<AlertTriangle size={50} color="#ff6b6b" style={{ marginBottom: '15px' }} />}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        cancelLabel="Cancelar"
+        confirmLabel="Eliminar Definitivamente"
+        containerClassName=""
+        containerStyle={{ padding: '10px', textAlign: 'center' }}
+        messageClassName=""
+        messageStyle={{ fontSize: '1.2rem', color: '#333', marginBottom: '10px', fontWeight: '600' }}
+        warningClassName=""
+        warningStyle={{ fontSize: '0.95rem', color: '#666' }}
+        actionsClassName="acciones-formulario"
+        actionsStyle={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '15px' }}
+        cancelClassName="btn-secondary"
+        cancelStyle={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}
+        confirmClassName=""
+        confirmStyle={{ padding: '10px 30px', borderRadius: '8px', border: 'none', background: '#ff6b6b', color: 'white', fontWeight: '600', cursor: 'pointer' }}
+      />
     </div>
   );
 };

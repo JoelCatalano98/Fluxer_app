@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { CirclePlus, Banknote, Landmark, Save, CreditCard, Smartphone, X, Trash, AlertCircle } from 'lucide-react';
+import { CirclePlus, Banknote, Landmark, Save, CreditCard, Smartphone, Trash, AlertCircle } from 'lucide-react';
 import Modal from '../components/Modal';
+import PageHeader from '../components/PageHeader';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import '../styles/style.css';
 import '../styles/utilidades/configuracion_pagos.css';
 import '../styles/utilidades/pagos.css';
@@ -72,13 +74,11 @@ const Pagos = () => {
 
   return (
     <div className="main-content">
-      <section id="content-header" className="pagos-header">
-        <div className="pagos-header-info">
-          <h1 id="main-title">Medios de Pago</h1>
-          <p>Configura tus canales de cobro y recargos</p>
-        </div>
-        <img src="/img/welcome-background.png" alt="Fondo" className="pagos-header-bg" />
-      </section>
+      <PageHeader
+        title="Medios de Pago"
+        subtitle="Configura tus canales de cobro y recargos"
+        image="/img/welcome-background.png"
+      />
 
       <div className="contenedor-pagos">
         <div style={{ paddingBottom: '20px' }}>
@@ -234,23 +234,27 @@ const Pagos = () => {
       </Modal>
 
       {/* Modal Confirmar Eliminación */}
-      <Modal 
-        isOpen={isDeleteConfirmOpen} 
-        onClose={() => setIsDeleteConfirmOpen(false)} 
+      <ConfirmDeleteModal
+        isOpen={isDeleteConfirmOpen}
         title="Confirmar eliminación"
-      >
-        <div style={{ padding: '10px', textAlign: 'center' }}>
-          <AlertCircle size={48} color="#ff6b6b" style={{ marginBottom: '15px', marginLeft: 'auto', marginRight: 'auto' }} />
-          <p style={{ fontSize: '1.1rem', color: '#333', marginBottom: '10px' }}>
-            ¿Estás seguro de que quieres eliminar el medio de pago <strong>{selectedMethod?.nombre}</strong>?
-          </p>
-          <p style={{ fontSize: '0.9rem', color: '#666' }}>Esta acción no se puede deshacer.</p>
-          <div className="acciones-formulario-pagos" style={{ justifyContent: 'center' }}>
-            <button type="button" className="btn-modal-cancelar" onClick={() => setIsDeleteConfirmOpen(false)}>Cancelar</button>
-            <button type="button" className="btn-modal-eliminar" onClick={handleConfirmDelete}>Eliminar Medio</button>
-          </div>
-        </div>
-      </Modal>
+        message={<>¿Estás seguro de que quieres eliminar el medio de pago <strong>{selectedMethod?.nombre}</strong>?</>}
+        warning="Esta acción no se puede deshacer."
+        icon={<AlertCircle size={48} color="#ff6b6b" style={{ marginBottom: '15px', marginLeft: 'auto', marginRight: 'auto' }} />}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        cancelLabel="Cancelar"
+        confirmLabel="Eliminar Medio"
+        containerClassName=""
+        containerStyle={{ padding: '10px', textAlign: 'center' }}
+        messageClassName=""
+        messageStyle={{ fontSize: '1.1rem', color: '#333', marginBottom: '10px' }}
+        warningClassName=""
+        warningStyle={{ fontSize: '0.9rem', color: '#666' }}
+        actionsClassName="acciones-formulario-pagos"
+        actionsStyle={{ justifyContent: 'center' }}
+        cancelClassName="btn-modal-cancelar"
+        confirmClassName="btn-modal-eliminar"
+      />
     </div>
   );
 };

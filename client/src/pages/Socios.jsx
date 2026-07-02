@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { Pencil, Save, X, Loader2, AlertTriangle, Search, DollarSign } from 'lucide-react';
 import Modal from '../components/Modal';
+import PageHeader from '../components/PageHeader';
+import TableActions from '../components/TableActions';
 
 // Importamos los estilos
 import '../styles/style.css';
@@ -111,19 +113,18 @@ const Socios = () => {
       cliente.nombre.toLowerCase().includes(busqueda) ||
       cliente.apellido.toLowerCase().includes(busqueda) ||
       cliente.dni_cuit.includes(busqueda) ||
-      cliente.codigo_socio.toLowerCase().includes(busqueda)
+      (cliente.codigo_socio && cliente.codigo_socio.toLowerCase().includes(busqueda))
     );
   });
 
   return (
     <div className="main-content">
-      <section id="content-header" className="dashboard-header">
-        <div className="header-overlay">
-          <h1 className="header-title">Gestión de Socios</h1>
-          <p className="header-subtitle">Administra los miembros activos y sus pagos.</p>
-        </div>
-        <img src="/img/welcome-background.png" alt="Fondo" className="header-bg-img" />
-      </section>
+      {/* Encabezado Estandarizado */}
+      <PageHeader
+        title="Gestión de Socios"
+        subtitle="Administra la base de miembros y sus abonos."
+        image="/img/welcome-background.png"
+      />
 
       <div className="socios-container">
         <div className="socios-actions" style={{ justifyContent: 'flex-start' }}>
@@ -191,18 +192,15 @@ const Socios = () => {
                       </span>
                     </td>
                     <td>
-                      <div className="acciones-tabla">
-                        <button className="btn-accion-edit" onClick={() => handleOpenEdit(cliente)} title="Editar">
-                          <Pencil size={14} />
-                        </button>
-                        <button 
-                          onClick={() => toggleEstadoPago(cliente)} 
-                          title="Cambiar Estado Pago"
-                          style={{ border: 'none', background: '#f0f4f8', color: '#555', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}
-                        >
-                          <DollarSign size={14} />
-                        </button>
-                      </div>
+                      <TableActions
+                        onEdit={() => handleOpenEdit(cliente)}
+                        onDelete={() => toggleEstadoPago(cliente)}
+                        editClassName="btn-accion-edit"
+                        editTitle="Editar"
+                        deleteIcon={<DollarSign size={14} />}
+                        deleteTitle="Cambiar Estado Pago"
+                        deleteStyle={{ border: 'none', background: '#f0f4f8', color: '#555', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer' }}
+                      />
                     </td>
                   </tr>
                 ))

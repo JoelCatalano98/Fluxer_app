@@ -1,0 +1,138 @@
+.tarjeta-categoria-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  overflow: hidden;
+  border: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+}
+
+.cabecera-categoria-card {
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fcfcfc;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.titulo-categoria {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.titulo-categoria h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.boton-agregar-plan-card {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: #e1f0ff;
+  color: #00a8e8;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.boton-agregar-plan-card:hover {
+  background: #00a8e8;
+  color: white;
+}
+
+.cuerpo-categoria-card {
+  padding: 15px 20px;
+  flex-grow: 1;
+}
+
+.rubro-texto {
+  font-size: 0.9rem;
+  color: #888;
+  margin-bottom: 10px;
+  margin-top: 0;
+}
+
+.planes-asignados-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.planes-asignados-card li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.planes-asignados-card li:last-child {
+  border-bottom: none;
+}
+
+.planes-asignados-card li span {
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.boton-quitar-plan {
+  border: none;
+  background: none;
+  color: #ff6b6b;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.sin-planes {
+  font-size: 0.9rem;
+  color: #aaa;
+  font-style: italic;
+  text-align: center;
+  margin: 10px 0;
+}
+
+.acciones-categoria-card {
+  padding: 10px 20px;
+  background: #f9f9f9;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.boton-editar-card, .boton-eliminar-card {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: opacity 0.2s;
+}
+
+.boton-editar-card {
+  color: #888;
+}
+
+.boton-editar-card:hover {
+  color: #555;
+}
+
+.boton-eliminar-card {
+  color: #ff6b6b;
+}
+
+.boton-eliminar-card:hover {
+  color: #e03131;
+}

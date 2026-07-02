@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Settings, Plus, Eye, X, Save, CalendarCheck, UserPlus } from 'lucide-react';
+import { Settings, Plus, Eye, CalendarCheck, UserPlus } from 'lucide-react';
 import Modal from '../components/Modal';
+import PageHeader from '../components/PageHeader';
+import { useForm } from '../hooks/useForm';
 import '../styles/style.css';
 import '../styles/Servicios/horarios_cronograma.css';
 
@@ -18,6 +20,13 @@ const Turnos = () => {
   ]);
 
   const [nuevoHorario, setNuevoHorario] = useState({ inicio: '', fin: '' });
+
+  // Hook useForm para el modal "Anotar Cliente"
+  const [anotarValues, handleAnotarInputChange, resetAnotarForm] = useForm({
+    cliente: '',
+    dia: 'lunes',
+    hora: '07:00 - 08:00'
+  });
 
   const handleAddHorario = (e) => {
     e.preventDefault();
@@ -47,33 +56,36 @@ const Turnos = () => {
     alert("¡Nuevo horario agregado con éxito!");
   };
 
+  const handleAnotarSubmit = (e) => {
+    e.preventDefault();
+    console.log('Cliente anotado en turno:', anotarValues); // Log de datos controlados
+    alert('¡Cliente anotado!');
+    resetAnotarForm(); // Limpieza del formulario
+    setIsAnotarModalOpen(false);
+  };
+
   return (
     <div className="main-content">
       {/* Encabezado */}
-      <section id="content-header" className="dashboard-header">
-        <div className="header-overlay">
-          <h1 className="header-title">Cronograma Semanal</h1>
-          <div className="header-actions">
-            <button 
-              className="btn-config-horarios" 
-              onClick={() => setIsConfigModalOpen(true)}
-            >
-              <Settings size={16} /> <span>Crear Nuevo Horario</span>
-            </button>
-            <button 
-              className="btn-anotar-cliente" 
-              onClick={() => setIsAnotarModalOpen(true)}
-            >
-              <Plus size={16} /> <span>Anotar Cliente</span>
-            </button>
-          </div>
+      <PageHeader
+        title="Cronograma Semanal"
+        image="/img/welcome-background.png"
+      >
+        <div className="header-actions">
+          <button 
+            className="btn-config-horarios" 
+            onClick={() => setIsConfigModalOpen(true)}
+          >
+            <Settings size={16} /> <span>Crear Nuevo Horario</span>
+          </button>
+          <button 
+            className="btn-anotar-cliente" 
+            onClick={() => setIsAnotarModalOpen(true)}
+          >
+            <Plus size={16} /> <span>Anotar Cliente</span>
+          </button>
         </div>
-        <img 
-          src="/img/welcome-background.png" 
-          alt="Fondo" 
-          className="header-bg-img"
-        />
-      </section>
+      </PageHeader>
 
       {/* Tabla Dinámica */}
       <div className="table-section">
@@ -154,21 +166,34 @@ const Turnos = () => {
         </form>
       </Modal>
 
-      {/* Modal: Anotar Cliente (Sigue igual por ahora) */}
+      {/* Modal: Anotar Cliente (Controlado con useForm) */}
       <Modal 
         isOpen={isAnotarModalOpen} 
         onClose={() => setIsAnotarModalOpen(false)} 
         title={<span><UserPlus size={20} className="modal-title-icon" /> Anotar Cliente</span>}
       >
-        <form className="turnos-form" onSubmit={(e) => { e.preventDefault(); alert('¡Cliente anotado!'); setIsAnotarModalOpen(false); }}>
+        <form className="turnos-form" onSubmit={handleAnotarSubmit}>
           <div className="grupo-entrada">
             <label htmlFor="buscar_cliente">Buscar Cliente</label>
-            <input type="text" id="buscar_cliente" placeholder="Nombre o DNI..." required />
+            <input 
+              type="text" 
+              id="buscar_cliente" 
+              name="cliente"
+              placeholder="Nombre o DNI..." 
+              value={anotarValues.cliente}
+              onChange={handleAnotarInputChange}
+              required 
+            />
           </div>
           <div className="form-row">
             <div className="grupo-entrada">
               <label htmlFor="dia_turno">Día</label>
-              <select id="dia_turno">
+              <select 
+                id="dia_turno"
+                name="dia"
+                value={anotarValues.dia}
+                onChange={handleAnotarInputChange}
+              >
                 <option value="lunes">Lunes</option>
                 <option value="martes">Martes</option>
                 <option value="miercoles">Miércoles</option>
@@ -179,7 +204,12 @@ const Turnos = () => {
             </div>
             <div className="grupo-entrada">
               <label htmlFor="hora_turno">Horario</label>
-              <select id="hora_turno">
+              <select 
+                id="hora_turno"
+                name="hora"
+                value={anotarValues.hora}
+                onChange={handleAnotarInputChange}
+              >
                 {filasTurnos.map((f, i) => (
                   <option key={i} value={f.hora}>{f.hora}</option>
                 ))}

@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { CirclePlus, Pencil, Trash, Check, X, Save, List, LayoutGrid, AlertTriangle } from 'lucide-react';
+import { CirclePlus, Check, X, Save, List, LayoutGrid, AlertTriangle } from 'lucide-react';
 import Modal from '../components/Modal';
+import PageHeader from '../components/PageHeader';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import TableActions from '../components/TableActions';
 import '../styles/style.css';
 import '../styles/Servicios/gestion_planes.css';
 import '../styles/clientes/listados_gestion.css';
@@ -87,17 +90,11 @@ const GestionPlanes = () => {
   return (
     <div className="main-content">
       {/* Encabezado con imagen de fondo */}
-      <section id="content-header" className="dashboard-header">
-        <div className="header-overlay">
-          <h1 className="header-title">Gestión de Planes</h1>
-          <p className="header-subtitle">Configura los abonos y membresías</p>
-        </div>
-        <img 
-          src="/img/welcome-background.png" 
-          alt="Fondo" 
-          className="header-bg-img"
-        />
-      </section>
+      <PageHeader
+        title="Gestión de Planes"
+        subtitle="Configura los abonos y membresías"
+        image="/img/welcome-background.png"
+      />
 
       {/* Acciones principales */}
       <div className="planes-actions-bar">
@@ -131,10 +128,13 @@ const GestionPlanes = () => {
                   <li key={i}><Check size={14} color="#40c057" /> {b}</li>
                 ))}
               </ul>
-              <div className="acciones-plan">
-                <button className="btn-icon-edit" onClick={() => openEditModal(plan)}><Pencil size={14} /></button>
-                <button className="btn-icon-delete" onClick={() => openDeleteConfirm(plan)}><Trash size={14} /></button>
-              </div>
+              <TableActions
+                onEdit={() => openEditModal(plan)}
+                onDelete={() => openDeleteConfirm(plan)}
+                containerClassName="acciones-plan"
+                editClassName="btn-icon-edit"
+                deleteClassName="btn-icon-delete"
+              />
             </div>
           ))}
         </div>
@@ -173,14 +173,14 @@ const GestionPlanes = () => {
               </span>
             </td>
             <td>
-              <div className="acciones-tabla">
-                <button className="btn-icon-edit" title="Editar" onClick={() => openEditModal(plan)}>
-                  <Pencil size={14} />
-                </button>
-                <button className="btn-icon-delete" title="Eliminar" onClick={() => openDeleteConfirm(plan)}>
-                  <Trash size={14} />
-                </button>
-              </div>
+              <TableActions
+                onEdit={() => openEditModal(plan)}
+                onDelete={() => openDeleteConfirm(plan)}
+                editClassName="btn-icon-edit"
+                deleteClassName="btn-icon-delete"
+                editTitle="Editar"
+                deleteTitle="Eliminar"
+              />
             </td>
           </tr>
         ))}
@@ -238,33 +238,17 @@ const GestionPlanes = () => {
       </Modal>
 
       {/* Modal Confirmar Eliminación */}
-      <Modal 
-        isOpen={isDeleteConfirmOpen} 
-        onClose={() => setIsDeleteConfirmOpen(false)} 
+      <ConfirmDeleteModal
+        isOpen={isDeleteConfirmOpen}
         title="Confirmar eliminación"
-      >
-        <div className="confirm-modal-content">
-          <AlertTriangle size={48} className="confirm-icon" />
-          <p className="confirm-message">
-            ¿Estás seguro de que deseas eliminar el plan <strong>{planToDelete?.nombre}</strong>?
-          </p>
-          <p className="confirm-warning">Esta acción no se puede deshacer.</p>
-          <div className="confirm-actions">
-            <button 
-              className="btn-cancel" 
-              onClick={() => setIsDeleteConfirmOpen(false)}
-            >
-              Cancelar
-            </button>
-            <button 
-              className="btn-confirm-delete"
-              onClick={handleConfirmDelete}
-            >
-              Eliminar Plan
-            </button>
-          </div>
-        </div>
-      </Modal>
+        message={<>¿Estás seguro de que deseas eliminar el plan <strong>{planToDelete?.nombre}</strong>?</>}
+        warning="Esta acción no se puede deshacer."
+        icon={<AlertTriangle size={48} className="confirm-icon" />}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        cancelLabel="Cancelar"
+        confirmLabel="Eliminar Plan"
+      />
     </div>
   );
 };

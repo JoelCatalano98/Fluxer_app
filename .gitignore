@@ -7,7 +7,7 @@ node_modules/
 # Archivos del sistema
 .DS_Store
 Thumbs.db
-instrucciones.md
+instruccionesCLI.md
 
 # Logs
 *.log

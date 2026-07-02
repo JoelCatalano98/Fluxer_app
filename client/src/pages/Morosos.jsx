@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { OctagonAlert, Eye, Banknote, Loader2, AlertTriangle, CheckCircle } from 'lucide-react';
 import api from '../services/api';
+import PageHeader from '../components/PageHeader';
 import '../styles/style.css';
 import '../styles/clientes/listados_gestion.css';
 import '../styles/clientes/morosos.css';
@@ -38,12 +39,10 @@ const Morosos = () => {
       const res = await api.patch(`/api/clientes/${id}/estado-pago`, { estado_pago: nuevoEstado });
       
       if (res.data.success) {
-        // Si el nuevo estado es ALDIA, lo removemos de la lista de morosos
         if (nuevoEstado === 'ALDIA') {
           setMorosos(prev => prev.filter(m => m.id !== id));
           alert('¡Estado de pago actualizado! El cliente ya no figura como moroso.');
         } else {
-          // Por si acaso se vuelve a poner como moroso (aunque no debería pasar desde esta vista)
           setMorosos(prev => prev.map(m => m.id === id ? { ...m, estado_pago: nuevoEstado } : m));
         }
       }
@@ -55,13 +54,11 @@ const Morosos = () => {
 
   return (
     <div className="main-content">
-      <section id="content-header" className="morosos-header">
-        <div className="header-info-container">
-          <h1 id="main-title">Gestión de Clientes morosos</h1>
-          <p>Controlá los clientes con pagos atrasados</p>
-        </div>
-        <img src="/img/welcome-background.png" alt="Fondo" className="header-bg-img" />
-      </section>
+      <PageHeader
+        title="Gestión de Clientes morosos"
+        subtitle="Controlá los clientes con pagos atrasados"
+        image="/img/welcome-background.png"
+      />
 
       <div className="morosos-main-container">
         <div className="morosos-list-header">

@@ -1,21 +1,16 @@
 import { Users, UserCheck, CircleAlert } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
 import '../styles/style.css';
 
 const Dashboard = () => {
   return (
     <div className="main-content">
       {/* Encabezado con imagen de fondo */}
-      <section id="content-header" className="dashboard-header">
-        <div className="header-overlay">
-          <h1 className="header-title">Panel de Control</h1>
-          <p className="header-subtitle">Bienvenido a Fluxer Gestion.</p>
-        </div>
-        <img 
-          src="/img/welcome-background.png" 
-          alt="Fondo" 
-          className="header-bg-img"
-        />
-      </section>
+      <PageHeader
+        title="Panel de Control"
+        subtitle="Bienvenido a Fluxer Gestion."
+        image="/img/welcome-background.png"
+      />
       
       {/* Grilla de estadísticas */}
       <div className="dashboard-stats-grid">
