@@ -1,19 +1,22 @@
-import { useState } from 'react';
-import { CirclePlus, Check, X, Save, List, LayoutGrid, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { CirclePlus, Check, X, Save, List, LayoutGrid, AlertTriangle, Loader2 } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import TableActions from '../components/TableActions';
+import api from '../services/api';
+import { useConfirmModal } from '../hooks/useConfirmModal';
 import '../styles/style.css';
 import '../styles/Servicios/gestion_planes.css';
 import '../styles/clientes/listados_gestion.css';
 
 const GestionPlanes = () => {
+  const [planes, setPlanes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [viewMode, setViewMode] = useState('cards'); // 'cards' o 'list'
   const [editingPlan, setEditingPlan] = useState(null);
-  const [planToDelete, setPlanToDelete] = useState(null);
   
   const [nuevoPlan, setNuevoPlan] = useState({
     nombre: '',
@@ -23,12 +26,29 @@ const GestionPlanes = () => {
     beneficios: ''
   });
 
-  const [planes, setPlanes] = useState([
-    { id: '1', codigo: '#PLN-001', nombre: 'Musculación', precio: '15000', etiqueta: 'Básico', observaciones: '3 veces por semana', estado: 'Activo', beneficios: 'Acceso a sala de pesas\n3 veces por semana' },
-    { id: '2', codigo: '#PLN-002', nombre: 'Full Entrenamiento', precio: '22000', etiqueta: 'Recomendado', observaciones: 'Acceso libre total', estado: 'Activo', beneficios: 'Sala de pesas libre\nRutinas específicas\nSeguimiento mensual' },
-    { id: '3', codigo: '#PLN-003', nombre: 'Pilates Por Clase', precio: '22000', etiqueta: 'Especial', observaciones: 'Pago por sesión', estado: 'Activo', beneficios: 'Sala de pilates\nEquipamiento completo\nInstructor guiado' },
-    { id: '4', codigo: '#PLN-004', nombre: 'Crosfit/Mensual', precio: '22000', etiqueta: 'Intenso', observaciones: 'Entrenamiento funcional', estado: 'Activo', beneficios: 'Box de Crosfit\nWODs diarios\nComunidad activa' },
-  ]);
+  const deleteModal = useConfirmModal();
+
+  const fetchPlanes = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await api.get('/api/planes');
+      if (res.data.success) {
+        setPlanes(res.data.data);
+      } else {
+        throw new Error(res.data.message || 'Error al obtener planes');
+      }
+    } catch (err) {
+      console.error('Error fetchPlanes:', err);
+      setError('Error al cargar la lista de planes.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPlanes();
+  }, [fetchPlanes]);
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
@@ -55,36 +75,65 @@ const GestionPlanes = () => {
     setNuevoPlan({
       nombre: plan.nombre,
       etiqueta: plan.etiqueta || '',
-      precio: plan.precio.replace('$', '').replace('.', ''),
+      precio: Math.round(Number(plan.precio)).toString(),
       frecuencia: plan.frecuencia || 'Mensual',
-      beneficios: plan.beneficios || ''
+      beneficios: plan.caracteristicas || ''
     });
     setIsModalOpen(true);
   };
 
-  const openDeleteConfirm = (plan) => {
-    setPlanToDelete(plan);
-    setIsDeleteConfirmOpen(true);
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingPlan) {
-      setPlanes(planes.map(p => p.id === editingPlan.id ? { ...p, ...nuevoPlan, precio: nuevoPlan.precio } : p));
-      alert("¡Plan actualizado con éxito!");
-    } else {
-      const newId = (planes.length + 1).toString();
-      setPlanes([...planes, { ...nuevoPlan, id: newId, codigo: `#PLN-00${newId}`, estado: 'Activo', observaciones: nuevoPlan.beneficios.split('\n')[0] }]);
-      alert("¡Plan creado con éxito!");
+    if (!nuevoPlan.nombre || !nuevoPlan.precio || !nuevoPlan.frecuencia) {
+      alert("Los campos obligatorios no pueden estar vacíos");
+      return;
     }
-    setIsModalOpen(false);
+
+    const dataToSave = {
+      nombre: nuevoPlan.nombre,
+      etiqueta: nuevoPlan.etiqueta || null,
+      precio: parseFloat(nuevoPlan.precio),
+      frecuencia: nuevoPlan.frecuencia,
+      caracteristicas: nuevoPlan.beneficios || null,
+      observaciones: nuevoPlan.beneficios ? nuevoPlan.beneficios.split('\n')[0] : null
+    };
+
+    try {
+      if (editingPlan) {
+        const res = await api.put(`/api/planes/${editingPlan.id}`, dataToSave);
+        if (res.data.success) {
+          setPlanes(planes.map(p => p.id === editingPlan.id ? res.data.data : p));
+          alert("¡Plan actualizado con éxito!");
+        }
+      } else {
+        const res = await api.post('/api/planes', dataToSave);
+        if (res.data.success) {
+          setPlanes([res.data.data, ...planes]);
+          alert("¡Plan creado con éxito!");
+        }
+      }
+      setIsModalOpen(false);
+    } catch (err) {
+      console.error('Error handleSubmit:', err);
+      alert('Error al guardar: ' + (err.response?.data?.message || err.message));
+    }
   };
 
-  const handleConfirmDelete = () => {
-    setPlanes(planes.filter(p => p.id !== planToDelete.id));
-    setIsDeleteConfirmOpen(false);
-    setPlanToDelete(null);
-    alert("Plan eliminado correctamente");
+  const handleConfirmDelete = async () => {
+    const plan = deleteModal.selectedItem;
+    if (!plan) return;
+    try {
+      const res = await api.delete(`/api/planes/${plan.id}`);
+      if (res.data.success) {
+        setPlanes(planes.filter(p => p.id !== plan.id));
+        alert("Plan eliminado correctamente");
+      }
+    } catch (err) {
+      console.error('Error handleDelete:', err);
+      alert('Error al eliminar el plan');
+    } finally {
+      deleteModal.closeModal();
+    }
   };
 
   return (
@@ -95,6 +144,14 @@ const GestionPlanes = () => {
         subtitle="Configura los abonos y membresías"
         image="/img/welcome-background.png"
       />
+
+      {/* Alerta de Error si ocurre alguno */}
+      {error && (
+        <div style={{ backgroundColor: '#fff1f1', color: '#e03131', padding: '15px', borderRadius: '8px', margin: '20px 30px 0 30px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <AlertTriangle size={20} />
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* Acciones principales */}
       <div className="planes-actions-bar">
@@ -117,77 +174,102 @@ const GestionPlanes = () => {
       </div>
 
       {viewMode === 'cards' ? (
-        <div className="cuadricula-planes">
-          {planes.map((plan) => (
-            <div key={plan.id} className={`tarjeta-plan ${plan.etiqueta === 'Recomendado' ? 'destacado' : ''}`}>
-              {plan.etiqueta && <div className="etiqueta-plan">{plan.etiqueta}</div>}
-              <h3>{plan.nombre}</h3>
-              <p className="precio">${parseInt(plan.precio).toLocaleString('es-AR')} <span>/mes</span></p>
-              <ul className="caracteristicas-plan">
-                {plan.beneficios.split('\n').map((b, i) => (
-                  <li key={i}><Check size={14} color="#40c057" /> {b}</li>
-                ))}
-              </ul>
-              <TableActions
-                onEdit={() => openEditModal(plan)}
-                onDelete={() => openDeleteConfirm(plan)}
-                containerClassName="acciones-plan"
-                editClassName="btn-icon-edit"
-                deleteClassName="btn-icon-delete"
-              />
-            </div>
-          ))}
-        </div>
+        loading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '60px' }}>
+            <Loader2 className="animate-spin" style={{ color: 'var(--accent-blue)' }} size={32} />
+            <p style={{ marginTop: '15px', color: '#666' }}>Cargando planes...</p>
+          </div>
+        ) : planes.length > 0 ? (
+          <div className="cuadricula-planes">
+            {planes.map((plan) => (
+              <div key={plan.id} className={`tarjeta-plan ${plan.etiqueta === 'Recomendado' ? 'destacado' : ''}`}>
+                {plan.etiqueta && <div className="etiqueta-plan">{plan.etiqueta}</div>}
+                <h3>{plan.nombre}</h3>
+                <p className="precio">${Math.round(Number(plan.precio)).toLocaleString('es-AR')} <span>/mes</span></p>
+                <ul className="caracteristicas-plan">
+                  {plan.caracteristicas && plan.caracteristicas.split('\n').map((b, i) => (
+                    <li key={i}><Check size={14} color="#40c057" /> {b}</li>
+                  ))}
+                </ul>
+                <TableActions
+                  onEdit={() => openEditModal(plan)}
+                  onDelete={() => deleteModal.openModal(plan)}
+                  containerClassName="acciones-plan"
+                  editClassName="btn-icon-edit"
+                  deleteClassName="btn-icon-delete"
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '60px', color: '#666' }}>
+            No hay planes registrados.
+          </div>
+        )
       ) : (
         <div className="listado-planes-container">
-  <div className="listado-header">
-    <h2 className="listado-title">Abonos y Planes</h2>
-    <p className="listado-subtitle">Gestiona las membresías y paquetes de servicios.</p>
-  </div>
-  
-  {/* Reemplazamos table-wrapper por contenedor-scroll para habilitar el desplazamiento */}
-  <div className="contenedor-scroll ">
-    
-    {/* Cambiamos data-table por tabla-cronograma para heredar el min-width de 900px */}
-    <table className="tabla-cronograma table-wrapper">
-      <thead>
-        <tr>
-          <th className="columna-fija">Nombre del Plan</th>
-          <th>Código</th>
-          <th>Precio</th>
-          <th>Observaciones</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {planes.map((plan) => (
-          <tr key={plan.id}>
-            <td className="columna-fija"><strong>{plan.nombre}</strong></td>
-            <td>{plan.codigo}</td>
-            <td>${parseInt(plan.precio).toLocaleString('es-AR')}</td>
-            <td>{plan.observaciones}</td>
-            <td>
-              <span className={`badge ${plan.estado === 'Activo' ? 'badge-success-light' : 'badge-danger-light'}`}>
-                {plan.estado}
-              </span>
-            </td>
-            <td>
-              <TableActions
-                onEdit={() => openEditModal(plan)}
-                onDelete={() => openDeleteConfirm(plan)}
-                editClassName="btn-icon-edit"
-                deleteClassName="btn-icon-delete"
-                editTitle="Editar"
-                deleteTitle="Eliminar"
-              />
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-</div>
+          <div className="listado-header">
+            <h2 className="listado-title">Abonos y Planes</h2>
+            <p className="listado-subtitle">Gestiona las membresías y paquetes de servicios.</p>
+          </div>
+          
+          {/* Reemplazamos table-wrapper por contenedor-scroll para habilitar el desplazamiento */}
+          <div className="contenedor-scroll ">
+            {/* Cambiamos data-table por tabla-cronograma para heredar el min-width de 900px */}
+            <table className="tabla-cronograma table-wrapper">
+              <thead>
+                <tr>
+                  <th className="columna-fija">Nombre del Plan</th>
+                  <th>Código</th>
+                  <th>Precio</th>
+                  <th>Observaciones</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '60px' }}>
+                      <Loader2 className="animate-spin" style={{ margin: '0 auto', color: 'var(--accent-blue)' }} />
+                      <p style={{ marginTop: '15px', color: '#666' }}>Cargando planes...</p>
+                    </td>
+                  </tr>
+                ) : planes.length > 0 ? (
+                  planes.map((plan) => (
+                    <tr key={plan.id}>
+                      <td className="columna-fija"><strong>{plan.nombre}</strong></td>
+                      <td>{plan.codigo}</td>
+                      <td>${Math.round(Number(plan.precio)).toLocaleString('es-AR')}</td>
+                      <td>{plan.observaciones || 'N/A'}</td>
+                      <td>
+                        <span className={`badge ${plan.activo ? 'badge-success-light' : 'badge-danger-light'}`}>
+                          {plan.activo ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      <td>
+                        <TableActions
+                          onEdit={() => openEditModal(plan)}
+                          onDelete={() => deleteModal.openModal(plan)}
+                          editClassName="btn-icon-edit"
+                          deleteClassName="btn-icon-delete"
+                          editTitle="Editar"
+                          deleteTitle="Eliminar"
+                        />
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#666' }}>
+                      No hay planes registrados.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {/* Modal Crear/Editar */}
@@ -239,12 +321,12 @@ const GestionPlanes = () => {
 
       {/* Modal Confirmar Eliminación */}
       <ConfirmDeleteModal
-        isOpen={isDeleteConfirmOpen}
+        isOpen={deleteModal.isOpen}
         title="Confirmar eliminación"
-        message={<>¿Estás seguro de que deseas eliminar el plan <strong>{planToDelete?.nombre}</strong>?</>}
+        message={<>¿Estás seguro de que deseas eliminar el plan <strong>{deleteModal.selectedItem?.nombre}</strong>?</>}
         warning="Esta acción no se puede deshacer."
         icon={<AlertTriangle size={48} className="confirm-icon" />}
-        onCancel={() => setIsDeleteConfirmOpen(false)}
+        onCancel={() => deleteModal.closeModal()}
         onConfirm={handleConfirmDelete}
         cancelLabel="Cancelar"
         confirmLabel="Eliminar Plan"

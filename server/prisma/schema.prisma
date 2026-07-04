@@ -35,11 +35,14 @@ model ConfiguracionLocal {
 
 model Plan {
   id              Int        @id @default(autoincrement())
+  codigo          String?    @unique
   nombre          String
   etiqueta        String?
   precio          Decimal    @db.Decimal(10, 2)
   frecuencia      String
   caracteristicas String?    @db.Text
+  observaciones   String?    @db.Text
+  activo          Boolean    @default(true)
   categoriaId     Int?
   clientes        Cliente[]
   categoria       Categoria? @relation(fields: [categoriaId], references: [id])

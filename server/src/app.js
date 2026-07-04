@@ -15,8 +15,10 @@ app.get('/', (req, res) => {
 // Rutas de la API
 const clientesRoutes = require('./routes/clientes.routes');
 const profesionalesRoutes = require('./routes/profesionales.routes');
+const planesRoutes = require('./routes/planes.routes');
 
 app.use('/api/clientes', clientesRoutes);
 app.use('/api/profesionales', profesionalesRoutes);
+app.use('/api/planes', planesRoutes);
 
 module.exports = app;
