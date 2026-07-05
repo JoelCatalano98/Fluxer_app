@@ -18,6 +18,22 @@ const ClientesTotales = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [clienteToDelete, setClienteToDelete] = useState(null);
+  const [categoriasList, setCategoriasList] = useState([]);
+
+  // Cargar categorías
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        const res = await api.get('/api/categorias');
+        if (res.data.success) {
+          setCategoriasList(res.data.data);
+        }
+      } catch (err) {
+        console.error('Error fetching categorias:', err);
+      }
+    };
+    fetchCategorias();
+  }, []);
 
   // Hook useForm para controlar el formulario de Clientes
   const [formValues, handleInputChange, resetForm, setFormValues] = useForm({
@@ -29,7 +45,7 @@ const ClientesTotales = () => {
     telefono: '',
     es_socio: false,
     codigo_socio: '',
-    planId: '',
+    categoriaId: '',
     fecha_inicio: new Date().toISOString().split('T')[0],
     observaciones: '',
     estado_pago: 'ALDIA'
@@ -74,7 +90,7 @@ const ClientesTotales = () => {
       telefono: cliente.telefono || '',
       es_socio: cliente.es_socio || false,
       codigo_socio: cliente.codigo_socio || '',
-      planId: cliente.planId || '',
+      categoriaId: cliente.categoriaId || '',
       fecha_inicio: cliente.fecha_inicio ? new Date(cliente.fecha_inicio).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       observaciones: cliente.observaciones || '',
       estado_pago: cliente.estado_pago || 'ALDIA'
@@ -128,7 +144,6 @@ const ClientesTotales = () => {
       const dataToSave = { ...formValues };
       if (!dataToSave.es_socio) {
         dataToSave.codigo_socio = null;
-        dataToSave.planId = null;
         dataToSave.fecha_inicio = null;
       }
 
@@ -189,6 +204,7 @@ const ClientesTotales = () => {
                 <th className="columna-fija">Nombre</th>
                 <th>Apellido</th>
                 <th>DNI / CUIT</th>
+                <th>Categoría</th>
                 <th>Email</th>
                 <th>Teléfono</th>
                 <th>Tipo</th>
@@ -199,7 +215,7 @@ const ClientesTotales = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '40px' }}>
+                  <td colSpan="9" style={{ textAlign: 'center', padding: '40px' }}>
                     <Loader2 className="animate-spin" style={{ margin: '0 auto', color: 'var(--accent-blue)' }} />
                     <p style={{ marginTop: '10px', color: '#666' }}>Cargando clientes...</p>
                   </td>
@@ -210,6 +226,22 @@ const ClientesTotales = () => {
                     <td className="columna-fija"><strong>{cliente.nombre}</strong></td>
                     <td>{cliente.apellido}</td>
                     <td>{cliente.dni_cuit}</td>
+                    <td>
+                      {cliente.categoria ? (
+                        <span className="etiqueta-plan-socio" style={{
+                          backgroundColor: '#e1f0ff',
+                          color: 'var(--accent-blue)',
+                          padding: '4px 10px',
+                          borderRadius: '6px',
+                          fontWeight: '600',
+                          fontSize: '0.85rem'
+                        }}>
+                          {cliente.categoria.nombre}
+                        </span>
+                      ) : (
+                        <span style={{ color: '#888', fontStyle: 'italic', fontSize: '0.85rem' }}>Sin Categoría</span>
+                      )}
+                    </td>
                     <td>{cliente.email || 'N/A'}</td>
                     <td>{cliente.telefono || 'N/A'}</td>
                     <td>
@@ -241,7 +273,7 @@ const ClientesTotales = () => {
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan="8" style={{ textAlign: 'center', padding: '20px' }}>No hay clientes registrados.</td></tr>
+                <tr><td colSpan="9" style={{ textAlign: 'center', padding: '20px' }}>No hay clientes registrados.</td></tr>
               )}
             </tbody>
           </table>
@@ -307,15 +339,29 @@ const ClientesTotales = () => {
                       <input type="text" id="codigo_socio" name="codigo_socio" value={formValues.codigo_socio} onChange={handleInputChange} placeholder="Ej: SOC-001" required={formValues.es_socio} />
                     </div>
                     <div className="grupo-campo">
-                      <label htmlFor="planId">ID de Plan</label>
-                      <input type="number" id="planId" name="planId" value={formValues.planId} onChange={handleInputChange} placeholder="ID del plan" />
-                    </div>
-                    <div className="grupo-campo">
                       <label htmlFor="fecha_inicio">Fecha Inicio</label>
                       <input type="date" id="fecha_inicio" name="fecha_inicio" value={formValues.fecha_inicio} onChange={handleInputChange} />
                     </div>
                   </>
                 )}
+
+                <div className="grupo-campo">
+                  <label htmlFor="categoriaId">Asignar Categoría / Actividad</label>
+                  <select 
+                    id="categoriaId" 
+                    name="categoriaId" 
+                    value={formValues.categoriaId} 
+                    onChange={handleInputChange}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                  >
+                    <option value="">-- Sin Categoría (Selecciona una) --</option>
+                    {categoriasList.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre} {c.plan ? `(${c.plan.nombre})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
               
               <div className="grupo-campo ancho-completo">

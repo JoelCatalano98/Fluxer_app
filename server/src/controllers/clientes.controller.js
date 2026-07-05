@@ -35,7 +35,11 @@ const getClientes = async (req, res) => {
                 skip,
                 take,
                 include: {
-                    plan: true
+                    categoria: {
+                        include: {
+                            plan: true
+                        }
+                    }
                 },
                 orderBy: {
                     id: 'desc'
@@ -80,7 +84,7 @@ const createCliente = async (req, res) => {
             estado_pago,
             estado_cliente,
             es_socio,
-            planId
+            categoriaId
         } = req.body;
 
         const isSocio = es_socio === true || es_socio === 'true';
@@ -126,10 +130,14 @@ const createCliente = async (req, res) => {
                 estado_pago: estado_pago || 'ALDIA',
                 estado_cliente: estado_cliente || 'ACTIVO',
                 es_socio: isSocio,
-                planId: isSocio && planId ? parseInt(planId) : null
+                categoriaId: categoriaId ? parseInt(categoriaId) : null
             },
             include: {
-                plan: true
+                categoria: {
+                    include: {
+                        plan: true
+                    }
+                }
             }
         });
 
@@ -184,7 +192,7 @@ const updateCliente = async (req, res) => {
             estado_pago,
             estado_cliente,
             es_socio,
-            planId
+            categoriaId
         } = req.body;
 
         const isSocio = es_socio === true || es_socio === 'true';
@@ -229,24 +237,29 @@ const updateCliente = async (req, res) => {
             updateData.es_socio = isSocio;
             if (!isSocio) {
                 updateData.codigo_socio = null;
-                updateData.planId = null;
                 updateData.fecha_inicio = null;
             } else {
                 if (codigo_socio !== undefined) updateData.codigo_socio = codigo_socio;
-                if (planId !== undefined) updateData.planId = planId ? parseInt(planId) : null;
                 if (fecha_inicio !== undefined) updateData.fecha_inicio = fecha_inicio ? new Date(fecha_inicio) : null;
             }
         } else {
             if (codigo_socio !== undefined) updateData.codigo_socio = codigo_socio;
-            if (planId !== undefined) updateData.planId = planId ? parseInt(planId) : null;
             if (fecha_inicio !== undefined) updateData.fecha_inicio = fecha_inicio ? new Date(fecha_inicio) : null;
+        }
+
+        if (categoriaId !== undefined) {
+            updateData.categoriaId = categoriaId ? parseInt(categoriaId) : null;
         }
 
         const clienteActualizado = await prisma.cliente.update({
             where: { id },
             data: updateData,
             include: {
-                plan: true
+                categoria: {
+                    include: {
+                        plan: true
+                    }
+                }
             }
         });
 
@@ -304,7 +317,11 @@ const deleteCliente = async (req, res) => {
                 estado_cliente: 'INACTIVO'
             },
             include: {
-                plan: true
+                categoria: {
+                    include: {
+                        plan: true
+                    }
+                }
             }
         });
 
@@ -362,7 +379,11 @@ const updateEstadoPago = async (req, res) => {
                 estado_pago
             },
             include: {
-                plan: true
+                categoria: {
+                    include: {
+                        plan: true
+                    }
+                }
             }
         });
 

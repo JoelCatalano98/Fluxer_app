@@ -17,6 +17,22 @@ const Socios = () => {
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoriasList, setCategoriasList] = useState([]);
+
+  // Cargar categorías
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        const res = await api.get('/api/categorias');
+        if (res.data.success) {
+          setCategoriasList(res.data.data);
+        }
+      } catch (err) {
+        console.error('Error fetching categorias:', err);
+      }
+    };
+    fetchCategorias();
+  }, []);
 
   const [formSocio, setFormSocio] = useState({
     id: null,
@@ -27,7 +43,7 @@ const Socios = () => {
     email: '',
     telefono: '',
     fecha_inicio: '',
-    planId: '',
+    categoriaId: '',
     observaciones: ''
   });
 
@@ -72,7 +88,7 @@ const Socios = () => {
       email: cliente.email || '',
       telefono: cliente.telefono || '',
       fecha_inicio: cliente.fecha_inicio ? new Date(cliente.fecha_inicio).toISOString().split('T')[0] : '',
-      planId: cliente.planId || '',
+      categoriaId: cliente.categoriaId || '',
       observaciones: cliente.observaciones || ''
     });
     setIsEditing(true);
@@ -178,7 +194,7 @@ const Socios = () => {
                     <td>{cliente.apellido}</td>
                     <td>
                       <span className="etiqueta-plan-socio">
-                        {cliente.plan?.nombre || 'Sin Plan'}
+                        {cliente.categoria?.nombre || 'Sin Categoría'}
                       </span>
                     </td>
                     <td>
@@ -231,8 +247,20 @@ const Socios = () => {
                 <input type="text" id="dni_cuit" value={formSocio.dni_cuit} onChange={handleInputChange} required />
               </div>
               <div className="grupo-entrada-socio">
-                <label htmlFor="planId">ID de Plan</label>
-                <input type="number" id="planId" value={formSocio.planId} onChange={handleInputChange} />
+                <label htmlFor="categoriaId">Asignar Categoría / Actividad</label>
+                <select 
+                  id="categoriaId" 
+                  value={formSocio.categoriaId} 
+                  onChange={handleInputChange}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
+                >
+                  <option value="">-- Sin Categoría (Selecciona una) --</option>
+                  {categoriasList.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.nombre} {c.plan ? `(${c.plan.nombre})` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="grupo-entrada-socio">
                 <label htmlFor="fecha_inicio">Fecha Inicio</label>
