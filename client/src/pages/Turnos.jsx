@@ -82,6 +82,18 @@ const Turnos = () => {
     });
   }, [semanaBase]);
 
+  const fechasPorDiaFull = useMemo(() => {
+    const lunes = getLunesDeSemana(semanaBase);
+    return [0, 1, 2, 3, 4, 5].map(offset => {
+      const d = new Date(lunes);
+      d.setDate(lunes.getDate() + offset);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    });
+  }, [semanaBase]);
+
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isAnotarModalOpen, setIsAnotarModalOpen] = useState(false);
   const [isDetallesModalOpen, setIsDetallesModalOpen] = useState(false);
@@ -90,6 +102,7 @@ const Turnos = () => {
   const [selectedCellTurnos, setSelectedCellTurnos] = useState([]);
   const [clientesList, setClientesList] = useState([]);
   const [profesionalesList, setProfesionalesList] = useState([]);
+  const [feriadosList, setFeriadosList] = useState([]);
 
   const [nuevoHorario, setNuevoHorario] = useState({ inicio: '', fin: '', dias: [] });
 
@@ -116,7 +129,21 @@ const Turnos = () => {
     profesionalId: ''
   });
 
-  // Cargar clientes y profesionales para los formularios
+  // Cargar clientes, profesionales y feriados
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const resFeriados = await api.get('/api/feriados');
+        if (resFeriados.data) {
+          setFeriadosList(resFeriados.data);
+        }
+      } catch (err) {
+        console.error('Error al cargar feriados:', err);
+      }
+    };
+    loadData();
+  }, [semanaBase]); // Reload feriados if needed
+
   useEffect(() => {
     const loadFormData = async () => {
       try {
@@ -481,6 +508,8 @@ const Turnos = () => {
                     
                     {['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'].map((dia, dIdx) => {
                       const diaSemanaNum = dIdx + 1; // 1 = Lunes, etc.
+                      const fechaExacta = fechasPorDiaFull[dIdx];
+                      const feriado = feriadosList.find(f => fechaExacta >= f.fechaInicio && fechaExacta <= f.fechaFin);
                       
                       // Buscar horarios configurados para este rango y este día
                       const slotsMatching = horarios.filter(h => {
@@ -494,6 +523,18 @@ const Turnos = () => {
                       const turnosEnCelda = turnos.filter(t => slotIds.includes(t.horarioId));
                       const count = turnosEnCelda.length;
                       const tieneSlotConfigurado = slotsMatching.length > 0;
+
+                      if (feriado) {
+                        return (
+                          <td key={dia} style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', position: 'relative', padding: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', pointerEvents: 'none' }}>
+                              <span style={{ backgroundColor: '#ef4444', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                                Cerrado: {feriado.motivo}
+                              </span>
+                            </div>
+                          </td>
+                        );
+                      }
 
                       return (
                         <td key={dia}>

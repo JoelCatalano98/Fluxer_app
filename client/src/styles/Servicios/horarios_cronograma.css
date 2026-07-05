@@ -45,12 +45,18 @@
 /* --- TABLA DE TURNOS (CRONOGRAMA) --- */
 .table-section {
     padding: 30px;
+    overflow: visible !important;
+}
+
+.table-section .contenedor-scroll {
+    overflow-y: visible !important;
 }
 
 /* Sobrescribimos el espaciado para el cronograma */
 .tabla-turnos {
     border-spacing: 8px !important; 
     border-collapse: separate !important;
+    min-width: 900px;
 }
 
 .etiqueta-hora {

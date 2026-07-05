@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Lock, Trash2, AlertTriangle, Save } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import api from '../services/api';
 import '../styles/style.css';
 import '../styles/utilidades/calendario_feriados.css';
 
@@ -11,44 +12,51 @@ const Feriados = () => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [selectedFeriado, setSelectedFeriado] = useState(null);
 
-  const [feriados, setFeriados] = useState([
-    { id: 1, motivo: 'Día del Trabajador', tipo: 'Feriado Nacional', desde: '2026-05-01', hasta: '2026-05-01', bloquear: true, color: 'nacional' },
-    { id: 2, motivo: 'Vacaciones de Invierno', tipo: 'Receso Operativo', desde: '2026-07-15', hasta: '2026-07-30', bloquear: true, color: 'vacaciones' },
-  ]);
+  const [feriados, setFeriados] = useState([]);
 
   const [nuevoFeriado, setNuevoFeriado] = useState({
     motivo: '',
-    tipo: 'Feriado Nacional',
-    desde: new Date().toISOString().split('T')[0],
-    hasta: new Date().toISOString().split('T')[0],
-    bloquear: true
+    fechaInicio: new Date().toISOString().split('T')[0],
+    fechaFin: new Date().toISOString().split('T')[0]
   });
 
+  useEffect(() => {
+    fetchFeriados();
+  }, []);
+
+  const fetchFeriados = async () => {
+    try {
+      const res = await api.get('/api/feriados');
+      setFeriados(res.data);
+    } catch (error) {
+      console.error('Error fetching feriados:', error);
+    }
+  };
+
   const handleInputChange = (e) => {
-    const { id, value, type, checked } = e.target;
+    const { id, value } = e.target;
     setNuevoFeriado(prev => ({
       ...prev,
-      [id]: type === 'checkbox' ? checked : value
+      [id]: value
     }));
   };
 
-  const handleCreateFeriado = (e) => {
+  const handleCreateFeriado = async (e) => {
     e.preventDefault();
-    const newEntry = {
-      ...nuevoFeriado,
-      id: Date.now(),
-      color: nuevoFeriado.tipo === 'Feriado Nacional' ? 'nacional' : 'vacaciones'
-    };
-    setFeriados([...feriados, newEntry]);
-    setIsModalOpen(false);
-    setNuevoFeriado({
-      motivo: '',
-      tipo: 'Feriado Nacional',
-      desde: new Date().toISOString().split('T')[0],
-      hasta: new Date().toISOString().split('T')[0],
-      bloquear: true
-    });
-    alert("Periodo inactivo agregado con éxito");
+    try {
+      await api.post('/api/feriados', nuevoFeriado);
+      setIsModalOpen(false);
+      setNuevoFeriado({
+        motivo: '',
+        fechaInicio: new Date().toISOString().split('T')[0],
+        fechaFin: new Date().toISOString().split('T')[0]
+      });
+      alert("Feriado registrado con éxito");
+      fetchFeriados();
+    } catch (error) {
+      console.error('Error creating feriado:', error);
+      alert("Error al registrar el feriado");
+    }
   };
 
   const handleOpenDeleteConfirm = (feriado) => {
@@ -56,11 +64,16 @@ const Feriados = () => {
     setIsDeleteConfirmOpen(true);
   };
 
-  const handleConfirmDelete = () => {
-    setFeriados(feriados.filter(f => f.id !== selectedFeriado.id));
-    setIsDeleteConfirmOpen(false);
-    setSelectedFeriado(null);
-    alert("Periodo eliminado");
+  const handleConfirmDelete = async () => {
+    try {
+      await api.delete(`/api/feriados/${selectedFeriado.id}`);
+      setIsDeleteConfirmOpen(false);
+      setSelectedFeriado(null);
+      alert("Feriado eliminado");
+      fetchFeriados();
+    } catch (error) {
+      console.error('Error deleting feriado:', error);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -92,9 +105,10 @@ const Feriados = () => {
 
         <div className="lista-feriados">
           {feriados.map(feriado => {
-            const dateInfo = formatDate(feriado.desde);
+            const dateInfo = formatDate(feriado.fechaInicio);
+            const esRango = feriado.fechaInicio !== feriado.fechaFin;
             return (
-              <article key={feriado.id} className={`item-feriado ${feriado.color}`} style={{ padding: '25px 30px' }}>
+              <article key={feriado.id} className="item-feriado nacional" style={{ padding: '25px 30px' }}>
                 <div className="info-feriado">
                   <div className="caja-fecha-feriado" style={{ minWidth: '90px', padding: '15px' }}>
                     <span className="dia" style={{ fontSize: '1.8rem' }}>{dateInfo.dia}</span>
@@ -102,15 +116,17 @@ const Feriados = () => {
                   </div>
                   <div className="detalles-feriado">
                     <h3 style={{ fontSize: '1.3rem' }}>{feriado.motivo}</h3>
-                    <p style={{ fontSize: '0.95rem' }}>{feriado.tipo} • {feriado.desde === feriado.hasta ? 'Día Único' : `Desde ${feriado.desde} hasta ${feriado.hasta}`}</p>
+                    <p style={{ fontSize: '0.95rem' }}>
+                      {esRango 
+                        ? `Desde ${feriado.fechaInicio} hasta ${feriado.fechaFin}` 
+                        : `Día Único • ${feriado.fechaInicio}`}
+                    </p>
                   </div>
                 </div>
                 <div className="estado-feriado" style={{ gap: '20px' }}>
-                  {feriado.bloquear && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ff4b4b' }}>
-                      <Lock size={18} /> <span style={{ fontSize: '0.9rem' }}>BLOQUEADO</span>
-                    </div>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ff4b4b' }}>
+                    <Lock size={18} /> <span style={{ fontSize: '0.9rem' }}>BLOQUEADO</span>
+                  </div>
                   <button 
                     className="btn-remove" 
                     onClick={() => handleOpenDeleteConfirm(feriado)}
@@ -145,57 +161,29 @@ const Feriados = () => {
                 style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px' }}
               />
             </div>
-            <div className="grupo-campo">
-              <label htmlFor="tipo" style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>Tipo de Inactividad</label>
-              <select 
-                id="tipo" 
-                value={nuevoFeriado.tipo} 
-                onChange={handleInputChange}
-                style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '8px', background: 'white' }}
-              >
-                <option value="Feriado Nacional">Feriado Nacional</option>
-                <option value="Receso Operativo">Receso Operativo</option>
-                <option value="Mantenimiento">Mantenimiento / Reformas</option>
-                <option value="Otro">Otro</option>
-              </select>
-            </div>
-            
             <div className="grupo-rango-fechas" style={{ background: '#f8f9fa', padding: '20px', borderRadius: '12px', border: '1px solid #eee' }}>
               <div className="grupo-campo">
-                <label htmlFor="desde" style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '0.9rem' }}>Desde</label>
+                <label htmlFor="fechaInicio" style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '0.9rem' }}>Fecha Inicio</label>
                 <input 
                   type="date" 
-                  id="desde" 
-                  value={nuevoFeriado.desde} 
+                  id="fechaInicio" 
+                  value={nuevoFeriado.fechaInicio} 
                   onChange={handleInputChange} 
                   required 
                   style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
                 />
               </div>
-              <div className="grupo-campo">
-                <label htmlFor="hasta" style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '0.9rem' }}>Hasta</label>
+              <div className="grupo-campo" style={{ marginTop: '12px' }}>
+                <label htmlFor="fechaFin" style={{ display: 'block', marginBottom: '8px', fontWeight: '600', fontSize: '0.9rem' }}>Fecha Fin</label>
                 <input 
                   type="date" 
-                  id="hasta" 
-                  value={nuevoFeriado.hasta} 
+                  id="fechaFin" 
+                  value={nuevoFeriado.fechaFin} 
                   onChange={handleInputChange} 
                   required 
                   style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
                 />
               </div>
-            </div>
-
-            <div className="grupo-campo" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#fff5f5', padding: '15px', borderRadius: '8px', border: '1px solid #ffe3e3' }}>
-              <input 
-                type="checkbox" 
-                id="bloquear" 
-                checked={nuevoFeriado.bloquear} 
-                onChange={handleInputChange}
-                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-              />
-              <label htmlFor="bloquear" style={{ fontWeight: '600', color: '#e03131', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Lock size={16} /> Bloquear cronograma de turnos
-              </label>
             </div>
           </div>
 

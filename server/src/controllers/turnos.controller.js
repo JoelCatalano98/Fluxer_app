@@ -124,8 +124,23 @@ const createTurno = async (req, res) => {
             });
         }
 
-        // Validar conflictos
+        // Validar conflictos y feriados
         for (const item of creations) {
+            const fechaStr = item.fecha.toISOString().split('T')[0];
+            const feriados = await prisma.feriado.findMany({
+                where: {
+                    fechaInicio: { lte: fechaStr },
+                    fechaFin: { gte: fechaStr }
+                }
+            });
+            if (feriados.length > 0) {
+                return res.status(400).json({
+                    success: false,
+                    data: null,
+                    message: `Día bloqueado por feriado: ${feriados[0].motivo}`
+                });
+            }
+
             const existing = await prisma.turnoCliente.findFirst({
                 where: {
                     fecha: item.fecha,
@@ -137,7 +152,7 @@ const createTurno = async (req, res) => {
                 return res.status(400).json({
                     success: false,
                     data: null,
-                    message: `El cliente ya tiene un turno reservado el ${item.fecha.toISOString().split('T')[0]} en el horario seleccionado`
+                    message: `El cliente ya tiene un turno reservado el ${fechaStr} en el horario seleccionado`
                 });
             }
         }

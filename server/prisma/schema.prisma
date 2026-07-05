@@ -145,3 +145,12 @@ model Configuracion {
 
   @@map("configuracion")
 }
+
+model Feriado {
+  id          Int    @id @default(autoincrement())
+  fechaInicio String
+  fechaFin    String
+  motivo      String
+
+  @@map("feriados")
+}

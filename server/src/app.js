@@ -20,6 +20,7 @@ const planesRoutes = require('./routes/planes.routes');
 const turnosRoutes = require('./routes/turnos.routes');
 const configuracionRoutes = require('./routes/configuracion.routes');
 const categoriasRoutes = require('./routes/categorias.routes');
+const feriadosRoutes = require('./routes/feriados.routes');
 
 app.use('/api/clientes', clientesRoutes);
 app.use('/api/profesionales', profesionalesRoutes);
@@ -27,5 +28,6 @@ app.use('/api/planes', planesRoutes);
 app.use('/api/turnos', turnosRoutes);
 app.use('/api/configuracion', configuracionRoutes);
 app.use('/api/categorias', categoriasRoutes);
+app.use('/api/feriados', feriadosRoutes);
 
 module.exports = app;
