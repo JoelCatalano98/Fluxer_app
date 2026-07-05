@@ -24,9 +24,11 @@
   "homepage": "https://github.com/JoelCatalano98/fluxer#readme",
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
     "prisma": "^6.19.3"
   }
 }

@@ -8,10 +8,18 @@ datasource db {
 }
 
 model Usuario {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  password String
-  rol      String @default("ADMIN")
+  id              Int      @id @default(autoincrement())
+  nombre          String   @default("Admin")
+  usuario         String   @unique
+  email           String   @unique
+  password        String
+  esSuperAdmin    Boolean  @default(false)
+  esAdmin         Boolean  @default(false)
+  permisoFinanzas Boolean  @default(false)
+  permisoTurnos   Boolean  @default(false)
+  permisoClientes Boolean  @default(false)
+  permisoPlanes   Boolean  @default(false)
+  permisoFeriados Boolean  @default(false)
 
   @@map("usuarios")
 }

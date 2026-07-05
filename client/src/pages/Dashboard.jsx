@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Users, UserCheck, DollarSign } from 'lucide-react';
+import { Users, UserCheck, DollarSign, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   PieChart,
   Pie,
@@ -22,6 +23,7 @@ const Dashboard = () => {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [rango, setRango] = useState('semanal');
+  const { hasPermission } = useAuth();
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -104,15 +106,25 @@ const Dashboard = () => {
           </div>
         </Link>
 
-        <Link to="/gestion-planes" className="stat-card clickable-card">
-          <DollarSign size={48} color="#00a8e8" />
-          <div className="stat-content">
-            <span className="stat-value" style={{ fontSize: '1.6rem' }}>
-              {formatCurrency(metrics?.kpis.ingresosProyectados || 0)}
-            </span>
-            <h3 className="stat-label">Ingresos Proyectados</h3>
+        {hasPermission('permisoFinanzas') ? (
+          <Link to="/gestion-planes" className="stat-card clickable-card">
+            <DollarSign size={48} color="#00a8e8" />
+            <div className="stat-content">
+              <span className="stat-value" style={{ fontSize: '1.6rem' }}>
+                {formatCurrency(metrics?.kpis.ingresosProyectados || 0)}
+              </span>
+              <h3 className="stat-label">Ingresos Proyectados</h3>
+            </div>
+          </Link>
+        ) : (
+          <div className="stat-card" style={{ opacity: 0.6 }}>
+            <Lock size={48} color="#666" />
+            <div className="stat-content">
+              <span className="stat-value" style={{ fontSize: '1.2rem', color: '#666' }}>Restringido</span>
+              <h3 className="stat-label">Finanzas Privadas</h3>
+            </div>
           </div>
-        </Link>
+        )}
       </div>
 
       {/* Sección de Gráficos (Rediseño 3 Columnas/Filas) */}
@@ -161,35 +173,42 @@ const Dashboard = () => {
         </div>
 
         {/* Gráfico 2: Ingresos por Plan (PieChart) */}
-        <div className="chart-card">
-          <h3 className="chart-title">Distribución de Ingresos por Plan</h3>
-          <div style={{ width: '100%', height: 300 }}>
-            {loading ? renderLoading() : (
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={metrics?.ingresosPorPlan || []}
-                    innerRadius={70}
-                    outerRadius={100}
-                    paddingAngle={3}
-                    dataKey="ingresos"
-                    stroke="none"
-                  >
-                    {(metrics?.ingresosPorPlan || []).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1a1a1f', border: 'none', borderRadius: '8px', color: '#fff' }}
-                    itemStyle={{ color: '#fff' }}
-                    formatter={(value) => formatCurrency(value)}
-                  />
-                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+        {hasPermission('permisoFinanzas') ? (
+          <div className="chart-card">
+            <h3 className="chart-title">Distribución de Ingresos por Plan</h3>
+            <div style={{ width: '100%', height: 300 }}>
+              {loading ? renderLoading() : (
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={metrics?.ingresosPorPlan || []}
+                      innerRadius={70}
+                      outerRadius={100}
+                      paddingAngle={3}
+                      dataKey="ingresos"
+                      stroke="none"
+                    >
+                      {(metrics?.ingresosPorPlan || []).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#1a1a1f', border: 'none', borderRadius: '8px', color: '#fff' }}
+                      itemStyle={{ color: '#fff' }}
+                      formatter={(value) => formatCurrency(value)}
+                    />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="chart-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.5 }}>
+            <Lock size={48} color="#666" style={{ marginBottom: '15px' }} />
+            <h3 style={{ color: '#666', margin: 0 }}>Distribución de Ingresos Restringida</h3>
+          </div>
+        )}
 
         {/* Gráfico 3: Horarios Populares (BarChart) */}
         <div className="chart-card" style={{ gridColumn: '1 / -1' }}>

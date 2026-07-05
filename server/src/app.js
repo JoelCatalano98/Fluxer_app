@@ -23,15 +23,18 @@ const categoriasRoutes = require('./routes/categorias.routes');
 const feriadosRoutes = require('./routes/feriados.routes');
 const calendarioRoutes = require('./routes/calendario.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
+const authRoutes = require('./routes/auth.routes');
+const { verifyToken, requirePermiso } = require('./middlewares/auth.middleware');
 
-app.use('/api/clientes', clientesRoutes);
-app.use('/api/profesionales', profesionalesRoutes);
-app.use('/api/planes', planesRoutes);
-app.use('/api/turnos', turnosRoutes);
-app.use('/api/configuracion', configuracionRoutes);
-app.use('/api/categorias', categoriasRoutes);
-app.use('/api/feriados', feriadosRoutes);
-app.use('/api/calendario', calendarioRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/clientes', verifyToken, requirePermiso('permisoClientes'), clientesRoutes);
+app.use('/api/profesionales', verifyToken, profesionalesRoutes);
+app.use('/api/planes', verifyToken, requirePermiso('permisoPlanes'), planesRoutes);
+app.use('/api/turnos', verifyToken, requirePermiso('permisoTurnos'), turnosRoutes);
+app.use('/api/configuracion', verifyToken, configuracionRoutes);
+app.use('/api/categorias', verifyToken, categoriasRoutes);
+app.use('/api/feriados', verifyToken, requirePermiso('permisoFeriados'), feriadosRoutes);
+app.use('/api/calendario', verifyToken, calendarioRoutes);
+app.use('/api/dashboard', verifyToken, requirePermiso('permisoFinanzas'), dashboardRoutes);
 
 module.exports = app;

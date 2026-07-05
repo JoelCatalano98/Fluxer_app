@@ -8,8 +8,10 @@ import {
   Calendar
 } from 'lucide-react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = ({ isOpen }) => {
+  const { hasPermission } = useAuth();
   const [config, setConfig] = useState({
     nombreGimnasio: 'FLUXER',
     logoBase64: null
@@ -122,11 +124,13 @@ const Navbar = ({ isOpen }) => {
                   Categorías / Etiquetas
                 </NavLink>
               </li>
-              <li>
-                <NavLink to="/pagos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Medios de Pago
-                </NavLink>
-              </li>
+              {hasPermission('permisoFinanzas') && (
+                <li>
+                  <NavLink to="/pagos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Medios de Pago
+                  </NavLink>
+                </li>
+              )}
               <li>
                 <NavLink to="/feriados" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
                   Feriados
@@ -141,6 +145,14 @@ const Navbar = ({ isOpen }) => {
             <Calendar size={20} style={{ marginRight: '10px', color: '#00a8e8' }} /> <span>Calendario</span>
           </NavLink>
         </li>
+
+        {hasPermission('esAdmin') && (
+          <li>
+            <NavLink to="/usuarios" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', padding: '10px 0' }}>
+              <Users size={20} style={{ marginRight: '10px', color: '#00a8e8' }} /> <span>Usuarios</span>
+            </NavLink>
+          </li>
+        )}
       </ul>
     </aside>
   );

@@ -19,7 +19,9 @@ import Feriados from './pages/Feriados';
 import Pagos from './pages/Pagos';
 import Login from './pages/Login';
 import Calendario from './pages/Calendario';
+import Usuarios from './pages/Usuarios';
 import api from './services/api';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 // Estilos globales
 import './styles/style.css';
@@ -32,6 +34,13 @@ function AppContent() {
 
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user && !isLoginPage) {
+        window.location.href = '/login';
+    }
+  }, [user, loading, isLoginPage]);
 
   // Suscripción reactiva para rastrear el ancho de pantalla
   useEffect(() => {
@@ -124,7 +133,9 @@ function AppContent() {
     };
   }, [location.pathname, isLoginPage]);
 
-  if (isLoginPage) {
+  if (loading) return <div>Cargando sesión...</div>;
+
+  if (isLoginPage || !user) {
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -158,6 +169,7 @@ function AppContent() {
             <Route path="/feriados" element={<Feriados />} />
             <Route path="/pagos" element={<Pagos />} />
             <Route path="/calendario" element={<Calendario />} />
+            <Route path="/usuarios" element={<Usuarios />} />
           </Routes>
         </main>
         
@@ -206,9 +218,11 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
 }
 
