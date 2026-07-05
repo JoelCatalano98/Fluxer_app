@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Settings, Plus, Eye, CalendarCheck, UserPlus, Loader2, AlertTriangle, Pencil } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Settings, Plus, Eye, CalendarCheck, UserPlus, Loader2, AlertTriangle, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import { useForm } from '../hooks/useForm';
@@ -8,18 +8,79 @@ import api from '../services/api';
 import '../styles/style.css';
 import '../styles/Servicios/horarios_cronograma.css';
 
+// Calcula el lunes de la semana que contiene la fecha dada
+const getLunesDeSemana = (fecha = new Date()) => {
+  const d = new Date(fecha);
+  const day = d.getDay();
+  d.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
 const Turnos = () => {
+  // Estado de la semana visible (lunes de la semana actual por defecto)
+  const [semanaBase, setSemanaBase] = useState(() => getLunesDeSemana());
+
   const {
     turnos,
     horarios,
     loading,
     error,
+    fechaInicio,
+    fechaFin,
     crearTurno,
     cancelarTurno,
     crearHorario,
     editarHorario,
     eliminarHorario
-  } = useTurnos();
+  } = useTurnos(semanaBase);
+
+  // Navegación de semanas
+  const irSemanaAnterior = () => {
+    setSemanaBase(prev => {
+      const nueva = new Date(prev);
+      nueva.setDate(nueva.getDate() - 7);
+      return nueva;
+    });
+  };
+
+  const irSemanaSiguiente = () => {
+    setSemanaBase(prev => {
+      const nueva = new Date(prev);
+      nueva.setDate(nueva.getDate() + 7);
+      return nueva;
+    });
+  };
+
+  const irSemanaActual = () => {
+    setSemanaBase(getLunesDeSemana());
+  };
+
+  // Etiqueta legible de la semana visible
+  const semanaLabel = useMemo(() => {
+    const lunes = getLunesDeSemana(semanaBase);
+    const sabado = new Date(lunes);
+    sabado.setDate(lunes.getDate() + 5);
+    const fmt = (d) => `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+    return `Semana del ${fmt(lunes)} al ${fmt(sabado)}`;
+  }, [semanaBase]);
+
+  // Verificar si la semana visible es la actual
+  const esEstaSemana = useMemo(() => {
+    const lunesActual = getLunesDeSemana();
+    const lunesVisible = getLunesDeSemana(semanaBase);
+    return lunesActual.getTime() === lunesVisible.getTime();
+  }, [semanaBase]);
+
+  // Fechas por columna (para mostrar en el header de la tabla)
+  const fechasPorDia = useMemo(() => {
+    const lunes = getLunesDeSemana(semanaBase);
+    return [0, 1, 2, 3, 4, 5].map(offset => {
+      const d = new Date(lunes);
+      d.setDate(lunes.getDate() + offset);
+      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+    });
+  }, [semanaBase]);
 
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isAnotarModalOpen, setIsAnotarModalOpen] = useState(false);
@@ -340,6 +401,22 @@ const Turnos = () => {
         </div>
       </PageHeader>
 
+      {/* Navegador de Semanas */}
+      <div className="semana-navegador" style={{ marginTop: '20px' }}>
+        <button className="btn-semana" onClick={irSemanaAnterior}>
+          <ChevronLeft size={16} /> Anterior
+        </button>
+        {!esEstaSemana && (
+          <button className="btn-hoy" onClick={irSemanaActual}>
+            Hoy
+          </button>
+        )}
+        <span className="semana-label">{semanaLabel}</span>
+        <button className="btn-semana" onClick={irSemanaSiguiente}>
+          Siguiente <ChevronRight size={16} />
+        </button>
+      </div>
+
       {/* Alerta de Error */}
       {error && (
         <div style={{ backgroundColor: '#fff1f1', color: '#e03131', padding: '15px', borderRadius: '8px', margin: '20px 30px 0 30px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -355,12 +432,12 @@ const Turnos = () => {
             <thead>
               <tr>
                 <th className="columna-fija">Hora</th>
-                <th>Lunes</th>
-                <th>Martes</th>
-                <th>Miércoles</th>
-                <th>Jueves</th>
-                <th>Viernes</th>
-                <th>Sábado</th>
+                <th>Lun {fechasPorDia[0]}</th>
+                <th>Mar {fechasPorDia[1]}</th>
+                <th>Mié {fechasPorDia[2]}</th>
+                <th>Jue {fechasPorDia[3]}</th>
+                <th>Vie {fechasPorDia[4]}</th>
+                <th>Sáb {fechasPorDia[5]}</th>
               </tr>
             </thead>
             <tbody>

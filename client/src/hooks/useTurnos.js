@@ -1,11 +1,40 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
-export const useTurnos = (fechaInicio = null, fechaFin = null) => {
+// Calcula el lunes de la semana a la que pertenece una fecha dada
+const getLunesDeSemana = (fecha = new Date()) => {
+  const d = new Date(fecha);
+  const day = d.getDay(); // 0=Dom, 1=Lun...
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+// Formatea una fecha a "YYYY-MM-DD"
+const toDateStr = (fecha) => {
+  const y = fecha.getFullYear();
+  const m = String(fecha.getMonth() + 1).padStart(2, '0');
+  const d = String(fecha.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
+export const useTurnos = (fechaBaseExterna = null) => {
   const [turnos, setTurnos] = useState([]);
   const [horarios, setHorarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // La fecha base de la semana visible, controlada desde el componente padre
+  const fechaBase = fechaBaseExterna || getLunesDeSemana();
+
+  // Calcular lunes y sábado de la semana visible
+  const lunes = getLunesDeSemana(fechaBase);
+  const sabado = new Date(lunes);
+  sabado.setDate(lunes.getDate() + 5);
+
+  const fechaInicio = toDateStr(lunes);
+  const fechaFin = toDateStr(sabado);
 
   const fetchHorarios = useCallback(async () => {
     try {
@@ -21,16 +50,12 @@ export const useTurnos = (fechaInicio = null, fechaFin = null) => {
     }
   }, []);
 
-  const fetchTurnos = useCallback(async (start = fechaInicio, end = fechaFin) => {
+  const fetchTurnos = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      let url = '/api/turnos';
-      if (start && end) {
-        url += `?fechaInicio=${start}&fechaFin=${end}`;
-      }
 
+      const url = `/api/turnos?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`;
       const res = await api.get(url);
       if (res.data.success) {
         setTurnos(res.data.data);
@@ -45,6 +70,7 @@ export const useTurnos = (fechaInicio = null, fechaFin = null) => {
     }
   }, [fechaInicio, fechaFin]);
 
+  // Re-fetch automático cuando cambia la semana visible
   useEffect(() => {
     const init = async () => {
       await fetchHorarios();
@@ -58,11 +84,8 @@ export const useTurnos = (fechaInicio = null, fechaFin = null) => {
       setError(null);
       const res = await api.post('/api/turnos', turnoData);
       if (res.data.success) {
-        if (Array.isArray(res.data.data)) {
-          setTurnos(prev => [...res.data.data, ...prev]);
-        } else {
-          setTurnos(prev => [res.data.data, ...prev]);
-        }
+        // Refrescar desde el server para sincronizar con la semana visible
+        await fetchTurnos();
         return res.data.data;
       } else {
         throw new Error(res.data.message || 'Error al crear turno');
@@ -98,7 +121,6 @@ export const useTurnos = (fechaInicio = null, fechaFin = null) => {
       setError(null);
       const res = await api.post('/api/turnos/horarios', horarioData);
       if (res.data.success) {
-        // Refrescar desde el server para obtener el estado más limpio
         await fetchHorarios();
         return res.data.data;
       } else {
@@ -153,6 +175,8 @@ export const useTurnos = (fechaInicio = null, fechaFin = null) => {
     horarios,
     loading,
     error,
+    fechaInicio,
+    fechaFin,
     fetchTurnos,
     fetchHorarios,
     crearTurno,

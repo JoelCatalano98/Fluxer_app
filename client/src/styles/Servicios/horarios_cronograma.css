@@ -200,6 +200,75 @@
     background-color: #2f9e44 !important;
 }
 
+/* --- NAVEGADOR DE SEMANAS --- */
+.semana-navegador {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 14px 30px;
+    margin: 0 30px;
+    background: #333639;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.semana-navegador .btn-semana {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cfd1d4;
+    padding: 8px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+.semana-navegador .btn-semana:hover {
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.semana-navegador .btn-semana:active {
+    transform: translateY(0);
+}
+
+.semana-navegador .semana-label {
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
+    text-align: center;
+    min-width: 240px;
+    user-select: none;
+}
+
+.semana-navegador .btn-hoy {
+    background: var(--accent-blue);
+    border: 1px solid transparent;
+    color: #fff;
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+.semana-navegador .btn-hoy:hover {
+    background: #0086bc;
+    transform: translateY(-1px);
+}
+
 /* --- RESPONSIVE 480PX --- */
 @media screen and (max-width: 480px) {
     .header-actions {
@@ -230,5 +299,24 @@
 
     .form-row {
         grid-template-columns: 1fr;
+    }
+
+    .semana-navegador {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px 15px;
+        margin: 0 10px;
+    }
+
+    .semana-navegador .semana-label {
+        min-width: 100%;
+        font-size: 0.85rem;
+        order: -1;
+    }
+
+    .semana-navegador .btn-semana {
+        padding: 7px 14px;
+        font-size: 0.8rem;
+        flex: 1;
     }
 }
