@@ -17,4 +17,10 @@ router.get('/horarios', turnosController.getHorarios);
 // Configurar una nueva franja horaria
 router.post('/horarios', turnosController.createHorario);
 
+// Editar una franja horaria existente
+router.put('/horarios/:id', turnosController.updateHorario);
+
+// Dar de baja un horario (baja lógica)
+router.delete('/horarios/:id', turnosController.deleteHorario);
+
 module.exports = router;

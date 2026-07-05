@@ -94,12 +94,44 @@
 }
 
 .turno-vacio {
-    color: #bbb;
+    color: #555;
     text-align: center;
-    border: 1px dashed #ddd;
+    border: 2px solid #2d3135;
     border-radius: 8px;
     padding: 12px;
     background: #fcfcfc;
+}
+
+.turno-deshabilitado {
+    text-align: center;
+    border: 1px dashed rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    padding: 12px;
+    background: transparent;
+    color: transparent;
+}
+
+/* --- COLUMNA FIJA --- */
+.tabla-turnos .columna-fija {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 10 !important;
+    background-color: #333639 !important;
+    color: #fff !important;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.15) !important;
+}
+
+.tabla-turnos th.columna-fija {
+    z-index: 11 !important;
+    background-color: #333639 !important;
+    color: #fff !important;
+}
+
+/* Modal de turnos con scroll vertical */
+.turnos-modal-content {
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+    padding-bottom: 30px !important;
 }
 
 .caja-turno.activo {

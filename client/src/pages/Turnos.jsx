@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, Plus, Eye, CalendarCheck, UserPlus, Loader2, AlertTriangle } from 'lucide-react';
+import { Settings, Plus, Eye, CalendarCheck, UserPlus, Loader2, AlertTriangle, Pencil } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import { useForm } from '../hooks/useForm';
@@ -16,25 +16,43 @@ const Turnos = () => {
     error,
     crearTurno,
     cancelarTurno,
-    crearHorario
+    crearHorario,
+    editarHorario,
+    eliminarHorario
   } = useTurnos();
 
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isAnotarModalOpen, setIsAnotarModalOpen] = useState(false);
   const [isDetallesModalOpen, setIsDetallesModalOpen] = useState(false);
+  const [isEditHorarioModalOpen, setIsEditHorarioModalOpen] = useState(false);
 
   const [selectedCellTurnos, setSelectedCellTurnos] = useState([]);
   const [clientesList, setClientesList] = useState([]);
   const [profesionalesList, setProfesionalesList] = useState([]);
 
-  const [nuevoHorario, setNuevoHorario] = useState({ inicio: '', fin: '', dia: '1' });
+  const [nuevoHorario, setNuevoHorario] = useState({ inicio: '', fin: '', dias: [] });
+
+  // Búsqueda local en modales
+  const [clienteSearch, setClienteSearch] = useState('');
+  const [profesionalSearch, setProfesionalSearch] = useState('');
+
+  // Selección múltiple para agendamiento
+  const [diasSeleccionados, setDiasSeleccionados] = useState([]);
+  const [horariosSeleccionados, setHorariosSeleccionados] = useState([]);
+
+  // Edición de Horarios
+  const [selectedHorarioId, setSelectedHorarioId] = useState(null);
+  const [selectedRangeSchedules, setSelectedRangeSchedules] = useState([]);
+  const [editHorarioValues, setEditHorarioValues] = useState({
+    dia_semana: '1',
+    hora_inicio: '',
+    hora_fin: ''
+  });
 
   // Hook useForm para el modal "Anotar Cliente"
   const [anotarValues, handleAnotarInputChange, resetAnotarForm] = useForm({
     clienteId: '',
-    profesionalId: '',
-    dia: 'lunes',
-    hora: ''
+    profesionalId: ''
   });
 
   // Cargar clientes y profesionales para los formularios
@@ -68,31 +86,6 @@ const Turnos = () => {
     return `${hours}:${minutes}`;
   };
 
-  const getFechaDeDiaSemana = (diaNombre) => {
-    const hoy = new Date();
-    const diaSemana = hoy.getDay(); // 0 = Domingo, 1 = Lunes, etc.
-    
-    const dias = {
-      lunes: 1,
-      martes: 2,
-      miercoles: 3,
-      jueves: 4,
-      viernes: 5,
-      sabado: 6
-    };
-    
-    const targetDiaNum = dias[diaNombre.toLowerCase()] || 1;
-    
-    const diff = targetDiaNum - diaSemana;
-    const targetDate = new Date(hoy);
-    targetDate.setDate(hoy.getDate() + diff);
-    
-    const year = targetDate.getFullYear();
-    const month = String(targetDate.getMonth() + 1).padStart(2, '0');
-    const date = String(targetDate.getDate()).padStart(2, '0');
-    return `${year}-${month}-${date}`;
-  };
-
   // Obtener franjas horarias únicas ordenadas para las filas de la tabla
   const uniqueRanges = [
     ...new Set(
@@ -104,33 +97,43 @@ const Turnos = () => {
     ),
   ].sort();
 
-  // Filtrar franjas del día seleccionado para el formulario de anotar
-  const diasMap = { lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6 };
-  const diaNumSeleccionado = diasMap[anotarValues.dia] || 1;
-  const horariosDelDia = horarios.filter(h => h.dia_semana === diaNumSeleccionado);
-  const franjasDelDia = [
-    ...new Set(
-      horariosDelDia.map(h => {
-        const inicioStr = formatTime(h.hora_inicio);
-        const finStr = formatTime(h.hora_fin);
-        return `${inicioStr} - ${finStr}`;
-      })
-    )
-  ].sort();
+  // Filtrado local de clientes
+  const filteredClientes = clientesList.filter(c => {
+    const searchStr = `${c.nombre} ${c.apellido} ${c.dni_cuit || ''}`.toLowerCase();
+    return searchStr.includes(clienteSearch.toLowerCase());
+  });
+
+  // Filtrado local de profesionales
+  const filteredProfesionales = profesionalesList.filter(p => {
+    const searchStr = `${p.nombre} ${p.apellido} ${p.dni || ''}`.toLowerCase();
+    return searchStr.includes(profesionalSearch.toLowerCase());
+  });
+
+  const openAnotarModal = () => {
+    setClienteSearch('');
+    setProfesionalSearch('');
+    setDiasSeleccionados([]);
+    setHorariosSeleccionados([]);
+    resetAnotarForm();
+    setIsAnotarModalOpen(true);
+  };
 
   const handleAddHorario = async (e) => {
     e.preventDefault();
-    if (!nuevoHorario.inicio || !nuevoHorario.fin || !nuevoHorario.dia) return;
+    if (!nuevoHorario.inicio || !nuevoHorario.fin || nuevoHorario.dias.length === 0) {
+      alert("Por favor completa la hora de inicio, fin y selecciona al menos un día.");
+      return;
+    }
 
     try {
       await crearHorario({
-        dia_semana: parseInt(nuevoHorario.dia),
+        dias: nuevoHorario.dias.map(d => parseInt(d)),
         hora_inicio: nuevoHorario.inicio,
         hora_fin: nuevoHorario.fin
       });
       setIsConfigModalOpen(false);
-      setNuevoHorario({ inicio: '', fin: '', dia: '1' });
-      alert("¡Nueva franja horaria agregada con éxito!");
+      setNuevoHorario({ inicio: '', fin: '', dias: [] });
+      alert("¡Nueva(s) franja(s) horaria(s) agregada(s) con éxito!");
     } catch (err) {
       alert("Error al configurar horario: " + err.message);
     }
@@ -138,36 +141,134 @@ const Turnos = () => {
 
   const handleAnotarSubmit = async (e) => {
     e.preventDefault();
-    if (!anotarValues.clienteId || !anotarValues.dia || !anotarValues.hora) {
-      alert("Por favor completa los campos obligatorios");
+    if (!anotarValues.clienteId) {
+      alert("Por favor selecciona un cliente");
       return;
     }
 
-    const diaNum = diasMap[anotarValues.dia];
-    const selectedHorario = horarios.find(h => {
-      const hRange = `${formatTime(h.hora_inicio)} - ${formatTime(h.hora_fin)}`;
-      return h.dia_semana === diaNum && hRange === anotarValues.hora;
+    if (diasSeleccionados.length === 0 || horariosSeleccionados.length === 0) {
+      alert("Por favor selecciona al menos un día y al menos una franja horaria");
+      return;
+    }
+
+    // Resolver los horariosIds correspondientes a las selecciones
+    const targetHorariosIds = [];
+    const missingConfigs = [];
+
+    diasSeleccionados.forEach(diaNum => {
+      horariosSeleccionados.forEach(range => {
+        const match = horarios.find(h => {
+          const hRange = `${formatTime(h.hora_inicio)} - ${formatTime(h.hora_fin)}`;
+          return h.dia_semana === parseInt(diaNum) && hRange === range;
+        });
+
+        if (match) {
+          targetHorariosIds.push(match.id);
+        } else {
+          const dayNames = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado' };
+          missingConfigs.push(`${dayNames[diaNum]} (${range})`);
+        }
+      });
     });
 
-    if (!selectedHorario) {
-      alert("No se encontró una franja horaria válida para ese día y hora");
+    if (targetHorariosIds.length === 0) {
+      alert("Ninguna de las combinaciones de día y horario seleccionadas está configurada en el cronograma. Por favor crea primero las franjas horarias correspondientes.");
       return;
     }
 
-    const fecha = getFechaDeDiaSemana(anotarValues.dia);
+    if (missingConfigs.length > 0) {
+      const proceed = window.confirm(
+        `Las siguientes combinaciones no están configuradas y se omitirán:\n${missingConfigs.join('\n')}\n\n¿Deseas continuar?`
+      );
+      if (!proceed) return;
+    }
 
     try {
       await crearTurno({
-        fecha,
-        horarioId: selectedHorario.id,
+        horariosIds: targetHorariosIds,
         clienteId: parseInt(anotarValues.clienteId),
         profesionalId: anotarValues.profesionalId ? parseInt(anotarValues.profesionalId) : null
       });
       setIsAnotarModalOpen(false);
       resetAnotarForm();
+      setClienteSearch('');
+      setProfesionalSearch('');
+      setDiasSeleccionados([]);
+      setHorariosSeleccionados([]);
       alert("¡Cliente anotado con éxito!");
     } catch (err) {
       alert("Error al anotar cliente: " + err.message);
+    }
+  };
+
+  // Apertura y manejo de edición de horarios
+  const handleOpenEditHorario = (range) => {
+    const matching = horarios.filter(h => {
+      const hRange = `${formatTime(h.hora_inicio)} - ${formatTime(h.hora_fin)}`;
+      return hRange === range;
+    });
+
+    if (matching.length === 0) return;
+
+    setSelectedRangeSchedules(matching);
+    const first = matching[0];
+    setSelectedHorarioId(first.id);
+    setEditHorarioValues({
+      dia_semana: String(first.dia_semana),
+      hora_inicio: formatTime(first.hora_inicio),
+      hora_fin: formatTime(first.hora_fin)
+    });
+    setIsEditHorarioModalOpen(true);
+  };
+
+  const handleEditHorarioChange = (e) => {
+    const { name, value } = e.target;
+    setEditHorarioValues(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSelectInstanceToEdit = (e) => {
+    const hId = parseInt(e.target.value);
+    setSelectedHorarioId(hId);
+    const selected = selectedRangeSchedules.find(h => h.id === hId);
+    if (selected) {
+      setEditHorarioValues({
+        dia_semana: String(selected.dia_semana),
+        hora_inicio: formatTime(selected.hora_inicio),
+        hora_fin: formatTime(selected.hora_fin)
+      });
+    }
+  };
+
+  const handleEditHorarioSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedHorarioId) return;
+
+    try {
+      await editarHorario(selectedHorarioId, {
+        dia_semana: parseInt(editHorarioValues.dia_semana),
+        hora_inicio: editHorarioValues.hora_inicio,
+        hora_fin: editHorarioValues.hora_fin
+      });
+      setIsEditHorarioModalOpen(false);
+      alert("¡Horario actualizado con éxito!");
+    } catch (err) {
+      alert("Error al editar horario: " + err.message);
+    }
+  };
+
+  const handleDeleteHorario = async () => {
+    if (!selectedHorarioId) return;
+    if (window.confirm("¿Estás seguro de que deseas dar de baja esta configuración de horario? Se mantendrá en el historial pero se removerá del cronograma activo.")) {
+      try {
+        await eliminarHorario(selectedHorarioId);
+        setIsEditHorarioModalOpen(false);
+        alert("¡Horario dado de baja con éxito!");
+      } catch (err) {
+        alert("Error al dar de baja el horario: " + err.message);
+      }
     }
   };
 
@@ -188,6 +289,15 @@ const Turnos = () => {
     }
   };
 
+  const toggleConfigDia = (diaVal) => {
+    setNuevoHorario(prev => {
+      const dias = prev.dias.includes(diaVal)
+        ? prev.dias.filter(d => d !== diaVal)
+        : [...prev.dias, diaVal];
+      return { ...prev, dias };
+    });
+  };
+
   return (
     <div className="main-content">
       {/* Encabezado */}
@@ -204,7 +314,7 @@ const Turnos = () => {
           </button>
           <button 
             className="btn-anotar-cliente" 
-            onClick={() => setIsAnotarModalOpen(true)}
+            onClick={openAnotarModal}
           >
             <Plus size={16} /> <span>Anotar Cliente</span>
           </button>
@@ -245,7 +355,34 @@ const Turnos = () => {
               ) : uniqueRanges.length > 0 ? (
                 uniqueRanges.map((range, index) => (
                   <tr key={index}>
-                    <td className="etiqueta-hora columna-fija">{range}</td>
+                    {/* Primera columna: Sticky con lápiz de edición */}
+                    <td className="etiqueta-hora columna-fija">
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        <span>{range}</span>
+                        <button 
+                          type="button"
+                          className="btn-edit-range"
+                          onClick={() => handleOpenEditHorario(range)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#aaa',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '4px',
+                            transition: 'color 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-blue)'}
+                          onMouseLeave={(e) => e.currentTarget.style.color = '#aaa'}
+                          title="Editar franja horaria"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                      </div>
+                    </td>
+                    
                     {['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'].map((dia, dIdx) => {
                       const diaSemanaNum = dIdx + 1; // 1 = Lunes, etc.
                       
@@ -283,7 +420,7 @@ const Turnos = () => {
                               <div className="turno-vacio">-</div>
                             )
                           ) : (
-                            <div className="turno-vacio" style={{ opacity: 0.4 }}>-</div>
+                            <div className="turno-deshabilitado"></div>
                           )}
                         </td>
                       );
@@ -310,22 +447,31 @@ const Turnos = () => {
       >
         <form className="turnos-form" onSubmit={handleAddHorario}>
           <div className="form-section">
-            <p style={{ marginBottom: '15px', color: '#666' }}>Define una nueva franja horaria y el día de la semana correspondiente.</p>
+            <p style={{ marginBottom: '15px', color: '#666' }}>Define una nueva franja horaria y selecciona los días de la semana correspondientes.</p>
+            
             <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
-              <label>Día de la Semana</label>
-              <select 
-                value={nuevoHorario.dia} 
-                onChange={(e) => setNuevoHorario({...nuevoHorario, dia: e.target.value})}
-                required
-              >
-                <option value="1">Lunes</option>
-                <option value="2">Martes</option>
-                <option value="3">Miércoles</option>
-                <option value="4">Jueves</option>
-                <option value="5">Viernes</option>
-                <option value="6">Sábado</option>
-              </select>
+              <label style={{ fontWeight: '600' }}>Días de la Semana</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '8px' }}>
+                {[
+                  { val: '1', label: 'Lunes' },
+                  { val: '2', label: 'Martes' },
+                  { val: '3', label: 'Miércoles' },
+                  { val: '4', label: 'Jueves' },
+                  { val: '5', label: 'Viernes' },
+                  { val: '6', label: 'Sábado' }
+                ].map(d => (
+                  <label key={d.val} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={nuevoHorario.dias.includes(d.val)}
+                      onChange={() => toggleConfigDia(d.val)}
+                    />
+                    <span>{d.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
+
             <div className="form-row">
               <div className="grupo-entrada">
                 <label>Hora Inicio</label>
@@ -363,77 +509,250 @@ const Turnos = () => {
         isOpen={isAnotarModalOpen} 
         onClose={() => setIsAnotarModalOpen(false)} 
         title={<span><UserPlus size={20} className="modal-title-icon" /> Anotar Cliente</span>}
+        contentClassName="turnos-modal-content"
       >
         <form className="turnos-form" onSubmit={handleAnotarSubmit}>
+          
+          {/* Seleccionar Cliente con filtro rápido */}
           <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
-            <label htmlFor="clienteId">Seleccionar Cliente</label>
+            <label htmlFor="clienteId" style={{ fontWeight: '600' }}>Seleccionar Cliente</label>
+            <input 
+              type="text" 
+              placeholder="🔍 Buscar cliente por nombre, apellido o DNI..." 
+              value={clienteSearch}
+              onChange={(e) => setClienteSearch(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '6px',
+                border: '1px solid #ccc',
+                marginBottom: '8px',
+                boxSizing: 'border-box',
+                fontSize: '0.9rem'
+              }}
+            />
             <select 
               id="clienteId" 
               name="clienteId"
               value={anotarValues.clienteId}
               onChange={handleAnotarInputChange}
               required 
+              style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
             >
-              <option value="">-- Seleccione un Cliente --</option>
-              {clientesList.map(c => (
+              <option value="">-- Seleccione un Cliente ({filteredClientes.length} encontrados) --</option>
+              {filteredClientes.map(c => (
                 <option key={c.id} value={c.id}>{c.nombre} {c.apellido} (DNI: {c.dni_cuit})</option>
               ))}
             </select>
           </div>
+
+          {/* Seleccionar Profesional con filtro rápido */}
           <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
-            <label htmlFor="profesionalId">Asignar Profesional (Opcional)</label>
+            <label htmlFor="profesionalId" style={{ fontWeight: '600' }}>Asignar Profesional (Opcional)</label>
+            <input 
+              type="text" 
+              placeholder="🔍 Buscar profesional por nombre o apellido..." 
+              value={profesionalSearch}
+              onChange={(e) => setProfesionalSearch(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '6px',
+                border: '1px solid #ccc',
+                marginBottom: '8px',
+                boxSizing: 'border-box',
+                fontSize: '0.9rem'
+              }}
+            />
             <select 
               id="profesionalId" 
               name="profesionalId"
               value={anotarValues.profesionalId}
               onChange={handleAnotarInputChange}
+              style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
             >
-              <option value="">-- Ninguno / Sin Asignar --</option>
-              {profesionalesList.map(p => (
-                <option key={p.id} value={p.id}>{p.nombre} {p.apellido} ({p.especialidad || 'Prof. General'})</option>
+              <option value="">-- Ninguno / Sin Asignar ({filteredProfesionales.length} encontrados) --</option>
+              {filteredProfesionales.map(p => (
+                <option key={p.id} value={p.id}>{p.nombre} {p.apellido} ({p.especialidad || 'General'})</option>
               ))}
             </select>
           </div>
-          <div className="form-row">
-            <div className="grupo-entrada">
-              <label htmlFor="dia_turno">Día</label>
-              <select 
-                id="dia_turno"
-                name="dia"
-                value={anotarValues.dia}
-                onChange={handleAnotarInputChange}
-              >
-                <option value="lunes">Lunes</option>
-                <option value="martes">Martes</option>
-                <option value="miercoles">Miércoles</option>
-                <option value="jueves">Jueves</option>
-                <option value="viernes">Viernes</option>
-                <option value="sabado">Sábado</option>
-              </select>
-            </div>
-            <div className="grupo-entrada">
-              <label htmlFor="hora_turno">Horario</label>
-              <select 
-                id="hora_turno"
-                name="hora"
-                value={anotarValues.hora}
-                onChange={handleAnotarInputChange}
-                required
-              >
-                <option value="">-- Seleccione Franja --</option>
-                {franjasDelDia.map((f, i) => (
-                  <option key={i} value={f}>{f}</option>
-                ))}
-              </select>
+
+          {/* Múltiples Días checkboxes */}
+          <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
+            <label style={{ fontWeight: '600' }}>Seleccionar Día(s)</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '8px' }}>
+              {[
+                { val: 1, label: 'Lunes' },
+                { val: 2, label: 'Martes' },
+                { val: 3, label: 'Miércoles' },
+                { val: 4, label: 'Jueves' },
+                { val: 5, label: 'Viernes' },
+                { val: 6, label: 'Sábado' }
+              ].map(d => (
+                <label key={d.val} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                  <input 
+                    type="checkbox"
+                    checked={diasSeleccionados.includes(d.val)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setDiasSeleccionados([...diasSeleccionados, d.val]);
+                      } else {
+                        setDiasSeleccionados(diasSeleccionados.filter(v => v !== d.val));
+                      }
+                    }}
+                  />
+                  <span>{d.label}</span>
+                </label>
+              ))}
             </div>
           </div>
-          <div className="pie-formulario">
+
+          {/* Múltiples Horarios checkboxes */}
+          <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
+            <label style={{ fontWeight: '600' }}>Seleccionar Horario(s)</label>
+            {uniqueRanges.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '8px', maxHeight: '150px', overflowY: 'auto', padding: '5px', border: '1px solid #ddd', borderRadius: '6px' }}>
+                {uniqueRanges.map(range => (
+                  <label key={range} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                    <input 
+                      type="checkbox"
+                      checked={horariosSeleccionados.includes(range)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setHorariosSeleccionados([...horariosSeleccionados, range]);
+                        } else {
+                          setHorariosSeleccionados(horariosSeleccionados.filter(r => r !== range));
+                        }
+                      }}
+                    />
+                    <span>{range}</span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: '#e03131', fontSize: '0.85rem', marginTop: '5px' }}>⚠️ No hay franjas horarias configuradas. Agrégalas primero antes de anotar un cliente.</p>
+            )}
+          </div>
+
+          <div className="pie-formulario" style={{ marginTop: '20px' }}>
             <button type="button" className="btn-cancel" onClick={() => setIsAnotarModalOpen(false)}>
               Cancelar
             </button>
             <button type="submit" className="btn-save btn-confirm">
               <Plus size={18} /> <span>Confirmar</span>
             </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal: Editar Horario */}
+      <Modal 
+        isOpen={isEditHorarioModalOpen} 
+        onClose={() => setIsEditHorarioModalOpen(false)} 
+        title={<span><CalendarCheck size={20} className="modal-title-icon" /> Editar Franja Horaria</span>}
+      >
+        <form className="turnos-form" onSubmit={handleEditHorarioSubmit}>
+          <div className="form-section">
+            <p style={{ marginBottom: '15px', color: '#666' }}>
+              Modifica o da de baja la franja horaria configurada.
+            </p>
+
+            {selectedRangeSchedules.length > 1 && (
+              <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
+                <label style={{ fontWeight: '600' }}>Seleccionar configuración específica a modificar</label>
+                <select 
+                  value={selectedHorarioId || ''} 
+                  onChange={handleSelectInstanceToEdit}
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+                >
+                  {selectedRangeSchedules.map(h => {
+                    const dayNames = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado' };
+                    return (
+                      <option key={h.id} value={h.id}>
+                        {dayNames[h.dia_semana]} ({formatTime(h.hora_inicio)} - {formatTime(h.hora_fin)})
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
+
+            <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
+              <label style={{ fontWeight: '600' }}>Día de la Semana</label>
+              <select 
+                name="dia_semana"
+                value={editHorarioValues.dia_semana} 
+                onChange={handleEditHorarioChange}
+                required
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
+              >
+                <option value="1">Lunes</option>
+                <option value="2">Martes</option>
+                <option value="3">Miércoles</option>
+                <option value="4">Jueves</option>
+                <option value="5">Viernes</option>
+                <option value="6">Sábado</option>
+              </select>
+            </div>
+
+            <div className="form-row">
+              <div className="grupo-entrada">
+                <label>Hora Inicio</label>
+                <input 
+                  type="time" 
+                  name="hora_inicio"
+                  value={editHorarioValues.hora_inicio} 
+                  onChange={handleEditHorarioChange}
+                  required 
+                />
+              </div>
+              <div className="grupo-entrada">
+                <label>Hora Fin</label>
+                <input 
+                  type="time" 
+                  name="hora_fin"
+                  value={editHorarioValues.hora_fin} 
+                  onChange={handleEditHorarioChange}
+                  required 
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="pie-formulario" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
+            <button 
+              type="button" 
+              className="btn-delete" 
+              onClick={handleDeleteHorario}
+              style={{
+                backgroundColor: '#fff1f1',
+                border: '1px solid #ffa8a8',
+                color: '#e03131',
+                padding: '10px 16px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '500',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#ffe3e3';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#fff1f1';
+              }}
+            >
+              Dar de Baja
+            </button>
+            
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button type="button" className="btn-cancel" onClick={() => setIsEditHorarioModalOpen(false)}>
+                Cancelar
+              </button>
+              <button type="submit" className="btn-save btn-confirm">
+                Guardar Cambios
+              </button>
+            </div>
           </div>
         </form>
       </Modal>

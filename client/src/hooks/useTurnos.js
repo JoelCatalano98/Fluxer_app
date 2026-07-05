@@ -58,7 +58,11 @@ export const useTurnos = (fechaInicio = null, fechaFin = null) => {
       setError(null);
       const res = await api.post('/api/turnos', turnoData);
       if (res.data.success) {
-        setTurnos(prev => [res.data.data, ...prev]);
+        if (Array.isArray(res.data.data)) {
+          setTurnos(prev => [...res.data.data, ...prev]);
+        } else {
+          setTurnos(prev => [res.data.data, ...prev]);
+        }
         return res.data.data;
       } else {
         throw new Error(res.data.message || 'Error al crear turno');
@@ -116,6 +120,50 @@ export const useTurnos = (fechaInicio = null, fechaFin = null) => {
     }
   };
 
+  const editarHorario = async (id, horarioData) => {
+    try {
+      setError(null);
+      const res = await api.put(`/api/turnos/horarios/${id}`, horarioData);
+      if (res.data.success) {
+        setHorarios(prev => {
+          const updated = prev.map(h => h.id === id ? res.data.data : h);
+          return updated.sort((a, b) => {
+            if (a.dia_semana !== b.dia_semana) {
+              return a.dia_semana - b.dia_semana;
+            }
+            return a.hora_inicio.localeCompare(b.hora_inicio);
+          });
+        });
+        return res.data.data;
+      } else {
+        throw new Error(res.data.message || 'Error al actualizar horario');
+      }
+    } catch (err) {
+      console.error('Error editarHorario:', err);
+      const errMsg = err.response?.data?.message || err.message || 'Error al actualizar horario';
+      setError(errMsg);
+      throw new Error(errMsg);
+    }
+  };
+
+  const eliminarHorario = async (id) => {
+    try {
+      setError(null);
+      const res = await api.delete(`/api/turnos/horarios/${id}`);
+      if (res.data.success) {
+        setHorarios(prev => prev.filter(h => h.id !== id));
+        return true;
+      } else {
+        throw new Error(res.data.message || 'Error al eliminar horario');
+      }
+    } catch (err) {
+      console.error('Error eliminarHorario:', err);
+      const errMsg = err.response?.data?.message || err.message || 'Error al eliminar horario';
+      setError(errMsg);
+      throw new Error(errMsg);
+    }
+  };
+
   return {
     turnos,
     horarios,
@@ -125,6 +173,8 @@ export const useTurnos = (fechaInicio = null, fechaFin = null) => {
     fetchHorarios,
     crearTurno,
     cancelarTurno,
-    crearHorario
+    crearHorario,
+    editarHorario,
+    eliminarHorario
   };
 };
