@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
-import { Pencil, Trash, UserPlus, Save, X, Loader2, AlertTriangle, Check, User } from 'lucide-react';
+import { Pencil, Trash, UserPlus, Save, X, Loader2, AlertTriangle, Check, User, RefreshCw } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
@@ -116,6 +116,20 @@ const ClientesTotales = () => {
     } finally {
       setIsDeleteConfirmOpen(false);
       setClienteToDelete(null);
+    }
+  };
+
+  const handleReactivar = async (cliente) => {
+    if (!window.confirm(`¿Reactivar al cliente ${cliente.nombre} ${cliente.apellido}?`)) return;
+    try {
+      const res = await api.put(`/api/clientes/${cliente.id}`, { estado_cliente: 'ACTIVO' });
+      if (res.data.success) {
+        setClientes(clientes.map(c => c.id === cliente.id ? { ...c, estado_cliente: 'ACTIVO' } : c));
+        alert('Cliente reactivado con éxito');
+      }
+    } catch (err) {
+      console.error('Error handleReactivar:', err);
+      alert('Error al reactivar al cliente');
     }
   };
 
@@ -257,18 +271,29 @@ const ClientesTotales = () => {
                       </span>
                     </td>
                     <td>
-                      <TableActions
-                        onEdit={() => handleEdit(cliente)}
-                        onDelete={() => openDeleteConfirm(cliente)}
-                        containerClassName=""
-                        containerStyle={{ display: 'flex', gap: '10px' }}
-                        editClassName="btn-accion-edit"
-                        deleteClassName="btn-accion-delete"
-                        editTitle="Editar"
-                        deleteTitle="Dar de baja"
-                        editStyle={{ border: 'none', background: '#e1f0ff', color: '#00a8e8', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                        deleteStyle={{ border: 'none', background: '#fff1f1', color: '#e03131', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                      />
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <TableActions
+                          onEdit={() => handleEdit(cliente)}
+                          onDelete={() => openDeleteConfirm(cliente)}
+                          containerClassName=""
+                          containerStyle={{ display: 'flex', gap: '10px' }}
+                          editClassName="btn-accion-edit"
+                          deleteClassName="btn-accion-delete"
+                          editTitle="Editar"
+                          deleteTitle="Dar de baja"
+                          editStyle={{ border: 'none', background: '#e1f0ff', color: '#00a8e8', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                          deleteStyle={{ border: 'none', background: '#fff1f1', color: '#e03131', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                        />
+                        {cliente.estado_cliente === 'INACTIVO' && (
+                          <button
+                            title="Reactivar cliente"
+                            onClick={() => handleReactivar(cliente)}
+                            style={{ border: 'none', background: '#e6f9ee', color: '#2b8a3e', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <RefreshCw size={16} />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

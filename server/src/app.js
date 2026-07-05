@@ -22,6 +22,7 @@ const configuracionRoutes = require('./routes/configuracion.routes');
 const categoriasRoutes = require('./routes/categorias.routes');
 const feriadosRoutes = require('./routes/feriados.routes');
 const calendarioRoutes = require('./routes/calendario.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
 
 app.use('/api/clientes', clientesRoutes);
 app.use('/api/profesionales', profesionalesRoutes);
@@ -31,5 +32,6 @@ app.use('/api/configuracion', configuracionRoutes);
 app.use('/api/categorias', categoriasRoutes);
 app.use('/api/feriados', feriadosRoutes);
 app.use('/api/calendario', calendarioRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 module.exports = app;
