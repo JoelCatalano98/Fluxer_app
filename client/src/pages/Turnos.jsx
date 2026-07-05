@@ -36,15 +36,15 @@ const Turnos = () => {
   const [clienteSearch, setClienteSearch] = useState('');
   const [profesionalSearch, setProfesionalSearch] = useState('');
 
-  // Selección múltiple para agendamiento
+  // Selección múltiple para agendamiento de cliente
   const [diasSeleccionados, setDiasSeleccionados] = useState([]);
   const [horariosSeleccionados, setHorariosSeleccionados] = useState([]);
 
-  // Edición de Horarios
+  // Edición de Horarios (Días Seleccionados por checkboxes)
   const [selectedHorarioId, setSelectedHorarioId] = useState(null);
   const [selectedRangeSchedules, setSelectedRangeSchedules] = useState([]);
+  const [editHorarioDias, setEditHorarioDias] = useState([]);
   const [editHorarioValues, setEditHorarioValues] = useState({
-    dia_semana: '1',
     hora_inicio: '',
     hora_fin: ''
   });
@@ -84,6 +84,19 @@ const Turnos = () => {
     const hours = String(date.getUTCHours()).padStart(2, '0');
     const minutes = String(date.getUTCMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
+  };
+
+  // Calcula la fecha YYYY-MM-DD del día de la semana actual (1=Lunes...6=Sábado)
+  const getFechaDeDiaSemana = (diaSemanaNum) => {
+    const hoy = new Date();
+    const diaActual = hoy.getDay(); // 0=Dom, 1=Lun...
+    const diff = parseInt(diaSemanaNum) - diaActual;
+    const target = new Date(hoy);
+    target.setDate(hoy.getDate() + diff);
+    const y = target.getFullYear();
+    const m = String(target.getMonth() + 1).padStart(2, '0');
+    const d = String(target.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   };
 
   // Obtener franjas horarias únicas ordenadas para las filas de la tabla
@@ -151,11 +164,12 @@ const Turnos = () => {
       return;
     }
 
-    // Resolver los horariosIds correspondientes a las selecciones
-    const targetHorariosIds = [];
+    // Construir pares explícitos { fecha, horarioId } — sin ambigüedad
+    const turnosToCreate = [];
     const missingConfigs = [];
 
     diasSeleccionados.forEach(diaNum => {
+      const fecha = getFechaDeDiaSemana(parseInt(diaNum));
       horariosSeleccionados.forEach(range => {
         const match = horarios.find(h => {
           const hRange = `${formatTime(h.hora_inicio)} - ${formatTime(h.hora_fin)}`;
@@ -163,7 +177,7 @@ const Turnos = () => {
         });
 
         if (match) {
-          targetHorariosIds.push(match.id);
+          turnosToCreate.push({ fecha, horarioId: match.id });
         } else {
           const dayNames = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado' };
           missingConfigs.push(`${dayNames[diaNum]} (${range})`);
@@ -171,7 +185,7 @@ const Turnos = () => {
       });
     });
 
-    if (targetHorariosIds.length === 0) {
+    if (turnosToCreate.length === 0) {
       alert("Ninguna de las combinaciones de día y horario seleccionadas está configurada en el cronograma. Por favor crea primero las franjas horarias correspondientes.");
       return;
     }
@@ -185,7 +199,7 @@ const Turnos = () => {
 
     try {
       await crearTurno({
-        horariosIds: targetHorariosIds,
+        turnos: turnosToCreate,
         clienteId: parseInt(anotarValues.clienteId),
         profesionalId: anotarValues.profesionalId ? parseInt(anotarValues.profesionalId) : null
       });
@@ -211,10 +225,14 @@ const Turnos = () => {
     if (matching.length === 0) return;
 
     setSelectedRangeSchedules(matching);
+    
+    // Marcar por defecto los días que ya tienen configurada esta franja
+    const configuredDays = matching.map(h => h.dia_semana);
+    setEditHorarioDias(configuredDays);
+
     const first = matching[0];
-    setSelectedHorarioId(first.id);
+    setSelectedHorarioId(first.id); // Guardamos la id del base para enviar al endpoint
     setEditHorarioValues({
-      dia_semana: String(first.dia_semana),
       hora_inicio: formatTime(first.hora_inicio),
       hora_fin: formatTime(first.hora_fin)
     });
@@ -229,31 +247,32 @@ const Turnos = () => {
     }));
   };
 
-  const handleSelectInstanceToEdit = (e) => {
-    const hId = parseInt(e.target.value);
-    setSelectedHorarioId(hId);
-    const selected = selectedRangeSchedules.find(h => h.id === hId);
-    if (selected) {
-      setEditHorarioValues({
-        dia_semana: String(selected.dia_semana),
-        hora_inicio: formatTime(selected.hora_inicio),
-        hora_fin: formatTime(selected.hora_fin)
-      });
-    }
+  const toggleEditDia = (diaVal) => {
+    const diaNum = parseInt(diaVal);
+    setEditHorarioDias(prev => 
+      prev.includes(diaNum)
+        ? prev.filter(d => d !== diaNum)
+        : [...prev, diaNum]
+    );
   };
 
   const handleEditHorarioSubmit = async (e) => {
     e.preventDefault();
     if (!selectedHorarioId) return;
 
+    if (editHorarioDias.length === 0) {
+      alert("Por favor selecciona al menos un día. Si deseas quitar la franja por completo, haz clic en 'Dar de Baja'.");
+      return;
+    }
+
     try {
       await editarHorario(selectedHorarioId, {
-        dia_semana: parseInt(editHorarioValues.dia_semana),
+        dias: editHorarioDias,
         hora_inicio: editHorarioValues.hora_inicio,
         hora_fin: editHorarioValues.hora_fin
       });
       setIsEditHorarioModalOpen(false);
-      alert("¡Horario actualizado con éxito!");
+      alert("¡Franja horaria actualizada con éxito!");
     } catch (err) {
       alert("Error al editar horario: " + err.message);
     }
@@ -261,11 +280,11 @@ const Turnos = () => {
 
   const handleDeleteHorario = async () => {
     if (!selectedHorarioId) return;
-    if (window.confirm("¿Estás seguro de que deseas dar de baja esta configuración de horario? Se mantendrá en el historial pero se removerá del cronograma activo.")) {
+    if (window.confirm("¿Estás seguro de que deseas dar de baja esta configuración de horario? Se mantendrá en el historial pero se removerá del cronograma activo en todos los días configurados.")) {
       try {
         await eliminarHorario(selectedHorarioId);
         setIsEditHorarioModalOpen(false);
-        alert("¡Horario dado de baja con éxito!");
+        alert("¡Franja horaria dada de baja con éxito!");
       } catch (err) {
         alert("Error al dar de baja el horario: " + err.message);
       }
@@ -655,45 +674,31 @@ const Turnos = () => {
         <form className="turnos-form" onSubmit={handleEditHorarioSubmit}>
           <div className="form-section">
             <p style={{ marginBottom: '15px', color: '#666' }}>
-              Modifica o da de baja la franja horaria configurada.
+              Modifica la hora de esta franja o selecciona los días de la semana en los que debe estar activa.
             </p>
 
-            {selectedRangeSchedules.length > 1 && (
-              <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
-                <label style={{ fontWeight: '600' }}>Seleccionar configuración específica a modificar</label>
-                <select 
-                  value={selectedHorarioId || ''} 
-                  onChange={handleSelectInstanceToEdit}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
-                >
-                  {selectedRangeSchedules.map(h => {
-                    const dayNames = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado' };
-                    return (
-                      <option key={h.id} value={h.id}>
-                        {dayNames[h.dia_semana]} ({formatTime(h.hora_inicio)} - {formatTime(h.hora_fin)})
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-            )}
-
+            {/* Selector de días de la semana con Checkboxes */}
             <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
-              <label style={{ fontWeight: '600' }}>Día de la Semana</label>
-              <select 
-                name="dia_semana"
-                value={editHorarioValues.dia_semana} 
-                onChange={handleEditHorarioChange}
-                required
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
-              >
-                <option value="1">Lunes</option>
-                <option value="2">Martes</option>
-                <option value="3">Miércoles</option>
-                <option value="4">Jueves</option>
-                <option value="5">Viernes</option>
-                <option value="6">Sábado</option>
-              </select>
+              <label style={{ fontWeight: '600' }}>Días de la Semana</label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '8px' }}>
+                {[
+                  { val: 1, label: 'Lunes' },
+                  { val: 2, label: 'Martes' },
+                  { val: 3, label: 'Miércoles' },
+                  { val: 4, label: 'Jueves' },
+                  { val: 5, label: 'Viernes' },
+                  { val: 6, label: 'Sábado' }
+                ].map(d => (
+                  <label key={d.val} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={editHorarioDias.includes(d.val)}
+                      onChange={() => toggleEditDia(d.val)}
+                    />
+                    <span>{d.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="form-row">

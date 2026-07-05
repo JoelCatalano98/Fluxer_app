@@ -1,7 +1,24 @@
 const prisma = require('../config/prisma');
 
+// Auxiliar: formatea un valor de hora (Date o string ISO) a "HH:MM" en UTC
+const formatTime = (d) => {
+    if (!d) return '';
+    const date = new Date(d);
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+};
+
+// Auxiliar: parsea un string "HH:MM" a un Date UTC válido para columnas TIME
+const parseTimeStr = (timeStr) => {
+    const match = timeStr.match(/^(\d{2}):(\d{2})/);
+    if (match) {
+        return new Date(`1970-01-01T${match[1]}:${match[2]}:00.000Z`);
+    }
+    return new Date(`1970-01-01T${timeStr}:00.000Z`);
+};
+
 // GET /api/turnos
-// Obtener todos los turnos de la semana con filtros de fecha
 const getTurnos = async (req, res) => {
     try {
         const { fechaInicio, fechaFin } = req.query;
@@ -9,28 +26,23 @@ const getTurnos = async (req, res) => {
         const where = {};
         if (fechaInicio && fechaFin) {
             where.fecha = {
-                gte: new Date(fechaInicio),
-                lte: new Date(fechaFin)
+                gte: new Date(fechaInicio + 'T00:00:00.000Z'),
+                lte: new Date(fechaFin + 'T23:59:59.999Z')
             };
         } else {
-            // Por defecto, traer los turnos de la semana actual (Lunes a Sábado)
             const hoy = new Date();
-            const diaSemana = hoy.getDay(); // 0: Domingo, 1: Lunes, etc.
-            
-            // Lunes de esta semana
+            const diaSemana = hoy.getDay();
             const lunes = new Date(hoy);
-            const diffLunes = hoy.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
-            lunes.setDate(diffLunes);
+            lunes.setDate(hoy.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1));
             lunes.setHours(0, 0, 0, 0);
 
-            // Sábado de esta semana
             const sabado = new Date(lunes);
             sabado.setDate(lunes.getDate() + 5);
             sabado.setHours(23, 59, 59, 999);
 
             where.fecha = {
-                gte: lunes,
-                lte: sabado
+                gte: new Date(lunes.toISOString().split('T')[0] + 'T00:00:00.000Z'),
+                lte: new Date(sabado.toISOString().split('T')[0] + 'T23:59:59.999Z')
             };
         }
 
@@ -41,9 +53,7 @@ const getTurnos = async (req, res) => {
                 profesional: true,
                 horario: true
             },
-            orderBy: {
-                id: 'desc'
-            }
+            orderBy: { id: 'desc' }
         });
 
         return res.status(200).json({
@@ -62,21 +72,13 @@ const getTurnos = async (req, res) => {
 };
 
 // POST /api/turnos
-// Crear una nueva reserva (turno) - Soporta agendamiento masivo (múltiples días/horarios)
+// Soporta:
+//   a) Modo explícito (nuevo): { turnos: [{ fecha, horarioId }], clienteId, profesionalId }
+//   b) Modo legacy (simple):   { fecha, horarioId, clienteId, profesionalId }
 const createTurno = async (req, res) => {
     try {
-        const {
-            fecha,
-            fechas,
-            dias,
-            dia,
-            horarioId,
-            horariosIds,
-            clienteId,
-            profesionalId
-        } = req.body;
+        const { turnos, fecha, horarioId, clienteId, profesionalId } = req.body;
 
-        // Validar clienteId obligatorio
         if (!clienteId) {
             return res.status(400).json({
                 success: false,
@@ -88,160 +90,41 @@ const createTurno = async (req, res) => {
         const parsedClienteId = parseInt(clienteId);
         const parsedProfesionalId = profesionalId ? parseInt(profesionalId) : null;
 
-        // Determinar horariosIds a procesar
-        let targetHorariosIds = [];
-        if (Array.isArray(horariosIds)) {
-            targetHorariosIds = horariosIds.map(id => parseInt(id));
-        } else if (Array.isArray(horarioId)) {
-            targetHorariosIds = horarioId.map(id => parseInt(id));
-        } else if (horarioId) {
-            targetHorariosIds = [parseInt(horarioId)];
-        }
+        // Construir la lista limpia de inserciones
+        const creations = [];
 
-        // Determinar fechas a procesar
-        let targetFechas = [];
-        if (Array.isArray(fechas)) {
-            targetFechas = fechas;
-        } else if (Array.isArray(fecha)) {
-            targetFechas = fecha;
-        } else if (fecha) {
-            targetFechas = [fecha];
-        }
-
-        // Si no se pasaron fechas, pero se pasaron dias/dia, calculamos las fechas correspondientes
-        if (targetFechas.length === 0) {
-            let targetDias = [];
-            if (Array.isArray(dias)) {
-                targetDias = dias;
-            } else if (Array.isArray(dia)) {
-                targetDias = dia;
-            } else if (dias !== undefined && dias !== null) {
-                targetDias = [dias];
-            } else if (dia !== undefined && dia !== null) {
-                targetDias = [dia];
-            }
-
-            if (targetDias.length > 0) {
-                const getFechaDeDiaSemana = (diaSemanaNum) => {
-                    const hoy = new Date();
-                    const diaActual = hoy.getDay(); // 0 = Domingo, 1 = Lunes, etc.
-                    const diff = parseInt(diaSemanaNum) - diaActual;
-                    const targetDate = new Date(hoy);
-                    targetDate.setDate(hoy.getDate() + diff);
-                    const y = targetDate.getFullYear();
-                    const m = String(targetDate.getMonth() + 1).padStart(2, '0');
-                    const d = String(targetDate.getDate()).padStart(2, '0');
-                    return `${y}-${m}-${d}`;
-                };
-
-                for (const d of targetDias) {
-                    let dNum = parseInt(d);
-                    if (isNaN(dNum)) {
-                        const mapping = { lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6 };
-                        dNum = mapping[String(d).toLowerCase()] || 1;
-                    }
-                    targetFechas.push(getFechaDeDiaSemana(dNum));
-                }
-            }
-        }
-
-        // Si después de todo no hay fechas o no hay horarios, error
-        if (targetFechas.length === 0 || targetHorariosIds.length === 0) {
-            // Si el frontend envía horariosIds y NO tiene fechas/dias explícitos,
-            // calculamos la fecha de la semana para cada horarioId según su dia_semana configurado
-            if (targetHorariosIds.length > 0) {
-                const configSlots = await prisma.horarioConfig.findMany({
-                    where: { id: { in: targetHorariosIds } }
-                });
-                
-                const getFechaDeDiaSemana = (diaSemanaNum) => {
-                    const hoy = new Date();
-                    const diaActual = hoy.getDay();
-                    const diff = diaSemanaNum - diaActual;
-                    const targetDate = new Date(hoy);
-                    targetDate.setDate(hoy.getDate() + diff);
-                    const y = targetDate.getFullYear();
-                    const m = String(targetDate.getMonth() + 1).padStart(2, '0');
-                    const d = String(targetDate.getDate()).padStart(2, '0');
-                    return `${y}-${m}-${d}`;
-                };
-
-                const creations = configSlots.map(h => ({
-                    fecha: new Date(getFechaDeDiaSemana(h.dia_semana)),
-                    horarioId: h.id,
+        if (Array.isArray(turnos) && turnos.length > 0) {
+            // MODO EXPLÍCITO: cada item trae { fecha: "YYYY-MM-DD", horarioId: N }
+            for (const t of turnos) {
+                if (!t.fecha || !t.horarioId) continue;
+                const fechaStr = String(t.fecha).split('T')[0]; // limpiar a YYYY-MM-DD
+                creations.push({
+                    fecha: new Date(fechaStr + 'T00:00:00.000Z'),
+                    horarioId: parseInt(t.horarioId),
                     clienteId: parsedClienteId,
                     profesionalId: parsedProfesionalId
-                }));
-
-                const conflicts = [];
-                for (const item of creations) {
-                    const existing = await prisma.turnoCliente.findFirst({
-                        where: {
-                            fecha: item.fecha,
-                            horarioId: item.horarioId,
-                            clienteId: item.clienteId
-                        }
-                    });
-                    if (existing) {
-                        conflicts.push(item);
-                    }
-                }
-
-                if (conflicts.length > 0) {
-                    return res.status(400).json({
-                        success: false,
-                        data: null,
-                        message: 'Uno o más turnos ya están reservados para este cliente en las fechas y horarios seleccionados'
-                    });
-                }
-
-                const results = [];
-                for (const item of creations) {
-                    const nuevo = await prisma.turnoCliente.create({
-                        data: {
-                            fecha: item.fecha,
-                            horarioId: item.horarioId,
-                            clienteId: item.clienteId,
-                            profesionalId: item.profesionalId
-                        },
-                        include: {
-                            cliente: true,
-                            profesional: true,
-                            horario: true
-                        }
-                    });
-                    results.push(nuevo);
-                }
-
-                return res.status(201).json({
-                    success: true,
-                    data: results.length === 1 ? results[0] : results,
-                    message: results.length === 1 ? 'Turno reservado con éxito' : 'Turnos reservados con éxito'
                 });
             }
-
-            return res.status(400).json({
-                success: false,
-                data: null,
-                message: 'Debe especificar al menos una fecha (o día) y al menos un horario'
+        } else if (fecha && horarioId) {
+            // MODO LEGACY: un solo turno
+            const fechaStr = String(fecha).split('T')[0];
+            creations.push({
+                fecha: new Date(fechaStr + 'T00:00:00.000Z'),
+                horarioId: parseInt(horarioId),
+                clienteId: parsedClienteId,
+                profesionalId: parsedProfesionalId
             });
         }
 
-        // Si tenemos fechas y horariosIds explícitos (o calculados desde dias), creamos todas las combinaciones
-        const creations = [];
-        for (const f of targetFechas) {
-            for (const hId of targetHorariosIds) {
-                creations.push({
-                    fecha: new Date(f),
-                    horarioId: hId,
-                    clienteId: parsedClienteId,
-                    profesionalId: parsedProfesionalId
-                });
-            }
+        if (creations.length === 0) {
+            return res.status(400).json({
+                success: false,
+                data: null,
+                message: 'Debe especificar al menos un turno con fecha y horarioId'
+            });
         }
 
-        // Validar conflictos de existencia
-        const conflicts = [];
+        // Validar conflictos
         for (const item of creations) {
             const existing = await prisma.turnoCliente.findFirst({
                 where: {
@@ -251,19 +134,15 @@ const createTurno = async (req, res) => {
                 }
             });
             if (existing) {
-                conflicts.push(item);
+                return res.status(400).json({
+                    success: false,
+                    data: null,
+                    message: `El cliente ya tiene un turno reservado el ${item.fecha.toISOString().split('T')[0]} en el horario seleccionado`
+                });
             }
         }
 
-        if (conflicts.length > 0) {
-            return res.status(400).json({
-                success: false,
-                data: null,
-                message: 'Uno o más turnos ya están reservados para este cliente en las fechas y horarios seleccionados'
-            });
-        }
-
-        // Realizar inserciones
+        // Insertar en MySQL
         const results = [];
         for (const item of creations) {
             const nuevo = await prisma.turnoCliente.create({
@@ -285,7 +164,7 @@ const createTurno = async (req, res) => {
         return res.status(201).json({
             success: true,
             data: results.length === 1 ? results[0] : results,
-            message: results.length === 1 ? 'Turno reservado con éxito' : 'Turnos reservados con éxito'
+            message: results.length === 1 ? 'Turno reservado con éxito' : `${results.length} turnos reservados con éxito`
         });
     } catch (error) {
         console.error('Error al crear turno(s):', error);
@@ -299,60 +178,36 @@ const createTurno = async (req, res) => {
         return res.status(500).json({
             success: false,
             data: null,
-            message: 'Error interno del servidor al registrar el turno o los turnos'
+            message: 'Error interno del servidor al registrar el turno'
         });
     }
 };
 
 // DELETE /api/turnos/:id
-// Cancelar una reserva de turno
 const deleteTurno = async (req, res) => {
     try {
         const id = parseInt(req.params.id);
         if (isNaN(id)) {
-            return res.status(400).json({
-                success: false,
-                data: null,
-                message: 'ID de turno no válido'
-            });
+            return res.status(400).json({ success: false, data: null, message: 'ID de turno no válido' });
         }
 
-        await prisma.turnoCliente.delete({
-            where: { id }
-        });
+        await prisma.turnoCliente.delete({ where: { id } });
 
-        return res.status(200).json({
-            success: true,
-            data: null,
-            message: 'Turno cancelado con éxito'
-        });
+        return res.status(200).json({ success: true, data: null, message: 'Turno cancelado con éxito' });
     } catch (error) {
         console.error('Error al cancelar turno:', error);
-
         if (error.code === 'P2025') {
-            return res.status(404).json({
-                success: false,
-                data: null,
-                message: 'Turno no encontrado'
-            });
+            return res.status(404).json({ success: false, data: null, message: 'Turno no encontrado' });
         }
-
-        return res.status(500).json({
-            success: false,
-            data: null,
-            message: 'Error interno del servidor al cancelar el turno'
-        });
+        return res.status(500).json({ success: false, data: null, message: 'Error interno del servidor al cancelar el turno' });
     }
 };
 
 // GET /api/turnos/horarios
-// Obtener la configuración de horarios/franjas horarias ACTIVAS
 const getHorarios = async (req, res) => {
     try {
         const horarios = await prisma.horarioConfig.findMany({
-            where: {
-                activo: true
-            },
+            where: { activo: true },
             orderBy: [
                 { dia_semana: 'asc' },
                 { hora_inicio: 'asc' }
@@ -375,15 +230,13 @@ const getHorarios = async (req, res) => {
 };
 
 // POST /api/turnos/horarios
-// Agregar nuevo(s) horario(s)/franja(s) horaria(s) a la configuración. Soporta múltiples días.
 const createHorario = async (req, res) => {
     try {
         const { dia_semana, dias, hora_inicio, hora_fin } = req.body;
 
         if (!hora_inicio || !hora_fin) {
             return res.status(400).json({
-                success: false,
-                data: null,
+                success: false, data: null,
                 message: 'Los campos hora_inicio y hora_fin son obligatorios'
             });
         }
@@ -392,35 +245,51 @@ const createHorario = async (req, res) => {
         if (Array.isArray(dias)) {
             targetDias = dias;
         } else if (dia_semana !== undefined && dia_semana !== null) {
-            if (Array.isArray(dia_semana)) {
-                targetDias = dia_semana;
-            } else {
-                targetDias = [dia_semana];
-            }
+            targetDias = Array.isArray(dia_semana) ? dia_semana : [dia_semana];
         }
 
         if (targetDias.length === 0) {
             return res.status(400).json({
-                success: false,
-                data: null,
+                success: false, data: null,
                 message: 'Debe especificar al menos un día (dia_semana o dias)'
             });
         }
 
-        const inicioDate = new Date(`1970-01-01T${hora_inicio}:00.000Z`);
-        const finDate = new Date(`1970-01-01T${hora_fin}:00.000Z`);
+        const inicioDate = parseTimeStr(hora_inicio);
+        const finDate = parseTimeStr(hora_fin);
+        const inicioStr = formatTime(inicioDate);
+        const finStr = formatTime(finDate);
 
         const createdHorarios = [];
         for (const dia of targetDias) {
-            const nuevoHorario = await prisma.horarioConfig.create({
-                data: {
-                    dia_semana: parseInt(dia),
-                    hora_inicio: inicioDate,
-                    hora_fin: finDate,
-                    activo: true
-                }
+            const diaInt = parseInt(dia);
+
+            // Buscar si ya existe uno (activo o inactivo) para ese día y hora
+            const allForDay = await prisma.horarioConfig.findMany({
+                where: { dia_semana: diaInt }
             });
-            createdHorarios.push(nuevoHorario);
+            const existing = allForDay.find(h =>
+                formatTime(h.hora_inicio) === inicioStr && formatTime(h.hora_fin) === finStr
+            );
+
+            if (existing) {
+                // Reactivar si estaba inactivo, o simplemente devolver si ya activo
+                const reactivado = await prisma.horarioConfig.update({
+                    where: { id: existing.id },
+                    data: { activo: true }
+                });
+                createdHorarios.push(reactivado);
+            } else {
+                const nuevoHorario = await prisma.horarioConfig.create({
+                    data: {
+                        dia_semana: diaInt,
+                        hora_inicio: inicioDate,
+                        hora_fin: finDate,
+                        activo: true
+                    }
+                });
+                createdHorarios.push(nuevoHorario);
+            }
         }
 
         return res.status(201).json({
@@ -431,106 +300,179 @@ const createHorario = async (req, res) => {
     } catch (error) {
         console.error('Error al crear configuración de horario:', error);
         return res.status(500).json({
-            success: false,
-            data: null,
+            success: false, data: null,
             message: 'Error interno del servidor al configurar el horario'
         });
     }
 };
 
 // PUT /api/turnos/horarios/:id
-// Editar una franja horaria existente
+// Editar una franja horaria: soporta replicación/desactivación multidía mediante array "dias"
 const updateHorario = async (req, res) => {
     try {
         const id = parseInt(req.params.id);
         if (isNaN(id)) {
-            return res.status(400).json({
-                success: false,
-                data: null,
-                message: 'ID de horario no válido'
+            return res.status(400).json({ success: false, data: null, message: 'ID de horario no válido' });
+        }
+
+        const { dias, dia_semana, hora_inicio, hora_fin } = req.body;
+
+        const horarioBase = await prisma.horarioConfig.findUnique({ where: { id } });
+        if (!horarioBase) {
+            return res.status(404).json({ success: false, data: null, message: 'Horario base no encontrado' });
+        }
+
+        // MODO CLÁSICO (sin array de días): edición simple de un solo registro
+        if (!dias || !Array.isArray(dias)) {
+            const dataToUpdate = {};
+            if (dia_semana !== undefined && dia_semana !== null) {
+                dataToUpdate.dia_semana = parseInt(dia_semana);
+            }
+            if (hora_inicio) dataToUpdate.hora_inicio = parseTimeStr(hora_inicio);
+            if (hora_fin) dataToUpdate.hora_fin = parseTimeStr(hora_fin);
+
+            const horarioActualizado = await prisma.horarioConfig.update({
+                where: { id },
+                data: dataToUpdate
             });
+            return res.status(200).json({ success: true, data: horarioActualizado, message: 'Horario actualizado con éxito' });
         }
 
-        const { dia_semana, hora_inicio, hora_fin } = req.body;
+        // MODO MULTIDÍA: sincronizar la familia de franjas hermanas del mismo rango horario
+        const baseInicioStr = formatTime(horarioBase.hora_inicio);
+        const baseFinStr = formatTime(horarioBase.hora_fin);
 
-        const dataToUpdate = {};
-        if (dia_semana !== undefined && dia_semana !== null) {
-            dataToUpdate.dia_semana = parseInt(dia_semana);
-        }
-        if (hora_inicio) {
-            dataToUpdate.hora_inicio = new Date(`1970-01-01T${hora_inicio}:00.000Z`);
-        }
-        if (hora_fin) {
-            dataToUpdate.hora_fin = new Date(`1970-01-01T${hora_fin}:00.000Z`);
-        }
+        // Buscar TODOS los registros de la tabla (activos e inactivos) para poder reutilizar registros
+        const allHorarios = await prisma.horarioConfig.findMany();
 
-        const horarioActualizado = await prisma.horarioConfig.update({
-            where: { id },
-            data: dataToUpdate
-        });
+        // Hermanos activos = mismo rango horario que el base (comparación en memoria, ambos del DB)
+        const hermanosActivos = allHorarios.filter(h =>
+            h.activo === true &&
+            formatTime(h.hora_inicio) === baseInicioStr &&
+            formatTime(h.hora_fin) === baseFinStr
+        );
+
+        const hermanosPorDia = {};
+        hermanosActivos.forEach(h => { hermanosPorDia[h.dia_semana] = h; });
+
+        const targetInicio = parseTimeStr(hora_inicio);
+        const targetFin = parseTimeStr(hora_fin);
+        const targetInicioStr = formatTime(targetInicio);
+        const targetFinStr = formatTime(targetFin);
+        const diasMarcados = dias.map(d => parseInt(d));
+
+        const results = [];
+
+        for (let dia = 1; dia <= 6; dia++) {
+            const estaMarcado = diasMarcados.includes(dia);
+            const hermanoExistente = hermanosPorDia[dia];
+
+            if (estaMarcado) {
+                if (hermanoExistente) {
+                    // Existe activo para este día → actualizar sus horas
+                    const actualizado = await prisma.horarioConfig.update({
+                        where: { id: hermanoExistente.id },
+                        data: { hora_inicio: targetInicio, hora_fin: targetFin }
+                    });
+                    results.push(actualizado);
+                } else {
+                    // No existe hermano activo → buscar si hay un registro inactivo para este día con las NUEVAS horas
+                    const inactivoConNuevaHora = allHorarios.find(h =>
+                        h.dia_semana === dia &&
+                        h.activo === false &&
+                        formatTime(h.hora_inicio) === targetInicioStr &&
+                        formatTime(h.hora_fin) === targetFinStr
+                    );
+
+                    // También buscar inactivo con las VIEJAS horas (por si se reactivó la misma franja)
+                    const inactivoConViejaHora = !inactivoConNuevaHora
+                        ? allHorarios.find(h =>
+                            h.dia_semana === dia &&
+                            h.activo === false &&
+                            formatTime(h.hora_inicio) === baseInicioStr &&
+                            formatTime(h.hora_fin) === baseFinStr
+                        )
+                        : null;
+
+                    const inactivo = inactivoConNuevaHora || inactivoConViejaHora;
+
+                    if (inactivo) {
+                        const reactivado = await prisma.horarioConfig.update({
+                            where: { id: inactivo.id },
+                            data: { hora_inicio: targetInicio, hora_fin: targetFin, activo: true }
+                        });
+                        results.push(reactivado);
+                    } else {
+                        // No existe ningún registro reutilizable → crear nuevo
+                        const nuevo = await prisma.horarioConfig.create({
+                            data: {
+                                dia_semana: dia,
+                                hora_inicio: targetInicio,
+                                hora_fin: targetFin,
+                                activo: true
+                            }
+                        });
+                        results.push(nuevo);
+                    }
+                }
+            } else {
+                // Día NO marcado → si tenía hermano activo, desactivar
+                if (hermanoExistente) {
+                    await prisma.horarioConfig.update({
+                        where: { id: hermanoExistente.id },
+                        data: { activo: false }
+                    });
+                }
+            }
+        }
 
         return res.status(200).json({
             success: true,
-            data: horarioActualizado,
-            message: 'Horario actualizado con éxito'
+            data: results.length > 0 ? results[0] : null,
+            message: 'Franja horaria actualizada con éxito para los días seleccionados'
         });
     } catch (error) {
         console.error('Error al actualizar horario:', error);
-        if (error.code === 'P2025') {
-            return res.status(404).json({
-                success: false,
-                data: null,
-                message: 'Horario no encontrado'
-            });
-        }
         return res.status(500).json({
-            success: false,
-            data: null,
+            success: false, data: null,
             message: 'Error interno del servidor al actualizar el horario'
         });
     }
 };
 
 // DELETE /api/turnos/horarios/:id
-// Dar de baja un horario (baja lógica para proteger datos históricos)
 const deleteHorario = async (req, res) => {
     try {
         const id = parseInt(req.params.id);
         if (isNaN(id)) {
-            return res.status(400).json({
-                success: false,
-                data: null,
-                message: 'ID de horario no válido'
+            return res.status(400).json({ success: false, data: null, message: 'ID de horario no válido' });
+        }
+
+        const horario = await prisma.horarioConfig.findUnique({ where: { id } });
+        if (!horario) {
+            return res.status(404).json({ success: false, data: null, message: 'Horario no encontrado' });
+        }
+
+        // Baja lógica de todos los hermanos activos con el mismo rango (comparación en memoria)
+        const baseInicioStr = formatTime(horario.hora_inicio);
+        const baseFinStr = formatTime(horario.hora_fin);
+
+        const allActive = await prisma.horarioConfig.findMany({ where: { activo: true } });
+        const siblingIds = allActive
+            .filter(h => formatTime(h.hora_inicio) === baseInicioStr && formatTime(h.hora_fin) === baseFinStr)
+            .map(h => h.id);
+
+        if (siblingIds.length > 0) {
+            await prisma.horarioConfig.updateMany({
+                where: { id: { in: siblingIds } },
+                data: { activo: false }
             });
         }
 
-        // Baja lógica: actualizamos el campo activo a false
-        await prisma.horarioConfig.update({
-            where: { id },
-            data: { activo: false }
-        });
-
-        return res.status(200).json({
-            success: true,
-            data: null,
-            message: 'Horario dado de baja con éxito'
-        });
+        return res.status(200).json({ success: true, data: null, message: 'Franja horaria dada de baja con éxito' });
     } catch (error) {
         console.error('Error al dar de baja el horario:', error);
-
-        if (error.code === 'P2025') {
-            return res.status(404).json({
-                success: false,
-                data: null,
-                message: 'Horario no encontrado'
-            });
-        }
-
-        return res.status(500).json({
-            success: false,
-            data: null,
-            message: 'Error interno del servidor al dar de baja el horario'
-        });
+        return res.status(500).json({ success: false, data: null, message: 'Error interno del servidor al dar de baja el horario' });
     }
 };
 

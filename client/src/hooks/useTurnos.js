@@ -98,16 +98,8 @@ export const useTurnos = (fechaInicio = null, fechaFin = null) => {
       setError(null);
       const res = await api.post('/api/turnos/horarios', horarioData);
       if (res.data.success) {
-        setHorarios(prev => {
-          const updated = [...prev, res.data.data];
-          // Ordenar por dia_semana y luego por hora_inicio
-          return updated.sort((a, b) => {
-            if (a.dia_semana !== b.dia_semana) {
-              return a.dia_semana - b.dia_semana;
-            }
-            return a.hora_inicio.localeCompare(b.hora_inicio);
-          });
-        });
+        // Refrescar desde el server para obtener el estado más limpio
+        await fetchHorarios();
         return res.data.data;
       } else {
         throw new Error(res.data.message || 'Error al configurar horario');
@@ -125,15 +117,7 @@ export const useTurnos = (fechaInicio = null, fechaFin = null) => {
       setError(null);
       const res = await api.put(`/api/turnos/horarios/${id}`, horarioData);
       if (res.data.success) {
-        setHorarios(prev => {
-          const updated = prev.map(h => h.id === id ? res.data.data : h);
-          return updated.sort((a, b) => {
-            if (a.dia_semana !== b.dia_semana) {
-              return a.dia_semana - b.dia_semana;
-            }
-            return a.hora_inicio.localeCompare(b.hora_inicio);
-          });
-        });
+        await fetchHorarios();
         return res.data.data;
       } else {
         throw new Error(res.data.message || 'Error al actualizar horario');
@@ -151,7 +135,7 @@ export const useTurnos = (fechaInicio = null, fechaFin = null) => {
       setError(null);
       const res = await api.delete(`/api/turnos/horarios/${id}`);
       if (res.data.success) {
-        setHorarios(prev => prev.filter(h => h.id !== id));
+        await fetchHorarios();
         return true;
       } else {
         throw new Error(res.data.message || 'Error al eliminar horario');
