@@ -21,6 +21,7 @@ const turnosRoutes = require('./routes/turnos.routes');
 const configuracionRoutes = require('./routes/configuracion.routes');
 const categoriasRoutes = require('./routes/categorias.routes');
 const feriadosRoutes = require('./routes/feriados.routes');
+const calendarioRoutes = require('./routes/calendario.routes');
 
 app.use('/api/clientes', clientesRoutes);
 app.use('/api/profesionales', profesionalesRoutes);
@@ -29,5 +30,6 @@ app.use('/api/turnos', turnosRoutes);
 app.use('/api/configuracion', configuracionRoutes);
 app.use('/api/categorias', categoriasRoutes);
 app.use('/api/feriados', feriadosRoutes);
+app.use('/api/calendario', calendarioRoutes);
 
 module.exports = app;

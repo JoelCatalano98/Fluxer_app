@@ -145,6 +145,11 @@ const Navbar = ({ onOpenCalendar, isOpen }) => {
               <li onClick={onOpenCalendar} style={{ cursor: 'pointer' }}>
                 Mensual
               </li>
+              <li>
+                <NavLink to="/calendario" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Agenda de Notas
+                </NavLink>
+              </li>
             </ul>
           </details>
         </li>

@@ -154,3 +154,14 @@ model Feriado {
 
   @@map("feriados")
 }
+
+model CalendarioNota {
+  id          Int      @id @default(autoincrement())
+  fecha       String   // Formato YYYY-MM-DD
+  contenido   String   @db.Text
+  horaAlarma  String?  // Formato HH:MM (Opcional)
+  notificado  Boolean  @default(false)
+
+  @@map("calendario_notas")
+}
+
