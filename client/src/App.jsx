@@ -10,7 +10,7 @@ import Calendar from './components/Calendar';
 import Dashboard from './pages/Dashboard';
 import Socios from './pages/Socios';
 import Turnos from './pages/Turnos';
-import ConfiguracionLocal from './pages/ConfiguracionLocal';
+import Configuracion from './pages/Configuracion';
 import GestionPlanes from './pages/GestionPlanes';
 import ClientesTotales from './pages/ClientesTotales';
 import Morosos from './pages/Morosos';
@@ -73,7 +73,7 @@ function AppContent() {
             <Route path="/profesionales" element={<Profesionales />} />
             <Route path="/turnos" element={<Turnos />} />
             <Route path="/gestion-planes" element={<GestionPlanes />} />
-            <Route path="/configuracion-local" element={<ConfiguracionLocal />} />
+            <Route path="/configuracion" element={<Configuracion />} />
             <Route path="/categorias" element={<Categorias />} />
             <Route path="/feriados" element={<Feriados />} />
             <Route path="/pagos" element={<Pagos />} />

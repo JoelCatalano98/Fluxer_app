@@ -142,6 +142,28 @@ const createTurno = async (req, res) => {
             }
         }
 
+        // Validar capacidad máxima si bloquearCapacidad está activo
+        const config = await prisma.configuracion.findUnique({ where: { id: 1 } });
+        if (config && config.bloquearCapacidad) {
+            const limite = config.capacidadMaxima;
+            for (const item of creations) {
+                const count = await prisma.turnoCliente.count({
+                    where: {
+                        fecha: item.fecha,
+                        horarioId: item.horarioId
+                    }
+                });
+
+                if (count >= limite) {
+                    return res.status(400).json({
+                        success: false,
+                        data: null,
+                        message: `Capacidad Máxima Alcanzada (Límite: ${limite} personas)`
+                    });
+                }
+            }
+        }
+
         // Insertar en MySQL
         const results = [];
         for (const item of creations) {

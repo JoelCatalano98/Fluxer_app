@@ -1,268 +1,340 @@
-import { useState } from 'react';
-import { SquarePlus, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { SquarePlus, Trash2, Pencil, Loader2, CalendarCheck, AlertTriangle } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
-import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
-import { useConfirmModal } from '../hooks/useConfirmModal';
-
-// Sub-componentes modulares importados
-import CategoryCard from '../components/CategoryCard';
-import CategoryFormModal from '../components/CategoryFormModal';
-import AssignPlanModal from '../components/AssignPlanModal';
-
+import Modal from '../components/Modal';
+import api from '../services/api';
 import '../styles/style.css';
-import '../styles/utilidades/categorias_etiquetas.css';
 
 const Categorias = () => {
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [categorias, setCategorias] = useState([]);
+  const [planes, setPlanes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // selectedCategory se usa solo para el modal de crear/editar (form)
-  const [selectedCategory, setSelectedCategory] = useState(null);
+  // Estados de Modales
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [selectedCategoria, setSelectedCategoria] = useState(null);
 
-  const [nuevaCategoria, setNuevaCategoria] = useState({
+  // Estado de Formulario
+  const [formValues, setFormValues] = useState({
     nombre: '',
-    color: '#00a8e8',
-    rubro: ''
-  });
-
-  const [assignment, setAssignment] = useState({
     planId: ''
   });
 
-  // --- Hooks de modales de confirmación / selección ---
-  const assignPlanModal = useConfirmModal();
-  const deletePlanModal = useConfirmModal();
-  const deleteCategoryModal = useConfirmModal();
+  const [submitting, setSubmitting] = useState(false);
 
-  // Mock de planes
-  const planesMock = [
-    { id: '1', nombre: 'Musculación' },
-    { id: '2', nombre: 'Full Entrenamiento' },
-    { id: '3', nombre: 'Pilates Por Clase' },
-    { id: '4', nombre: 'Crosfit/Mensual' },
-  ];
+  // Cargar categorías y planes
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-  // Mock de categorías
-  const [categories, setCategories] = useState([
-    { id: '1', nombre: 'CrossFit', color: '#00a8e8', rubro: 'Fitness', planes: ['Full Entrenamiento', 'Crosfit/Mensual'] },
-    { id: '2', nombre: 'Psicología', color: '#40c057', rubro: 'Salud', planes: [] },
-  ]);
+      const [resCategorias, resPlanes] = await Promise.all([
+        api.get('/api/categorias'),
+        api.get('/api/planes')
+      ]);
 
-  const handleEditCategory = (category) => {
-    if (!category) return;
-
-    setSelectedCategory(category);
-    setNuevaCategoria({
-      nombre: category.nombre,
-      color: category.color,
-      rubro: category.rubro || ''
-    });
-
-    setIsCategoryModalOpen(true);
-  };
-
-  const handleDeleteCategory = (category) => {
-    if (!category) return;
-    deleteCategoryModal.openModal(category);
-  };
-
-  const handleConfirmDeleteCategory = () => {
-    const category = deleteCategoryModal.selectedItem;
-    if (!category) return;
-
-    setCategories(prev => prev.filter(cat => cat.id !== category.id));
-    deleteCategoryModal.closeModal();
-  };
-
-  const handleCategoryInputChange = (e) => {
-    const { id, value } = e.target;
-    setNuevaCategoria(prev => ({ ...prev, [id]: value }));
-  };
-
-  const handleCreateCategory = (e) => {
-    e.preventDefault();
-    if (selectedCategory) {
-      // Edición de categoría existente
-      setCategories(prev => prev.map(cat => {
-        if (cat.id === selectedCategory.id) {
-          return {
-            ...cat,
-            nombre: nuevaCategoria.nombre,
-            color: nuevaCategoria.color,
-            rubro: nuevaCategoria.rubro
-          };
-        }
-        return cat;
-      }));
-      alert("Categoría editada con éxito");
-    } else {
-      // Creación de nueva categoría
-      const newCat = {
-        ...nuevaCategoria,
-        id: Date.now().toString(),
-        planes: []
-      };
-      setCategories([...categories, newCat]);
-      alert("Categoría creada con éxito");
+      if (resCategorias.data.success) {
+        setCategorias(resCategorias.data.data);
+      }
+      if (resPlanes.data.success) {
+        // Asumiendo que resPlanes.data.data es la lista de planes
+        setPlanes(resPlanes.data.data);
+      }
+    } catch (err) {
+      console.error('Error al cargar datos de categorías/planes:', err);
+      setError('Error al conectar con el servidor. No se pudieron obtener los datos.');
+    } finally {
+      setLoading(false);
     }
-    setIsCategoryModalOpen(false);
-    setSelectedCategory(null);
-    setNuevaCategoria({ nombre: '', color: '#00a8e8', rubro: '' });
   };
 
-  const handleOpenAssignModal = (category) => {
-    assignPlanModal.openModal(category);
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleInputChange = (e) => {
+    const { id, value } = e.target;
+    setFormValues(prev => ({
+      ...prev,
+      [id]: value
+    }));
   };
 
-  const handleAssignPlan = (e) => {
+  const openCreateModal = () => {
+    setSelectedCategoria(null);
+    setFormValues({
+      nombre: '',
+      planId: ''
+    });
+    setIsFormModalOpen(true);
+  };
+
+  const openEditModal = (categoria) => {
+    setSelectedCategoria(categoria);
+    setFormValues({
+      nombre: categoria.nombre,
+      planId: categoria.planId ? String(categoria.planId) : ''
+    });
+    setIsFormModalOpen(true);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!assignment.planId) return;
+    try {
+      setSubmitting(true);
+      const payload = {
+        nombre: formValues.nombre,
+        planId: formValues.planId ? parseInt(formValues.planId) : null
+      };
 
-    const category = assignPlanModal.selectedItem;
-    if (!category) return;
-
-    const plan = planesMock.find(p => p.id === assignment.planId);
-    setCategories(categories.map(cat => {
-      if (cat.id === category.id) {
-        return { ...cat, planes: [...cat.planes, plan.nombre] };
+      if (selectedCategoria) {
+        // Editar
+        const res = await api.put(`/api/categorias/${selectedCategoria.id}`, payload);
+        if (res.data.success) {
+          alert('¡Categoría actualizada con éxito!');
+        }
+      } else {
+        // Crear
+        const res = await api.post('/api/categorias', payload);
+        if (res.data.success) {
+          alert('¡Categoría creada con éxito!');
+        }
       }
-      return cat;
-    }));
 
-    assignPlanModal.closeModal();
-    setAssignment({ planId: '' });
-    alert(`Plan asignado a ${category.nombre}`);
+      setIsFormModalOpen(false);
+      loadData();
+    } catch (err) {
+      console.error('Error al guardar categoría:', err);
+      alert('Ocurrió un error al guardar la categoría.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleOpenDeleteConfirm = (category, planIndex) => {
-    deletePlanModal.openModal(category, planIndex);
-  };
+  const handleDelete = async (categoria) => {
+    const confirm = window.confirm(`¿Estás seguro de que deseas dar de baja la categoría "${categoria.nombre}"?`);
+    if (!confirm) return;
 
-  const handleConfirmDelete = () => {
-    const category = deletePlanModal.selectedItem;
-    const planIndex = deletePlanModal.extraData;
-    if (category === null || planIndex === null) return;
-
-    setCategories(categories.map(cat => {
-      if (cat.id === category.id) {
-        const newPlanes = [...cat.planes];
-        newPlanes.splice(planIndex, 1);
-        return { ...cat, planes: newPlanes };
+    try {
+      const res = await api.delete(`/api/categorias/${categoria.id}`);
+      if (res.data.success) {
+        alert('¡Categoría eliminada con éxito!');
+        loadData();
       }
-      return cat;
-    }));
-    deletePlanModal.closeModal();
+    } catch (err) {
+      console.error('Error al dar de baja categoría:', err);
+      alert('Error al intentar dar de baja la categoría.');
+    }
   };
 
   return (
     <div className="main-content">
+      {/* Encabezado */}
       <PageHeader
-        title="Categorías y Etiquetas"
-        subtitle="Organiza y clasifica tus servicios y planes"
+        title="Categorías de Actividades"
+        subtitle="Mapea las actividades de tu gimnasio y vinculalas con los planes"
         image="/img/welcome-background.png"
       />
 
-      <div style={{ padding: '20px 30px' }}>
+      {/* Alerta de Error */}
+      {error && (
+        <div style={{ backgroundColor: '#fff1f1', color: '#e03131', padding: '15px', borderRadius: '8px', margin: '20px 30px 0 30px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <AlertTriangle size={20} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Botón de Acción */}
+      <div style={{ padding: '20px 30px 10px 30px', display: 'flex', justifyContent: 'flex-start' }}>
         <button 
           className="btn-primary" 
-          onClick={() => {
-            setSelectedCategory(null);
-            setNuevaCategoria({ nombre: '', color: '#00a8e8', rubro: '' });
-            setIsCategoryModalOpen(true);
+          onClick={openCreateModal}
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '8px', 
+            padding: '10px 20px', 
+            borderRadius: '8px', 
+            fontWeight: '600'
           }}
-          style={{ width: 'auto', height: 'auto', padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: '#00a8e8', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
         >
-          <SquarePlus size={20} /> Nueva Categoría
+          <SquarePlus size={18} /> Nueva Categoría
         </button>
       </div>
 
-      <div style={{ padding: '0 30px 40px 30px' }}>
-        <div className="grid-categorias" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
-          {categories.map(category => (
-            <CategoryCard
-              key={category.id}
-              category={category}
-              onEdit={handleEditCategory}
-              onDelete={handleDeleteCategory}
-              onOpenAssign={handleOpenAssignModal}
-              onOpenRemovePlan={handleOpenDeleteConfirm}
-            />
-          ))}
+      {/* Tabla de Datos */}
+      <div className="table-section" style={{ padding: '0 30px 40px 30px' }}>
+        <div className="contenedor-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th style={{ width: '80px' }}>ID</th>
+                <th>Nombre de la Categoría</th>
+                <th>Plan Asociado</th>
+                <th style={{ width: '120px', textAlign: 'center' }}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="4" style={{ textAlign: 'center', padding: '40px' }}>
+                    <Loader2 className="animate-spin" style={{ margin: '0 auto', color: 'var(--accent-blue)' }} />
+                    <p style={{ marginTop: '10px', color: '#666' }}>Cargando categorías...</p>
+                  </td>
+                </tr>
+              ) : categorias.length > 0 ? (
+                categorias.map((cat) => (
+                  <tr key={cat.id}>
+                    <td>{cat.id}</td>
+                    <td style={{ fontWeight: '600', color: 'var(--primary-dark)' }}>{cat.nombre}</td>
+                    <td>
+                      {cat.plan ? (
+                        <span style={{ 
+                          backgroundColor: '#e1f0ff', 
+                          color: 'var(--accent-blue)', 
+                          padding: '4px 10px', 
+                          borderRadius: '6px', 
+                          fontWeight: '600',
+                          fontSize: '0.85rem'
+                        }}>
+                          {cat.plan.nombre}
+                        </span>
+                      ) : (
+                        <span style={{ color: '#888', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                          Sin Plan asignado
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                        <button
+                          onClick={() => openEditModal(cat)}
+                          title="Editar"
+                          style={{
+                            border: 'none',
+                            background: '#f0f4f8',
+                            color: '#00a8e8',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(cat)}
+                          title="Dar de baja"
+                          style={{
+                            border: 'none',
+                            background: '#fff1f1',
+                            color: '#e03131',
+                            padding: '6px 10px',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" style={{ textAlign: 'center', padding: '30px', color: '#666' }}>
+                    No hay categorías registradas en el sistema.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* Modal Nueva/Editar Categoría Modular */}
-      <CategoryFormModal 
-        isOpen={isCategoryModalOpen} 
-        onClose={() => {
-          setIsCategoryModalOpen(false);
-          setSelectedCategory(null);
-        }} 
-        onSubmit={handleCreateCategory}
-        selectedCategory={selectedCategory}
-        categoriaState={nuevaCategoria}
-        onChange={handleCategoryInputChange}
-      />
+      {/* Modal de Formulario (Crear/Editar) */}
+      <Modal
+        isOpen={isFormModalOpen}
+        onClose={() => setIsFormModalOpen(false)}
+        title={
+          <span>
+            <CalendarCheck size={20} className="modal-title-icon" />{' '}
+            {selectedCategoria ? 'Editar Categoría' : 'Nueva Categoría'}
+          </span>
+        }
+      >
+        <form className="turnos-form" onSubmit={handleSubmit}>
+          <div className="form-section">
+            <p style={{ marginBottom: '20px', color: '#666' }}>
+              {selectedCategoria 
+                ? 'Modifica los datos de la categoría seleccionada.' 
+                : 'Completa los siguientes campos para registrar una nueva actividad.'}
+            </p>
 
-      {/* Modal Asignar Plan Modular */}
-      <AssignPlanModal 
-        isOpen={assignPlanModal.isOpen} 
-        onClose={() => assignPlanModal.closeModal()} 
-        onSubmit={handleAssignPlan}
-        selectedCategoryName={assignPlanModal.selectedItem?.nombre || ''}
-        planes={planesMock}
-        assignedPlanId={assignment.planId}
-        onPlanChange={(val) => setAssignment({ planId: val })}
-      />
+            <div className="grupo-entrada" style={{ marginBottom: '20px' }}>
+              <label htmlFor="nombre" style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Nombre de la Categoría *</label>
+              <input
+                type="text"
+                id="nombre"
+                value={formValues.nombre}
+                onChange={handleInputChange}
+                placeholder="Ej: CrossFit, Spinning, Funcional"
+                required
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
 
-      {/* Modal Confirmar Eliminación de Plan */}
-      <ConfirmDeleteModal
-        isOpen={deletePlanModal.isOpen}
-        title="Confirmar eliminación"
-        message={<>¿Estás seguro de que quieres eliminar el plan <strong>{deletePlanModal.selectedItem?.planes[deletePlanModal.extraData]}</strong> de la categoría <strong>{deletePlanModal.selectedItem?.nombre}</strong>?</>}
-        warning="Esta acción no se puede deshacer."
-        icon={<AlertCircle size={48} color="#ff6b6b" style={{ marginBottom: '15px' }} />}
-        onCancel={() => deletePlanModal.closeModal()}
-        onConfirm={handleConfirmDelete}
-        cancelLabel="Cancelar"
-        confirmLabel="Eliminar Plan"
-        containerClassName=""
-        containerStyle={{ padding: '10px', textAlign: 'center' }}
-        messageClassName=""
-        messageStyle={{ fontSize: '1.1rem', color: '#333', marginBottom: '10px' }}
-        warningClassName=""
-        warningStyle={{ fontSize: '0.9rem', color: '#666' }}
-        actionsClassName="acciones-formulario"
-        actionsStyle={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '15px' }}
-        cancelClassName="btn-secondary"
-        cancelStyle={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}
-        confirmClassName=""
-        confirmStyle={{ padding: '10px 25px', borderRadius: '8px', border: 'none', background: '#ff6b6b', color: 'white', fontWeight: '600', cursor: 'pointer' }}
-      />
+            <div className="grupo-entrada" style={{ marginBottom: '20px' }}>
+              <label htmlFor="planId" style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Asignar Plan</label>
+              <select
+                id="planId"
+                value={formValues.planId}
+                onChange={handleInputChange}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
+              >
+                <option value="">-- Sin Plan (Selecciona uno para vincular) --</option>
+                {planes.map(plan => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.nombre} ({plan.frecuencia})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-      {/* Modal Confirmar Eliminación de Categoría */}
-      <ConfirmDeleteModal
-        isOpen={deleteCategoryModal.isOpen}
-        title="Confirmar eliminación"
-        message={<>¿Estás seguro de que quieres eliminar la categoría <strong>{deleteCategoryModal.selectedItem?.nombre}</strong>?</>}
-        warning="Esta acción no se puede deshacer y quitará todos los planes asignados a esta categoría."
-        icon={<AlertCircle size={48} color="#ff6b6b" style={{ marginBottom: '15px' }} />}
-        onCancel={() => deleteCategoryModal.closeModal()}
-        onConfirm={handleConfirmDeleteCategory}
-        cancelLabel="Cancelar"
-        confirmLabel="Eliminar Categoría"
-        containerClassName=""
-        containerStyle={{ padding: '10px', textAlign: 'center' }}
-        messageClassName=""
-        messageStyle={{ fontSize: '1.1rem', color: '#333', marginBottom: '10px' }}
-        warningClassName=""
-        warningStyle={{ fontSize: '0.9rem', color: '#666' }}
-        actionsClassName="acciones-formulario"
-        actionsStyle={{ marginTop: '30px', display: 'flex', justifyContent: 'center', gap: '15px' }}
-        cancelClassName="btn-secondary"
-        cancelStyle={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}
-        confirmClassName=""
-        confirmStyle={{ padding: '10px 25px', borderRadius: '8px', border: 'none', background: '#ff6b6b', color: 'white', fontWeight: '600', cursor: 'pointer' }}
-      />
+          <div className="acciones-formulario" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setIsFormModalOpen(false)}
+              disabled={submitting}
+              style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #ddd', cursor: 'pointer' }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              className="btn-save-config"
+              disabled={submitting}
+              style={{ 
+                padding: '10px 25px', 
+                borderRadius: '8px', 
+                border: 'none', 
+                background: 'var(--accent-blue)', 
+                color: 'white', 
+                fontWeight: '600', 
+                cursor: 'pointer'
+              }}
+            >
+              {submitting ? 'Guardando...' : 'Confirmar'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

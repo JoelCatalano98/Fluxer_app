@@ -5,7 +5,8 @@ const app = express();
 
 // Middlewares globales
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Ruta de prueba inicial
 app.get('/', (req, res) => {
@@ -17,10 +18,14 @@ const clientesRoutes = require('./routes/clientes.routes');
 const profesionalesRoutes = require('./routes/profesionales.routes');
 const planesRoutes = require('./routes/planes.routes');
 const turnosRoutes = require('./routes/turnos.routes');
+const configuracionRoutes = require('./routes/configuracion.routes');
+const categoriasRoutes = require('./routes/categorias.routes');
 
 app.use('/api/clientes', clientesRoutes);
 app.use('/api/profesionales', profesionalesRoutes);
 app.use('/api/planes', planesRoutes);
 app.use('/api/turnos', turnosRoutes);
+app.use('/api/configuracion', configuracionRoutes);
+app.use('/api/categorias', categoriasRoutes);
 
 module.exports = app;
