@@ -22,21 +22,18 @@ const getDashboardMetrics = async (req, res) => {
     let startOfRange, endOfRange;
 
     if (rango === 'mensual') {
-      startOfRange = new Date(today.getFullYear(), today.getMonth(), 1);
-      startOfRange.setHours(0, 0, 0, 0);
-      endOfRange = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      endOfRange.setHours(23, 59, 59, 999);
+      startOfRange = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0));
+      endOfRange = new Date(Date.UTC(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999));
     } else {
-      // Semanal: Lunes 00:00 → Domingo 23:59
-      const dayOfWeek = today.getDay(); // 0=Dom, 1=Lun...
-      const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-      startOfRange = new Date(today);
-      startOfRange.setDate(today.getDate() + diffToMonday);
-      startOfRange.setHours(0, 0, 0, 0);
+      // Semanal: Lunes 00:00 → Domingo 23:59 (UTC puro)
+      const hoy = new Date();
+      const diaSemana = hoy.getDay() === 0 ? 7 : hoy.getDay(); 
+      const diffLunes = hoy.getDate() - diaSemana + 1;
 
-      endOfRange = new Date(startOfRange);
-      endOfRange.setDate(startOfRange.getDate() + 6);
-      endOfRange.setHours(23, 59, 59, 999);
+      startOfRange = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), diffLunes, 0, 0, 0, 0));
+      endOfRange = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), diffLunes + 6, 23, 59, 59, 999));
+      
+      // console.log("Buscando turnos desde:", startOfRange, "hasta:", endOfRange);
     }
 
     // ─── 2. Clientes activos con categoría y plan ────────────
@@ -63,6 +60,14 @@ const getDashboardMetrics = async (req, res) => {
     let ingresosProyectados = 0;
     const disciplinaMap = {};
     const planMap = {};
+
+    // const desgloseIngresos = clientes.map(c => ({
+    //     nombre: c.nombre,
+    //     planAsignado: c.categoria?.plan?.nombre || 'Ninguno',
+    //     precioPlan: Number(c.categoria?.plan?.precio || 0)
+    // }));
+    // console.log("=== DESGLOSE DE INGRESOS ===");
+    // console.table(desgloseIngresos);
 
     clientes.forEach(cliente => {
       // Agrupar por nombre de categoría (todos los clientes activos, sean socios o no)
