@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 
-const Navbar = ({ onOpenCalendar, isOpen }) => {
+const Navbar = ({ isOpen }) => {
   const [config, setConfig] = useState({
     nombreGimnasio: 'FLUXER',
     logoBase64: null
@@ -137,21 +137,9 @@ const Navbar = ({ onOpenCalendar, isOpen }) => {
         </li>
 
         <li>
-          <details open>
-            <summary style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', listStyle: 'none', padding: '10px 0' }}>
-              <Calendar size={20} style={{ marginRight: '10px', color: '#00a8e8' }} /> <span>Calendario</span>
-            </summary>
-            <ul className="submenu">
-              <li onClick={onOpenCalendar} style={{ cursor: 'pointer' }}>
-                Mensual
-              </li>
-              <li>
-                <NavLink to="/calendario" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Agenda de Notas
-                </NavLink>
-              </li>
-            </ul>
-          </details>
+          <NavLink to="/calendario" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', padding: '10px 0' }}>
+            <Calendar size={20} style={{ marginRight: '10px', color: '#00a8e8' }} /> <span>Calendario</span>
+          </NavLink>
         </li>
       </ul>
     </aside>

@@ -4,7 +4,6 @@ import Navbar from './components/Navbar';
 import Topbar from './components/Topbar';
 import Footer from './components/Footer';
 import Modal from './components/Modal';
-import Calendar from './components/Calendar';
 
 // Páginas
 import Dashboard from './pages/Dashboard';
@@ -27,7 +26,6 @@ import './styles/style.css';
 
 function AppContent() {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeAlarms, setActiveAlarms] = useState([]);
   const [isAlarmModalOpen, setIsAlarmModalOpen] = useState(false);
@@ -137,7 +135,7 @@ function AppContent() {
   return (
     <div className={`app-layout ${isSidebarOpen ? 'sidebar-open' : ''}`} style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
       {/* Sidebar - Ancho fijo */}
-      <Navbar onOpenCalendar={() => setIsCalendarOpen(true)} isOpen={isSidebarOpen} /> 
+      <Navbar isOpen={isSidebarOpen} /> 
       
       {/* Overlay para cerrar el menú en móviles */}
       {isSidebarOpen && <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)}></div>}
@@ -165,16 +163,6 @@ function AppContent() {
         
         <Footer />
       </div>
-
-      <Modal 
-        isOpen={isCalendarOpen} 
-        onClose={() => setIsCalendarOpen(false)} 
-        title="Agenda de Turnos Mensual"
-      >
-        <div style={{ padding: '10px' }}>
-          <Calendar />
-        </div>
-      </Modal>
 
       {/* Modal de Alerta de Alarma */}
       <Modal
