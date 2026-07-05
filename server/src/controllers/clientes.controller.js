@@ -50,7 +50,10 @@ const getClientes = async (req, res) => {
         return res.status(200).json({
             success: true,
             data: {
-                clientes,
+                clientes: clientes.map(c => ({
+                    ...c,
+                    plan: c.categoria?.plan || null
+                })),
                 total,
                 page: p,
                 limit: l,

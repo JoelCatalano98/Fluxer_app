@@ -56,17 +56,15 @@ const getDashboardMetrics = async (req, res) => {
       }
     });
 
-    let totalSocios = 0;
+    const totalSocios = await prisma.cliente.count({
+      where: { estado_cliente: 'ACTIVO' }
+    });
+
     let ingresosProyectados = 0;
     const disciplinaMap = {};
     const planMap = {};
 
     clientes.forEach(cliente => {
-      // Solo contar socios activos para el KPI de "Clientes Activos"
-      if (cliente.es_socio) {
-        totalSocios++;
-      }
-
       // Agrupar por nombre de categoría (todos los clientes activos, sean socios o no)
       if (cliente.categoria) {
         const catName = cliente.categoria.nombre || 'Sin Categoría';
