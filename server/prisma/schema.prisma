@@ -8,18 +8,18 @@ datasource db {
 }
 
 model Usuario {
-  id              Int      @id @default(autoincrement())
-  nombre          String   @default("Admin")
-  usuario         String   @unique
-  email           String   @unique
+  id              Int     @id @default(autoincrement())
+  nombre          String  @default("Admin")
+  usuario         String  @unique
+  email           String  @unique
   password        String
-  esSuperAdmin    Boolean  @default(false)
-  esAdmin         Boolean  @default(false)
-  permisoFinanzas Boolean  @default(false)
-  permisoTurnos   Boolean  @default(false)
-  permisoClientes Boolean  @default(false)
-  permisoPlanes   Boolean  @default(false)
-  permisoFeriados Boolean  @default(false)
+  esSuperAdmin    Boolean @default(false)
+  esAdmin         Boolean @default(false)
+  permisoFinanzas Boolean @default(false)
+  permisoTurnos   Boolean @default(false)
+  permisoClientes Boolean @default(false)
+  permisoPlanes   Boolean @default(false)
+  permisoFeriados Boolean @default(false)
 
   @@map("usuarios")
 }
@@ -40,16 +40,17 @@ model ConfiguracionLocal {
 
   @@map("configuracion_local")
 }
-model Plan {
-  id              Int            @id @default(autoincrement())
-  codigo          String?        @unique
+
+model Plan {
+  id              Int         @id @default(autoincrement())
+  codigo          String?     @unique
   nombre          String
   etiqueta        String?
-  precio          Decimal        @db.Decimal(10, 2)
+  precio          Decimal     @db.Decimal(10, 2)
   frecuencia      String
-  caracteristicas String?        @db.Text
-  observaciones   String?        @db.Text
-  activo          Boolean        @default(true)
+  caracteristicas String?     @db.Text
+  observaciones   String?     @db.Text
+  activo          Boolean     @default(true)
   categorias      Categoria[]
 
   @@map("planes")
@@ -71,7 +72,7 @@ model Cliente {
   categoriaId    Int?
   es_socio       Boolean        @default(false)
   categoria      Categoria?     @relation(fields: [categoriaId], references: [id])
-  turnos         TurnoCliente[]
+  turnosCliente  TurnoCliente[]
   rutinas        Rutina[]
 
   @@index([categoriaId], map: "clientes_categoriaId_fkey")
@@ -79,16 +80,16 @@ model Cliente {
 }
 
 model Profesional {
-  id           Int            @id @default(autoincrement())
-  nombre       String
-  apellido     String
-  dni          String         @unique
-  especialidad String?
-  matricula    String?
-  email        String?        @unique
-  telefono     String?
-  activo       Boolean        @default(true)
-  turnos       TurnoCliente[]
+  id            Int            @id @default(autoincrement())
+  nombre        String
+  apellido      String
+  dni           String         @unique
+  especialidad  String?
+  matricula     String?
+  email         String?        @unique
+  telefono      String?
+  activo        Boolean        @default(true)
+  turnosCliente TurnoCliente[]
 
   @@map("profesionales")
 }
@@ -99,20 +100,22 @@ model HorarioConfig {
   hora_inicio DateTime       @db.Time(0)
   hora_fin    DateTime       @db.Time(0)
   activo      Boolean        @default(true)
+  categoriaId Int?
+  categoria   Categoria?     @relation(fields: [categoriaId], references: [id])
   turnos      TurnoCliente[]
 
   @@map("horarios_config")
 }
 
 model TurnoCliente {
-  id            Int            @id @default(autoincrement())
-  fecha         DateTime       @db.Date
+  id            Int           @id @default(autoincrement())
+  fecha         DateTime      @db.Date
   horarioId     Int
   clienteId     Int
   profesionalId Int?
-  cliente       Cliente        @relation(fields: [clienteId], references: [id])
-  horario       HorarioConfig  @relation(fields: [horarioId], references: [id])
-  profesional   Profesional?   @relation(fields: [profesionalId], references: [id])
+  cliente       Cliente       @relation(fields: [clienteId], references: [id])
+  horario       HorarioConfig @relation(fields: [horarioId], references: [id])
+  profesional   Profesional?  @relation(fields: [profesionalId], references: [id])
 
   @@unique([fecha, horarioId, clienteId])
   @@index([clienteId], map: "turnos_clientes_clienteId_fkey")
@@ -130,6 +133,7 @@ model Categoria {
   rubro_sector String?
   color        String?
   clientes     Cliente[]
+  horarios     HorarioConfig[]
 
   @@index([planId], map: "categorias_planId_fkey")
   @@map("categorias")
@@ -146,11 +150,11 @@ enum EstadoCliente {
 }
 
 model Configuracion {
-  id                Int      @id @default(1)
+  id                Int     @id @default(1)
   nombreGimnasio    String?
-  logoBase64        String?  @db.LongText
-  bloquearCapacidad Boolean  @default(false)
-  capacidadMaxima   Int      @default(10)
+  logoBase64        String? @db.LongText
+  bloquearCapacidad Boolean @default(false)
+  capacidadMaxima   Int     @default(10)
 
   @@map("configuracion")
 }
@@ -165,18 +169,18 @@ model Feriado {
 }
 
 model CalendarioNota {
-  id          Int      @id @default(autoincrement())
-  fecha       String   // Formato YYYY-MM-DD
-  contenido   String   @db.Text
-  horaAlarma  String?  // Formato HH:MM (Opcional)
-  notificado  Boolean  @default(false)
+  id         Int     @id @default(autoincrement())
+  fecha      String // Formato YYYY-MM-DD
+  contenido  String  @db.Text
+  horaAlarma String? // Formato HH:MM (Opcional)
+  notificado Boolean @default(false)
 
   @@map("calendario_notas")
 }
 
 model Rutina {
   id          Int         @id @default(autoincrement())
-  nombre      String      
+  nombre      String
   descripcion String?
   fechaInicio DateTime    @default(now())
   clienteId   Int
@@ -185,22 +189,24 @@ model Rutina {
 }
 
 model DiaRutina {
-  id          Int               @id @default(autoincrement())
-  nombre      String            
-  rutinaId    Int
-  rutina      Rutina            @relation(fields: [rutinaId], references: [id], onDelete: Cascade)
-  ejercicios  EjercicioRutina[]
+  id         Int               @id @default(autoincrement())
+  nombre     String
+  rutinaId   Int
+  rutina     Rutina            @relation(fields: [rutinaId], references: [id], onDelete: Cascade)
+  ejercicios EjercicioRutina[]
 }
 
 model EjercicioRutina {
-  id              Int       @id @default(autoincrement())
-  nombre          String    
-  series          Int
-  repeticiones    String    
-  descanso        String?   
-  pesoSugerido    String?   
-  notas           String?
-  videoUrl        String?
-  diaRutinaId     Int
-  diaRutina       DiaRutina @relation(fields: [diaRutinaId], references: [id], onDelete: Cascade)
+  id           Int       @id @default(autoincrement())
+  nombre       String
+  series       Int
+  repeticiones String
+  descanso     String?
+  pesoSugerido String?
+  notas        String?
+  videoUrl     String?
+  diaRutinaId  Int
+  diaRutina    DiaRutina @relation(fields: [diaRutinaId], references: [id], onDelete: Cascade)
 }
+
+

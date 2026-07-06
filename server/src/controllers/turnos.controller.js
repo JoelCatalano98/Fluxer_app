@@ -269,7 +269,7 @@ const getHorarios = async (req, res) => {
 // POST /api/turnos/horarios
 const createHorario = async (req, res) => {
     try {
-        const { dia_semana, dias, hora_inicio, hora_fin } = req.body;
+        const { dia_semana, dias, hora_inicio, hora_fin, categoriaId } = req.body;
 
         if (!hora_inicio || !hora_fin) {
             return res.status(400).json({
@@ -310,10 +310,13 @@ const createHorario = async (req, res) => {
             );
 
             if (existing) {
-                // Reactivar si estaba inactivo, o simplemente devolver si ya activo
+                // Reactivar si estaba inactivo, o actualizar si ya activo
                 const reactivado = await prisma.horarioConfig.update({
                     where: { id: existing.id },
-                    data: { activo: true }
+                    data: { 
+                        activo: true, 
+                        categoriaId: categoriaId ? parseInt(categoriaId) : null 
+                    }
                 });
                 createdHorarios.push(reactivado);
             } else {
@@ -322,7 +325,8 @@ const createHorario = async (req, res) => {
                         dia_semana: diaInt,
                         hora_inicio: inicioDate,
                         hora_fin: finDate,
-                        activo: true
+                        activo: true,
+                        categoriaId: categoriaId ? parseInt(categoriaId) : null
                     }
                 });
                 createdHorarios.push(nuevoHorario);
@@ -352,7 +356,7 @@ const updateHorario = async (req, res) => {
             return res.status(400).json({ success: false, data: null, message: 'ID de horario no válido' });
         }
 
-        const { dias, dia_semana, hora_inicio, hora_fin } = req.body;
+        const { dias, dia_semana, hora_inicio, hora_fin, categoriaId } = req.body;
 
         const horarioBase = await prisma.horarioConfig.findUnique({ where: { id } });
         if (!horarioBase) {
@@ -367,6 +371,7 @@ const updateHorario = async (req, res) => {
             }
             if (hora_inicio) dataToUpdate.hora_inicio = parseTimeStr(hora_inicio);
             if (hora_fin) dataToUpdate.hora_fin = parseTimeStr(hora_fin);
+            if (categoriaId !== undefined) dataToUpdate.categoriaId = categoriaId ? parseInt(categoriaId) : null;
 
             const horarioActualizado = await prisma.horarioConfig.update({
                 where: { id },
@@ -382,11 +387,12 @@ const updateHorario = async (req, res) => {
         // Buscar TODOS los registros de la tabla (activos e inactivos) para poder reutilizar registros
         const allHorarios = await prisma.horarioConfig.findMany();
 
-        // Hermanos activos = mismo rango horario que el base (comparación en memoria, ambos del DB)
+        // Hermanos activos = mismo rango horario y categoria que el base (comparación en memoria, ambos del DB)
         const hermanosActivos = allHorarios.filter(h =>
             h.activo === true &&
             formatTime(h.hora_inicio) === baseInicioStr &&
-            formatTime(h.hora_fin) === baseFinStr
+            formatTime(h.hora_fin) === baseFinStr &&
+            h.categoriaId === horarioBase.categoriaId
         );
 
         const hermanosPorDia = {};
@@ -406,10 +412,14 @@ const updateHorario = async (req, res) => {
 
             if (estaMarcado) {
                 if (hermanoExistente) {
-                    // Existe activo para este día → actualizar sus horas
+                    // Existe activo para este día → actualizar sus horas y categoria
                     const actualizado = await prisma.horarioConfig.update({
                         where: { id: hermanoExistente.id },
-                        data: { hora_inicio: targetInicio, hora_fin: targetFin }
+                        data: { 
+                            hora_inicio: targetInicio, 
+                            hora_fin: targetFin,
+                            categoriaId: categoriaId ? parseInt(categoriaId) : null 
+                        }
                     });
                     results.push(actualizado);
                 } else {
@@ -436,7 +446,12 @@ const updateHorario = async (req, res) => {
                     if (inactivo) {
                         const reactivado = await prisma.horarioConfig.update({
                             where: { id: inactivo.id },
-                            data: { hora_inicio: targetInicio, hora_fin: targetFin, activo: true }
+                            data: { 
+                                hora_inicio: targetInicio, 
+                                hora_fin: targetFin, 
+                                activo: true,
+                                categoriaId: categoriaId ? parseInt(categoriaId) : null
+                            }
                         });
                         results.push(reactivado);
                     } else {
@@ -446,7 +461,8 @@ const updateHorario = async (req, res) => {
                                 dia_semana: dia,
                                 hora_inicio: targetInicio,
                                 hora_fin: targetFin,
-                                activo: true
+                                activo: true,
+                                categoriaId: categoriaId ? parseInt(categoriaId) : null
                             }
                         });
                         results.push(nuevo);

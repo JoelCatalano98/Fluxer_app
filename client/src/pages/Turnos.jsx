@@ -103,8 +103,9 @@ const Turnos = () => {
   const [clientesList, setClientesList] = useState([]);
   const [profesionalesList, setProfesionalesList] = useState([]);
   const [feriadosList, setFeriadosList] = useState([]);
+  const [categoriasList, setCategoriasList] = useState([]);
 
-  const [nuevoHorario, setNuevoHorario] = useState({ inicio: '', fin: '', dias: [] });
+  const [nuevoHorario, setNuevoHorario] = useState({ inicio: '', fin: '', dias: [], categoriaId: '' });
 
   // Búsqueda local en modales
   const [clienteSearch, setClienteSearch] = useState('');
@@ -133,9 +134,15 @@ const Turnos = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const resFeriados = await api.get('/api/feriados');
+        const [resFeriados, resCategorias] = await Promise.all([
+          api.get('/api/feriados'),
+          api.get('/api/categorias')
+        ]);
         if (resFeriados.data) {
           setFeriadosList(resFeriados.data);
+        }
+        if (resCategorias.data.success) {
+          setCategoriasList(resCategorias.data.data);
         }
       } catch (err) {
         console.error('Error al cargar feriados:', err);
@@ -221,8 +228,8 @@ const Turnos = () => {
 
   const handleAddHorario = async (e) => {
     e.preventDefault();
-    if (!nuevoHorario.inicio || !nuevoHorario.fin || nuevoHorario.dias.length === 0) {
-      alert("Por favor completa la hora de inicio, fin y selecciona al menos un día.");
+    if (!nuevoHorario.inicio || !nuevoHorario.fin || nuevoHorario.dias.length === 0 || !nuevoHorario.categoriaId) {
+      alert("Por favor completa la hora de inicio, fin, selecciona al menos un día y una disciplina/etiqueta.");
       return;
     }
 
@@ -230,10 +237,11 @@ const Turnos = () => {
       await crearHorario({
         dias: nuevoHorario.dias.map(d => parseInt(d)),
         hora_inicio: nuevoHorario.inicio,
-        hora_fin: nuevoHorario.fin
+        hora_fin: nuevoHorario.fin,
+        categoriaId: parseInt(nuevoHorario.categoriaId)
       });
       setIsConfigModalOpen(false);
-      setNuevoHorario({ inicio: '', fin: '', dias: [] });
+      setNuevoHorario({ inicio: '', fin: '', dias: [], categoriaId: '' });
       alert("¡Nueva(s) franja(s) horaria(s) agregada(s) con éxito!");
     } catch (err) {
       alert("Error al configurar horario: " + err.message);
@@ -304,10 +312,11 @@ const Turnos = () => {
   };
 
   // Apertura y manejo de edición de horarios
-  const handleOpenEditHorario = (range) => {
+  const handleOpenEditHorario = (range, categoriaId) => {
     const matching = horarios.filter(h => {
       const hRange = `${formatTime(h.hora_inicio)} - ${formatTime(h.hora_fin)}`;
-      return hRange === range;
+      // Comparación estricta de string para rango y coincidencia de categoría (incluso si es null)
+      return hRange === range && h.categoriaId === categoriaId;
     });
 
     if (matching.length === 0) return;
@@ -322,7 +331,8 @@ const Turnos = () => {
     setSelectedHorarioId(first.id); // Guardamos la id del base para enviar al endpoint
     setEditHorarioValues({
       hora_inicio: formatTime(first.hora_inicio),
-      hora_fin: formatTime(first.hora_fin)
+      hora_fin: formatTime(first.hora_fin),
+      categoriaId: first.categoriaId || ''
     });
     setIsEditHorarioModalOpen(true);
   };
@@ -357,7 +367,8 @@ const Turnos = () => {
       await editarHorario(selectedHorarioId, {
         dias: editHorarioDias,
         hora_inicio: editHorarioValues.hora_inicio,
-        hora_fin: editHorarioValues.hora_fin
+        hora_fin: editHorarioValues.hora_fin,
+        categoriaId: editHorarioValues.categoriaId ? parseInt(editHorarioValues.categoriaId) : null
       });
       setIsEditHorarioModalOpen(false);
       alert("¡Franja horaria actualizada con éxito!");
@@ -482,27 +493,6 @@ const Turnos = () => {
                     <td className="etiqueta-hora columna-fija">
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                         <span>{range}</span>
-                        <button 
-                          type="button"
-                          className="btn-edit-range"
-                          onClick={() => handleOpenEditHorario(range)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            color: '#aaa',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            padding: '4px',
-                            transition: 'color 0.2s'
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent-blue)'}
-                          onMouseLeave={(e) => e.currentTarget.style.color = '#aaa'}
-                          title="Editar franja horaria"
-                        >
-                          <Pencil size={13} />
-                        </button>
                       </div>
                     </td>
                     
@@ -539,23 +529,43 @@ const Turnos = () => {
                       return (
                         <td key={dia}>
                           {tieneSlotConfigurado ? (
-                            count > 0 ? (
-                              <div className={`caja-turno ${count === 1 ? 'activo' : ''}`}>
-                                <span>
-                                  {count === 1 
-                                    ? `${turnosEnCelda[0].cliente?.nombre} ${turnosEnCelda[0].cliente?.apellido}` 
-                                    : `${count} pers.`}
-                                </span>
-                                <button 
-                                  className="btn-view-turno"
-                                  onClick={() => openViewTurnosDetails(turnosEnCelda)}
-                                >
-                                  <Eye size={14} />
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="turno-vacio">-</div>
-                            )
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '4px' }}>
+                              {slotsMatching.map(slot => {
+                                const turnosDelSlot = turnos.filter(t => t.horarioId === slot.id);
+                                const count = turnosDelSlot.length;
+                                const catNombre = slot.categoria?.nombre || 'General';
+                                const catColor = slot.categoria?.color || '#00a8e8';
+
+                                return (
+                                  <div key={slot.id} className={`caja-turno ${count > 0 ? 'activo' : ''}`} style={{ borderLeft: `4px solid ${catColor}`, backgroundColor: `${catColor}15`, display: 'block' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', borderBottom: `1px solid ${catColor}30`, paddingBottom: '4px' }}>
+                                      <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: catColor }}>{catNombre}</span>
+                                      <button 
+                                        type="button"
+                                        onClick={() => handleOpenEditHorario(range, slot.categoriaId)} 
+                                        style={{ background:'none', border:'none', cursor:'pointer', color:'#888', padding: '2px' }}
+                                        title="Editar disciplina"
+                                      >
+                                        <Pencil size={12} />
+                                      </button>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      {count > 0 ? (
+                                        <>
+                                          <span style={{ fontSize: '0.85rem' }}>{count === 1 ? `${turnosDelSlot[0].cliente?.nombre.split(' ')[0]} ${turnosDelSlot[0].cliente?.apellido.charAt(0)}.` : `${count} pers.`}</span>
+                                          <button className="btn-view-turno" onClick={() => openViewTurnosDetails(turnosDelSlot)}>
+                                            <Eye size={14} />
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <span style={{ color: '#888', fontSize: '0.8rem', fontStyle: 'italic' }}>0 inscritos</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           ) : (
                             <div className="turno-deshabilitado"></div>
                           )}
@@ -607,6 +617,20 @@ const Turnos = () => {
                   </label>
                 ))}
               </div>
+            </div>
+
+            <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
+              <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Etiqueta (Disciplina)</label>
+              <select 
+                value={nuevoHorario.categoriaId}
+                onChange={(e) => setNuevoHorario({...nuevoHorario, categoriaId: e.target.value})}
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
+              >
+                <option value="">Selecciona una disciplina</option>
+                {categoriasList.map(c => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
             </div>
 
             <div className="form-row">
@@ -771,7 +795,7 @@ const Turnos = () => {
               <p style={{ color: '#e03131', fontSize: '0.85rem', marginTop: '5px' }}>⚠️ No hay franjas horarias configuradas. Agrégalas primero antes de anotar un cliente.</p>
             )}
           </div>
-
+          
           <div className="pie-formulario" style={{ marginTop: '20px' }}>
             <button type="button" className="btn-cancel" onClick={() => setIsAnotarModalOpen(false)}>
               Cancelar
@@ -817,6 +841,21 @@ const Turnos = () => {
                   </label>
                 ))}
               </div>
+            </div>
+
+            <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
+              <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Etiqueta (Disciplina)</label>
+              <select 
+                name="categoriaId"
+                value={editHorarioValues.categoriaId}
+                onChange={handleEditHorarioChange}
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
+              >
+                <option value="">Selecciona una disciplina</option>
+                {categoriasList.map(c => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
             </div>
 
             <div className="form-row">

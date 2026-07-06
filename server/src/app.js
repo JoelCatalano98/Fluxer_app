@@ -25,11 +25,17 @@ const calendarioRoutes = require('./routes/calendario.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const authRoutes = require('./routes/auth.routes');
 const authSocioRoutes = require('./routes/authSocio.routes');
+const perfilSocioRoutes = require('./routes/perfilSocio.routes');
+const turnoSocioRoutes = require('./routes/turnoSocio.routes');
 const rutinasRoutes = require('./routes/rutinas.routes');
+const actividadRoutes = require('./routes/actividad.routes');
+const claseRoutes = require('./routes/clase.routes');
 const { verifyToken, requirePermiso } = require('./middlewares/auth.middleware');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/socio/auth', authSocioRoutes);
+app.use('/api/socio/perfil', perfilSocioRoutes);
+app.use('/api/socio/turnos', turnoSocioRoutes);
 app.use('/api/clientes', verifyToken, requirePermiso('permisoClientes'), clientesRoutes);
 app.use('/api/profesionales', verifyToken, profesionalesRoutes);
 app.use('/api/planes', verifyToken, requirePermiso('permisoPlanes'), planesRoutes);
@@ -40,5 +46,7 @@ app.use('/api/feriados', verifyToken, requirePermiso('permisoFeriados'), feriado
 app.use('/api/calendario', verifyToken, calendarioRoutes);
 app.use('/api/dashboard', verifyToken, requirePermiso('permisoFinanzas'), dashboardRoutes);
 app.use('/api/rutinas', rutinasRoutes);
+app.use('/api/actividades', verifyToken, actividadRoutes);
+app.use('/api/clases', verifyToken, claseRoutes);
 
 module.exports = app;

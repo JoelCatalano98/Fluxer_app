@@ -113,6 +113,7 @@ const Navbar = ({ isOpen }) => {
           </details>
         </li>
 
+
         <li>
           <details open>
             <summary style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', listStyle: 'none', padding: '10px 0' }}>
@@ -141,14 +142,14 @@ const Navbar = ({ isOpen }) => {
         </li>
 
         <li>
-          <NavLink to="/calendario" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', padding: '10px 0' }}>
+          <NavLink to="/calendario" end className={({ isActive }) => isActive ? 'active' : ''} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', padding: '10px 0' }}>
             <Calendar size={20} style={{ marginRight: '10px', color: '#00a8e8' }} /> <span>Calendario</span>
           </NavLink>
         </li>
 
         {hasPermission('esAdmin') && (
           <li>
-            <NavLink to="/usuarios" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', padding: '10px 0' }}>
+            <NavLink to="/usuarios" end className={({ isActive }) => isActive ? 'active' : ''} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', padding: '10px 0' }}>
               <Users size={20} style={{ marginRight: '10px', color: '#00a8e8' }} /> <span>Usuarios</span>
             </NavLink>
           </li>

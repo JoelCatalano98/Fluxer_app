@@ -318,17 +318,28 @@ const ClientesTotales = () => {
                           editStyle={{ border: 'none', background: '#e1f0ff', color: '#00a8e8', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
                           deleteStyle={{ border: 'none', background: '#fff1f1', color: '#e03131', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
                         />
-                        {cliente.telefono && (
-                          <a 
-                            href={`https://wa.me/${cliente.telefono.replace(/\D/g, '')}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            title="Enviar WhatsApp"
-                            style={{ display: 'flex', alignItems: 'center', background: '#e6f9ee', color: '#25D366', padding: '5px 10px', borderRadius: '4px', textDecoration: 'none' }}
-                          >
-                            <MessageCircle size={16} />
-                          </a>
-                        )}
+                        <button
+                          onClick={() => {
+                            if (cliente.telefono) {
+                              window.open(`https://wa.me/${cliente.telefono.replace(/\D/g, '')}`, '_blank', 'noopener,noreferrer');
+                            }
+                          }}
+                          disabled={!cliente.telefono}
+                          title={cliente.telefono ? 'Enviar WhatsApp' : 'Sin teléfono registrado'}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            background: cliente.telefono ? '#e6f9ee' : '#f5f5f5',
+                            color: cliente.telefono ? '#25D366' : '#ccc',
+                            border: 'none',
+                            padding: '5px 10px',
+                            borderRadius: '4px',
+                            cursor: cliente.telefono ? 'pointer' : 'not-allowed',
+                            opacity: cliente.telefono ? 1 : 0.6,
+                          }}
+                        >
+                          <MessageCircle size={16} />
+                        </button>
                         <button
                           onClick={() => setClienteRutinaSeleccionado(cliente)}
                           title="Gestionar Rutinas"
