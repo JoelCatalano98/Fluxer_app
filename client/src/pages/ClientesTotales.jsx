@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
-import { Pencil, Trash, UserPlus, Save, X, Loader2, AlertTriangle, Check, User, RefreshCw } from 'lucide-react';
+import { Pencil, Trash, UserPlus, Save, X, Loader2, AlertTriangle, Check, User, RefreshCw, MessageCircle } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
@@ -284,6 +284,17 @@ const ClientesTotales = () => {
                           editStyle={{ border: 'none', background: '#e1f0ff', color: '#00a8e8', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
                           deleteStyle={{ border: 'none', background: '#fff1f1', color: '#e03131', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
                         />
+                        {cliente.telefono && (
+                          <a 
+                            href={`https://wa.me/${cliente.telefono.replace(/\D/g, '')}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            title="Enviar WhatsApp"
+                            style={{ display: 'flex', alignItems: 'center', background: '#e6f9ee', color: '#25D366', padding: '5px 10px', borderRadius: '4px', textDecoration: 'none' }}
+                          >
+                            <MessageCircle size={16} />
+                          </a>
+                        )}
                         {cliente.estado_cliente === 'INACTIVO' && (
                           <button
                             title="Reactivar cliente"

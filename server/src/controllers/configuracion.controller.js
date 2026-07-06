@@ -46,14 +46,14 @@ const updateConfiguracion = async (req, res) => {
             where: { id: 1 },
             update: {
                 nombreGimnasio,
-                logoBase64,
+                logoBase64: logoBase64 === "" ? null : logoBase64,
                 bloquearCapacidad: bloquearCapacidad === true,
                 capacidadMaxima: parseInt(capacidadMaxima) || 10
             },
             create: {
                 id: 1,
                 nombreGimnasio: nombreGimnasio || 'Fluxer Gym',
-                logoBase64: logoBase64 || null,
+                logoBase64: logoBase64 === "" ? null : (logoBase64 || null),
                 bloquearCapacidad: bloquearCapacidad === true,
                 capacidadMaxima: parseInt(capacidadMaxima) || 10
             }

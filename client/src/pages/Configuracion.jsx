@@ -74,8 +74,24 @@ const Configuracion = () => {
     }
   };
 
-  const handleRemoveLogo = () => {
-    setConfig(prev => ({ ...prev, logoBase64: null }));
+  const handleRemoveLogo = async () => {
+    try {
+      setSaving(true);
+      setMessage({ text: '', type: '' });
+      const updatedConfig = { ...config, logoBase64: null };
+      const res = await api.put('/api/configuracion', updatedConfig);
+      
+      if (res.data.success) {
+        setConfig(updatedConfig);
+        setMessage({ text: 'Logo eliminado con éxito.', type: 'success' });
+        window.dispatchEvent(new Event('configUpdated'));
+      }
+    } catch (err) {
+      console.error('Error al quitar logo:', err);
+      setMessage({ text: 'Error al quitar logo.', type: 'error' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSave = async (e) => {
