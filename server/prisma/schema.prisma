@@ -40,8 +40,7 @@ model ConfiguracionLocal {
 
   @@map("configuracion_local")
 }
-
-model Plan {
+model Plan {
   id              Int            @id @default(autoincrement())
   codigo          String?        @unique
   nombre          String
@@ -72,6 +71,7 @@ model Cliente {
   es_socio       Boolean        @default(false)
   categoria      Categoria?     @relation(fields: [categoriaId], references: [id])
   turnos         TurnoCliente[]
+  rutinas        Rutina[]
 
   @@index([categoriaId], map: "clientes_categoriaId_fkey")
   @@map("clientes")
@@ -173,3 +173,33 @@ model CalendarioNota {
   @@map("calendario_notas")
 }
 
+model Rutina {
+  id          Int         @id @default(autoincrement())
+  nombre      String      
+  descripcion String?
+  fechaInicio DateTime    @default(now())
+  clienteId   Int
+  cliente     Cliente     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  dias        DiaRutina[]
+}
+
+model DiaRutina {
+  id          Int               @id @default(autoincrement())
+  nombre      String            
+  rutinaId    Int
+  rutina      Rutina            @relation(fields: [rutinaId], references: [id], onDelete: Cascade)
+  ejercicios  EjercicioRutina[]
+}
+
+model EjercicioRutina {
+  id              Int       @id @default(autoincrement())
+  nombre          String    
+  series          Int
+  repeticiones    String    
+  descanso        String?   
+  pesoSugerido    String?   
+  notas           String?
+  videoUrl        String?
+  diaRutinaId     Int
+  diaRutina       DiaRutina @relation(fields: [diaRutinaId], references: [id], onDelete: Cascade)
+}

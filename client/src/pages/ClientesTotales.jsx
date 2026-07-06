@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
-import { Pencil, Trash, UserPlus, Save, X, Loader2, AlertTriangle, Check, User, RefreshCw, MessageCircle } from 'lucide-react';
+import { Pencil, Trash, UserPlus, Save, X, Loader2, AlertTriangle, Check, User, RefreshCw, MessageCircle, Dumbbell, Search } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import TableActions from '../components/TableActions';
+import ModalRutinas from '../components/ModalRutinas';
 import { useForm } from '../hooks/useForm';
 import '../styles/style.css';
 import '../styles/clientes/listados_gestion.css';
@@ -18,7 +19,9 @@ const ClientesTotales = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [clienteToDelete, setClienteToDelete] = useState(null);
+  const [clienteRutinaSeleccionado, setClienteRutinaSeleccionado] = useState(null);
   const [categoriasList, setCategoriasList] = useState([]);
+  const [busqueda, setBusqueda] = useState('');
 
   // Cargar categorías
   useEffect(() => {
@@ -181,6 +184,13 @@ const ClientesTotales = () => {
     }
   };
 
+  const clientesFiltrados = clientes.filter(cliente => {
+    const termino = busqueda.toLowerCase();
+    const nombreCompleto = `${cliente.nombre || ''} ${cliente.apellido || ''}`.toLowerCase();
+    const dni = (cliente.dni_cuit || '').toLowerCase();
+    return nombreCompleto.includes(termino) || dni.includes(termino);
+  });
+
   return (
     <div className="main-content">
       <PageHeader
@@ -202,6 +212,17 @@ const ClientesTotales = () => {
           >
             <UserPlus size={20} /> Nuevo Cliente
           </button>
+        </div>
+
+        <div style={{ marginBottom: '20px', position: 'relative', maxWidth: '400px' }}>
+          <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
+          <input 
+            type="text" 
+            placeholder="Buscar por nombre, apellido o DNI..." 
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            style={{ width: '100%', padding: '10px 10px 10px 38px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.95rem' }}
+          />
         </div>
 
         {error && (
@@ -234,8 +255,8 @@ const ClientesTotales = () => {
                     <p style={{ marginTop: '10px', color: '#666' }}>Cargando clientes...</p>
                   </td>
                 </tr>
-              ) : clientes.length > 0 ? (
-                clientes.map(cliente => (
+              ) : clientesFiltrados.length > 0 ? (
+                clientesFiltrados.map(cliente => (
                   <tr key={cliente.id}>
                     <td className="columna-fija"><strong>{cliente.nombre}</strong></td>
                     <td>{cliente.apellido}</td>
@@ -295,6 +316,13 @@ const ClientesTotales = () => {
                             <MessageCircle size={16} />
                           </a>
                         )}
+                        <button
+                          onClick={() => setClienteRutinaSeleccionado(cliente)}
+                          title="Gestionar Rutinas"
+                          style={{ display: 'flex', alignItems: 'center', background: '#f4f0ff', color: '#845ef7', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          <Dumbbell size={16} />
+                        </button>
                         {cliente.estado_cliente === 'INACTIVO' && (
                           <button
                             title="Reactivar cliente"
@@ -427,6 +455,12 @@ const ClientesTotales = () => {
           onConfirm={handleConfirmDelete}
           cancelLabel="Cancelar"
           confirmLabel="Eliminar Cliente"
+        />
+
+        <ModalRutinas 
+          isOpen={!!clienteRutinaSeleccionado}
+          onClose={() => setClienteRutinaSeleccionado(null)}
+          cliente={clienteRutinaSeleccionado}
         />
       </div>
     </div>

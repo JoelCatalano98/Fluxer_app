@@ -160,7 +160,7 @@ const Usuarios = () => {
                 image="/img/welcome-background.png"
             />
             
-            <div style={{ padding: '20px' }}>
+            <div style={{ padding: '5px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center' }}>
                     <div>
                         <h1 style={{ color: '#333639', margin: 0, fontSize: '2rem' }}>Personal Autorizado</h1>

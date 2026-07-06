@@ -24,6 +24,7 @@ const feriadosRoutes = require('./routes/feriados.routes');
 const calendarioRoutes = require('./routes/calendario.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const authRoutes = require('./routes/auth.routes');
+const rutinasRoutes = require('./routes/rutinas.routes');
 const { verifyToken, requirePermiso } = require('./middlewares/auth.middleware');
 
 app.use('/api/auth', authRoutes);
@@ -36,5 +37,6 @@ app.use('/api/categorias', verifyToken, categoriasRoutes);
 app.use('/api/feriados', verifyToken, requirePermiso('permisoFeriados'), feriadosRoutes);
 app.use('/api/calendario', verifyToken, calendarioRoutes);
 app.use('/api/dashboard', verifyToken, requirePermiso('permisoFinanzas'), dashboardRoutes);
+app.use('/api/rutinas', rutinasRoutes);
 
 module.exports = app;
