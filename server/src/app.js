@@ -24,10 +24,12 @@ const feriadosRoutes = require('./routes/feriados.routes');
 const calendarioRoutes = require('./routes/calendario.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const authRoutes = require('./routes/auth.routes');
+const authSocioRoutes = require('./routes/authSocio.routes');
 const rutinasRoutes = require('./routes/rutinas.routes');
 const { verifyToken, requirePermiso } = require('./middlewares/auth.middleware');
 
 app.use('/api/auth', authRoutes);
+app.use('/api/socio/auth', authSocioRoutes);
 app.use('/api/clientes', verifyToken, requirePermiso('permisoClientes'), clientesRoutes);
 app.use('/api/profesionales', verifyToken, profesionalesRoutes);
 app.use('/api/planes', verifyToken, requirePermiso('permisoPlanes'), planesRoutes);

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
-import { Pencil, Trash, UserPlus, Save, X, Loader2, AlertTriangle, Check, User, RefreshCw, MessageCircle, Dumbbell, Search } from 'lucide-react';
+import { Pencil, Trash, UserPlus, Save, X, Loader2, AlertTriangle, Check, User, RefreshCw, MessageCircle, Dumbbell, Search, Unlock } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
@@ -133,6 +133,19 @@ const ClientesTotales = () => {
     } catch (err) {
       console.error('Error handleReactivar:', err);
       alert('Error al reactivar al cliente');
+    }
+  };
+
+  const handleResetPassword = async (cliente) => {
+    if (!window.confirm(`¿Blanquear la contraseña de ${cliente.nombre} ${cliente.apellido} a "123456"?`)) return;
+    try {
+      const res = await api.patch(`/api/clientes/${cliente.id}/reset-password`);
+      if (res.data.success) {
+        alert('Contraseña blanqueada con éxito. Nueva clave: 123456');
+      }
+    } catch (err) {
+      console.error('Error handleResetPassword:', err);
+      alert('Error al blanquear la contraseña: ' + (err.response?.data?.message || err.message));
     }
   };
 
@@ -322,6 +335,13 @@ const ClientesTotales = () => {
                           style={{ display: 'flex', alignItems: 'center', background: '#f4f0ff', color: '#845ef7', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
                         >
                           <Dumbbell size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleResetPassword(cliente)}
+                          title="Blanquear contraseña"
+                          style={{ display: 'flex', alignItems: 'center', background: '#fff8e1', color: '#f59f00', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          <Unlock size={16} />
                         </button>
                         {cliente.estado_cliente === 'INACTIVO' && (
                           <button

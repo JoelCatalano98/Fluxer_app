@@ -62,6 +62,7 @@ model Cliente {
   apellido       String
   dni_cuit       String         @unique
   email          String?        @unique
+  password       String?
   telefono       String?
   fecha_inicio   DateTime?      @db.Date
   observaciones  String?        @db.Text

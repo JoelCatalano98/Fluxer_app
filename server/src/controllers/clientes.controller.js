@@ -1,4 +1,5 @@
 const prisma = require('../config/prisma');
+const bcrypt = require('bcryptjs');
 
 // GET /api/clientes
 // Lista todos los clientes con paginación básica (query params: page, limit)
@@ -414,10 +415,55 @@ const updateEstadoPago = async (req, res) => {
     }
 };
 
+// PATCH /api/clientes/:id/reset-password
+// Blanquea la contraseña del cliente a "123456" (hasheada con bcrypt)
+const resetPasswordCliente = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({
+                success: false,
+                data: null,
+                message: 'ID de cliente no válido'
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash('123456', 10);
+
+        await prisma.cliente.update({
+            where: { id },
+            data: { password: hashedPassword }
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: null,
+            message: 'Contraseña blanqueada con éxito. Nueva clave: 123456'
+        });
+    } catch (error) {
+        console.error('Error al blanquear contraseña:', error);
+
+        if (error.code === 'P2025') {
+            return res.status(404).json({
+                success: false,
+                data: null,
+                message: 'Cliente no encontrado'
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            data: null,
+            message: 'Error interno del servidor al blanquear la contraseña'
+        });
+    }
+};
+
 module.exports = {
     getClientes,
     createCliente,
     updateCliente,
     deleteCliente,
-    updateEstadoPago
+    updateEstadoPago,
+    resetPasswordCliente
 };

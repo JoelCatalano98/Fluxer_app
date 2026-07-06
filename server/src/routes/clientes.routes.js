@@ -17,4 +17,7 @@ router.delete('/:id', clientesController.deleteCliente);
 // Actualizar únicamente el estado de pago de un cliente por ID
 router.patch('/:id/estado-pago', clientesController.updateEstadoPago);
 
+// Blanquear la contraseña de un cliente por ID (resetea a "123456")
+router.patch('/:id/reset-password', clientesController.resetPasswordCliente);
+
 module.exports = router;
