@@ -134,7 +134,7 @@ body {
 .user-actions {
     display: flex !important;
     flex-direction: row !important; 
-    align-items: center;
+    max-height: 30px;
     gap: 8px; 
     flex-shrink: 0; 
 }
