@@ -147,8 +147,86 @@ const getUsuarios = async (req, res) => {
     }
 }
 
+const editarUsuario = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        const { 
+            nombre, usuario, email, password, 
+            esAdmin, 
+            permisoFinanzas, permisoTurnos, 
+            permisoClientes, permisoPlanes, permisoFeriados 
+        } = req.body;
+
+        const updateData = {
+            nombre,
+            usuario,
+            email,
+            esAdmin: esAdmin || false,
+            permisoFinanzas: permisoFinanzas || false,
+            permisoTurnos: permisoTurnos || false,
+            permisoClientes: permisoClientes || false,
+            permisoPlanes: permisoPlanes || false,
+            permisoFeriados: permisoFeriados || false,
+        };
+
+        if (password && password.trim() !== '') {
+            updateData.password = bcrypt.hashSync(password, 10);
+        }
+
+        const updatedUser = await prisma.usuario.update({
+            where: { id },
+            data: updateData
+        });
+
+        const { password: _, ...userData } = updatedUser;
+
+        return res.status(200).json({
+            success: true,
+            data: userData,
+            message: 'Usuario actualizado con éxito'
+        });
+
+    } catch (error) {
+        console.error('Error en editarUsuario:', error);
+        return res.status(500).json({ success: false, message: 'Error en el servidor al editar' });
+    }
+};
+
+const eliminarUsuario = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+
+        const usuarioExistente = await prisma.usuario.findUnique({
+            where: { id }
+        });
+
+        if (!usuarioExistente) {
+            return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+        }
+
+        if (usuarioExistente.esSuperAdmin) {
+            return res.status(403).json({ success: false, message: 'No se puede eliminar a un Super Administrador' });
+        }
+
+        await prisma.usuario.delete({
+            where: { id }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: 'Usuario eliminado con éxito'
+        });
+
+    } catch (error) {
+        console.error('Error en eliminarUsuario:', error);
+        return res.status(500).json({ success: false, message: 'Error en el servidor al eliminar' });
+    }
+};
+
 module.exports = {
     login,
     registrarUsuario,
-    getUsuarios
+    getUsuarios,
+    editarUsuario,
+    eliminarUsuario
 };

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { Users, Shield, UserPlus, Save, X, Loader2, AlertTriangle, CheckSquare, Square } from 'lucide-react';
+import { Users, Shield, UserPlus, Save, X, Loader2, AlertTriangle, CheckSquare, Square, Edit, Trash2 } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import '../styles/style.css';
@@ -12,6 +12,7 @@ const Usuarios = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showForm, setShowForm] = useState(false);
+    const [usuarioEditando, setUsuarioEditando] = useState(null);
     
     // Form state
     const [formData, setFormData] = useState({
@@ -83,20 +84,67 @@ const Usuarios = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await api.post('/api/auth/registrar', formData);
-            if (res.data.success) {
-                setUsuarios([...usuarios, res.data.data]);
-                setShowForm(false);
-                setFormData({
-                    nombre: '', usuario: '', email: '', password: '', esSuperAdmin: false, esAdmin: false,
-                    permisoFinanzas: false, permisoTurnos: false, permisoClientes: false,
-                    permisoPlanes: false, permisoFeriados: false
-                });
-                alert('Empleado registrado exitosamente');
+            if (usuarioEditando) {
+                const res = await api.put(`/api/auth/usuarios/${usuarioEditando.id}`, formData);
+                if (res.data.success) {
+                    setUsuarios(usuarios.map(u => u.id === usuarioEditando.id ? res.data.data : u));
+                    setShowForm(false);
+                    setUsuarioEditando(null);
+                    setFormData({
+                        nombre: '', usuario: '', email: '', password: '', esSuperAdmin: false, esAdmin: false,
+                        permisoFinanzas: false, permisoTurnos: false, permisoClientes: false,
+                        permisoPlanes: false, permisoFeriados: false
+                    });
+                    alert('Empleado actualizado exitosamente');
+                }
+            } else {
+                const res = await api.post('/api/auth/registrar', formData);
+                if (res.data.success) {
+                    setUsuarios([...usuarios, res.data.data]);
+                    setShowForm(false);
+                    setFormData({
+                        nombre: '', usuario: '', email: '', password: '', esSuperAdmin: false, esAdmin: false,
+                        permisoFinanzas: false, permisoTurnos: false, permisoClientes: false,
+                        permisoPlanes: false, permisoFeriados: false
+                    });
+                    alert('Empleado registrado exitosamente');
+                }
             }
         } catch (err) {
-            console.error('Error registrar:', err);
-            alert(err.response?.data?.message || 'Error al registrar empleado');
+            console.error('Error registrar/editar:', err);
+            alert(err.response?.data?.message || 'Error al procesar empleado');
+        }
+    };
+
+    const handleEditar = (u) => {
+        setUsuarioEditando(u);
+        setFormData({
+            nombre: u.nombre || '',
+            usuario: u.usuario || '',
+            email: u.email || '',
+            password: '', // Dejar vacío por seguridad
+            esSuperAdmin: u.esSuperAdmin || false,
+            esAdmin: u.esAdmin || false,
+            permisoFinanzas: u.permisoFinanzas || false,
+            permisoTurnos: u.permisoTurnos || false,
+            permisoClientes: u.permisoClientes || false,
+            permisoPlanes: u.permisoPlanes || false,
+            permisoFeriados: u.permisoFeriados || false
+        });
+        setShowForm(true);
+    };
+
+    const handleEliminar = async (id) => {
+        if (window.confirm("¿Seguro que deseas eliminar este empleado?")) {
+            try {
+                const res = await api.delete(`/api/auth/usuarios/${id}`);
+                if (res.data.success) {
+                    setUsuarios(usuarios.filter(u => u.id !== id));
+                }
+            } catch (err) {
+                console.error("Error eliminar:", err);
+                alert(err.response?.data?.message || 'Error al eliminar empleado');
+            }
         }
     };
 
@@ -120,7 +168,15 @@ const Usuarios = () => {
                     </div>
                     <button 
                         className="btn-primary" 
-                        onClick={() => setShowForm(true)}
+                        onClick={() => {
+                            setUsuarioEditando(null);
+                            setFormData({
+                                nombre: '', usuario: '', email: '', password: '', esSuperAdmin: false, esAdmin: false,
+                                permisoFinanzas: false, permisoTurnos: false, permisoClientes: false,
+                                permisoPlanes: false, permisoFeriados: false
+                            });
+                            setShowForm(true);
+                        }}
                         style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#333639', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
                     >
                         <UserPlus size={20} /> Agregar Usuario
@@ -143,6 +199,7 @@ const Usuarios = () => {
                                 <th>Email</th>
                                 <th>Rol Principal</th>
                                 <th>Permisos Extra</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -174,6 +231,26 @@ const Usuarios = () => {
                                             {u.permisoPlanes && <span style={{ backgroundColor: '#e2e3e5', color: '#383d41', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem' }}>Planes</span>}
                                         </div>
                                     </td>
+                                    <td>
+                                        <div style={{ display: 'flex', gap: '8px' }}>
+                                            <button 
+                                                onClick={() => handleEditar(u)}
+                                                style={{ padding: '6px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', color: '#00a8e8' }}
+                                                title="Editar"
+                                            >
+                                                <Edit size={18} />
+                                            </button>
+                                            {!u.esSuperAdmin && (
+                                                <button 
+                                                    onClick={() => handleEliminar(u.id)}
+                                                    style={{ padding: '6px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', color: '#e60049' }}
+                                                    title="Eliminar"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
@@ -197,7 +274,15 @@ const Usuarios = () => {
                             </div>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Contraseña</label>
-                                <input type="password" name="password" value={formData.password} onChange={handleInputChange} required style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }} />
+                                <input 
+                                    type="password" 
+                                    name="password" 
+                                    value={formData.password} 
+                                    onChange={handleInputChange} 
+                                    required={!usuarioEditando} 
+                                    placeholder={usuarioEditando ? "Dejar en blanco para no cambiarla" : ""}
+                                    style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }} 
+                                />
                             </div>
                         </div>
 
