@@ -32,6 +32,7 @@ const avisosSocioRoutes = require('./routes/avisosSocio.routes');
 const rutinasRoutes = require('./routes/rutinas.routes');
 const actividadRoutes = require('./routes/actividad.routes');
 const claseRoutes = require('./routes/clase.routes');
+const rankingRoutes = require('./routes/ranking.routes');
 const { verifyToken, requirePermiso } = require('./middlewares/auth.middleware');
 
 app.use('/api/auth', authRoutes);
@@ -52,5 +53,6 @@ app.use('/api/dashboard', verifyToken, requirePermiso('permisoFinanzas'), dashbo
 app.use('/api/rutinas', rutinasRoutes);
 app.use('/api/actividades', verifyToken, actividadRoutes);
 app.use('/api/clases', verifyToken, claseRoutes);
+app.use('/api/ranking', rankingRoutes);
 
 module.exports = app;

@@ -74,6 +74,7 @@ model Cliente {
   categoria      Categoria?     @relation(fields: [categoriaId], references: [id])
   turnosCliente  TurnoCliente[]
   rutinas        Rutina[]
+  records        Record[]
 
   @@index([categoriaId], map: "clientes_categoriaId_fkey")
   @@map("clientes")
@@ -206,4 +207,16 @@ model RutinaEjercicio {
   pesoReal        String?
 
   @@map("rutina_ejercicios")
+}
+
+model Record {
+  id         Int      @id @default(autoincrement())
+  clienteId  Int
+  cliente    Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  ejercicio  String
+  pesoMaximo Float
+  fecha      DateTime @default(now())
+
+  @@unique([clienteId, ejercicio])
+  @@map("records")
 }

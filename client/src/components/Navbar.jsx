@@ -5,7 +5,8 @@ import {
   Users, 
   Settings, 
   Briefcase,
-  Calendar
+  Calendar,
+  Trophy
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -135,6 +136,11 @@ const Navbar = ({ isOpen }) => {
               <li>
                 <NavLink to="/avisos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
                   Avisos
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/ranking" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Ranking 1RM
                 </NavLink>
               </li>
             </ul>
