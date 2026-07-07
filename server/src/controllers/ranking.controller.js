@@ -59,17 +59,29 @@ exports.upsertRecord = async (req, res) => {
     }
 
     if (clienteId === 'profesor') {
+      let config = await prisma.configuracion.findUnique({ where: { id: 1 } });
       let adminCliente = await prisma.cliente.findUnique({
-        where: { dni_cuit: 'PROFESOR-ADMIN' }
+        where: { dni_cuit: config?.adminDni || 'PROFESOR-ADMIN' }
       });
 
       if (!adminCliente) {
         adminCliente = await prisma.cliente.create({
           data: {
-            nombre: 'Profesor',
-            apellido: 'Administrador',
-            dni_cuit: 'PROFESOR-ADMIN',
+            nombre: config?.adminNombre || 'Profesor',
+            apellido: config?.adminApellido || 'Admin',
+            dni_cuit: config?.adminDni || 'PROFESOR-ADMIN',
+            email: config?.adminEmail || 'admin@fluxer.com',
             es_socio: false
+          }
+        });
+      } else {
+        // Actualizamos los datos en caso de que la configuración haya cambiado
+        adminCliente = await prisma.cliente.update({
+          where: { id: adminCliente.id },
+          data: {
+            nombre: config?.adminNombre || 'Profesor',
+            apellido: config?.adminApellido || 'Admin',
+            email: config?.adminEmail || 'admin@fluxer.com'
           }
         });
       }

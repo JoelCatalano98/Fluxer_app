@@ -158,6 +158,10 @@ model Configuracion {
   bloqueoCapacidad         Boolean @default(false)
   cupoGlobal               Int     @default(15)
   limiteCancelacionMinutos Int     @default(60)
+  adminNombre              String?
+  adminApellido            String?
+  adminDni                 String?
+  adminEmail               String?
 
   @@map("configuracion")
 }

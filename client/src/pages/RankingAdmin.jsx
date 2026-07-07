@@ -9,26 +9,24 @@ const EJERCICIOS = ["Press Plano", "Sentadilla", "Peso Muerto", "Dominadas"];
 const RankingAdmin = () => {
   const [selectedEjercicio, setSelectedEjercicio] = useState(null);
   const [ranking, setRanking] = useState([]);
-  const [clientes, setClientes] = useState([]);
+  const [adminNombre, setAdminNombre] = useState('Profesor');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   
-  const [nuevoRecord, setNuevoRecord] = useState({
-    clienteId: '',
-    pesoMaximo: ''
-  });
+  const [pesoMaximo, setPesoMaximo] = useState('');
 
   useEffect(() => {
-    fetchClientes();
+    fetchConfig();
   }, []);
 
-  const fetchClientes = async () => {
+  const fetchConfig = async () => {
     try {
-      const res = await api.get('/api/clientes');
-      console.log('API Clientes Respuesta:', res.data);
-      setClientes(res.data.data || res.data || []);
+      const res = await api.get('/api/configuracion');
+      if (res.data.success && res.data.data.adminNombre) {
+        setAdminNombre(res.data.data.adminNombre);
+      }
     } catch (error) {
-      console.error('Error al cargar clientes:', error);
+      console.error('Error al cargar config:', error);
     }
   };
 
@@ -48,25 +46,25 @@ const RankingAdmin = () => {
 
   const handleSelectEjercicio = (ej) => {
     setSelectedEjercicio(ej);
-    setNuevoRecord({ clienteId: '', pesoMaximo: '' });
+    setPesoMaximo('');
     loadRanking(ej);
   };
 
   const handleSavePeso = async (e) => {
     e.preventDefault();
-    if (!nuevoRecord.clienteId || !nuevoRecord.pesoMaximo) {
-        alert("Selecciona un cliente y define el peso");
+    if (!pesoMaximo) {
+        alert("Define el peso");
         return;
     }
     setSaving(true);
     try {
       const res = await api.post('/api/ranking', {
-        clienteId: nuevoRecord.clienteId === 'profesor' ? 'profesor' : parseInt(nuevoRecord.clienteId, 10),
+        clienteId: 'profesor',
         ejercicio: selectedEjercicio,
-        pesoMaximo: parseFloat(nuevoRecord.pesoMaximo)
+        pesoMaximo: parseFloat(pesoMaximo)
       });
       if (res.data.success) {
-        setNuevoRecord({ clienteId: '', pesoMaximo: '' });
+        setPesoMaximo('');
         loadRanking(selectedEjercicio);
         alert('Récord guardado con éxito');
       }
@@ -102,28 +100,14 @@ const RankingAdmin = () => {
           </button>
 
           <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', marginBottom: '30px', border: '1px solid #eee' }}>
-            <h3 style={{ margin: '0 0 15px', color: '#333', fontSize: '1.1rem' }}>Cargar Nuevo Récord</h3>
+            <h3 style={{ margin: '0 0 15px', color: '#333', fontSize: '1.1rem' }}>¡Define tu récord, {adminNombre}!</h3>
             <form onSubmit={handleSavePeso} style={{ display: 'flex', gap: '15px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-              <div style={{ flex: '1 1 200px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', color: '#555', fontSize: '0.9rem', fontWeight: 'bold' }}>Cliente / Socio</label>
-                <select 
-                  value={nuevoRecord.clienteId}
-                  onChange={e => setNuevoRecord({...nuevoRecord, clienteId: e.target.value})}
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
-                >
-                  <option value="" disabled>Seleccione un cliente...</option>
-                  <option value="profesor">Yo (Profesor / Administrador)</option>
-                  {(Array.isArray(clientes) ? clientes : []).map(c => (
-                    <option key={c.id} value={c.id}>{c.nombre} {c.apellido} - {c.dni_cuit}</option>
-                  ))}
-                </select>
-              </div>
               <div style={{ flex: '1 1 150px' }}>
                 <label style={{ display: 'block', marginBottom: '5px', color: '#555', fontSize: '0.9rem', fontWeight: 'bold' }}>Peso (1RM) en kg</label>
                 <input 
                   type="number" 
-                  value={nuevoRecord.pesoMaximo}
-                  onChange={e => setNuevoRecord({...nuevoRecord, pesoMaximo: e.target.value})}
+                  value={pesoMaximo}
+                  onChange={e => setPesoMaximo(e.target.value)}
                   placeholder="Ej: 120"
                   style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
                 />
@@ -134,7 +118,7 @@ const RankingAdmin = () => {
                 style={{ padding: '10px 20px', backgroundColor: '#00a8e8', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', minWidth: '150px', justifyContent: 'center' }}
               >
                 {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />} 
-                {saving ? 'Guardando...' : 'Guardar Récord'}
+                {saving ? 'Guardando...' : 'Guardar mi Récord'}
               </button>
             </form>
           </div>

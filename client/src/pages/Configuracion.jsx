@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Palette, Upload, ShoppingBag, CircleCheck, Briefcase, RotateCcw, Loader2 } from 'lucide-react';
+import { Palette, Upload, ShoppingBag, CircleCheck, Briefcase, RotateCcw, Loader2, User } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import api from '../services/api';
 import '../styles/style.css';
@@ -11,7 +11,11 @@ const Configuracion = () => {
     logoBase64: null,
     bloqueoCapacidad: false,
     cupoGlobal: 15,
-    limiteCancelacionMinutos: 60
+    limiteCancelacionMinutos: 60,
+    adminNombre: '',
+    adminApellido: '',
+    adminDni: '',
+    adminEmail: ''
   });
 
   const [loading, setLoading] = useState(true);
@@ -30,7 +34,11 @@ const Configuracion = () => {
             logoBase64: res.data.data.logoBase64 || null,
             bloqueoCapacidad: res.data.data.bloqueoCapacidad || false,
             cupoGlobal: res.data.data.cupoGlobal || 15,
-            limiteCancelacionMinutos: res.data.data.limiteCancelacionMinutos || 60
+            limiteCancelacionMinutos: res.data.data.limiteCancelacionMinutos || 60,
+            adminNombre: res.data.data.adminNombre || '',
+            adminApellido: res.data.data.adminApellido || '',
+            adminDni: res.data.data.adminDni || '',
+            adminEmail: res.data.data.adminEmail || ''
           });
         }
       } catch (err) {
@@ -272,6 +280,61 @@ const Configuracion = () => {
                     <span className="perilla"></span>
                   </span>
                 </label>
+              </div>
+            </div>
+          </section>
+
+          {/* 3. DATOS DEL ADMINISTRADOR / PROFESOR */}
+          <section className="seccion-configuracion">
+            <div className="cabecera-seccion">
+              <User size={24} className="icon-blue" />
+              <h2>3. Datos del Administrador / Profesor</h2>
+            </div>
+            <div className="cuerpo-seccion">
+              <p className="p-ayuda" style={{ marginBottom: '15px' }}>
+                Estos datos se utilizarán para reflejar tu perfil en el Ranking 1RM.
+              </p>
+              <div className="formulario-config" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <div className="grupo-entrada">
+                  <label htmlFor="adminNombre">Nombre</label>
+                  <input
+                    type="text"
+                    id="adminNombre"
+                    value={config.adminNombre}
+                    onChange={handleInputChange}
+                    placeholder="Ej: Juan"
+                  />
+                </div>
+                <div className="grupo-entrada">
+                  <label htmlFor="adminApellido">Apellido</label>
+                  <input
+                    type="text"
+                    id="adminApellido"
+                    value={config.adminApellido}
+                    onChange={handleInputChange}
+                    placeholder="Ej: Pérez"
+                  />
+                </div>
+                <div className="grupo-entrada">
+                  <label htmlFor="adminDni">DNI</label>
+                  <input
+                    type="text"
+                    id="adminDni"
+                    value={config.adminDni}
+                    onChange={handleInputChange}
+                    placeholder="Ej: 12345678"
+                  />
+                </div>
+                <div className="grupo-entrada">
+                  <label htmlFor="adminEmail">Email</label>
+                  <input
+                    type="email"
+                    id="adminEmail"
+                    value={config.adminEmail}
+                    onChange={handleInputChange}
+                    placeholder="Ej: profe@fluxer.com"
+                  />
+                </div>
               </div>
             </div>
           </section>
