@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { X, Dumbbell, Trash2, Plus, ArrowLeft, ChevronDown, ChevronUp, Save, Loader2 } from 'lucide-react';
+import { X, Dumbbell, Trash2, Plus, ArrowLeft, ChevronDown, ChevronUp, Save, Loader2, Calculator } from 'lucide-react';
 import api from '../services/api';
+import CalculadoraPesos from './CalculadoraPesos';
 
 const ModalRutinas = ({ isOpen, onClose, cliente }) => {
   const [rutinasExistentes, setRutinasExistentes] = useState([]);
   const [modoCreacion, setModoCreacion] = useState(false);
   const [loading, setLoading] = useState(false);
   const [expandedRutinaId, setExpandedRutinaId] = useState(null);
+  const [showCalculadora, setShowCalculadora] = useState(false);
 
   // Estado del formulario dinámico
   const [nuevaRutina, setNuevaRutina] = useState({
@@ -214,6 +216,12 @@ const ModalRutinas = ({ isOpen, onClose, cliente }) => {
                   style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '500' }}
                 >
                   <ArrowLeft size={16} /> Volver a la lista
+                </button>
+                <button 
+                  onClick={() => setShowCalculadora(true)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '5px', background: '#fff', border: '1px solid #ddd', padding: '6px 12px', borderRadius: '6px', color: '#333', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}
+                >
+                  <Calculator size={16} /> Calculadora %
                 </button>
               </div>
 
@@ -427,6 +435,7 @@ const ModalRutinas = ({ isOpen, onClose, cliente }) => {
           </div>
         )}
       </div>
+      {showCalculadora && <CalculadoraPesos onClose={() => setShowCalculadora(false)} />}
     </div>
   );
 };
