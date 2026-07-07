@@ -161,13 +161,16 @@ model Configuracion {
   @@map("configuracion")
 }
 
-model Feriado {
-  id          Int    @id @default(autoincrement())
-  fechaInicio String
-  fechaFin    String
-  motivo      String
+model Aviso {
+  id         Int       @id @default(autoincrement())
+  titulo     String
+  mensaje    String?   @db.Text
+  tipo       String    @default("INFO")
+  fechaDesde DateTime
+  fechaHasta DateTime?
+  activo     Boolean   @default(true)
 
-  @@map("feriados")
+  @@map("avisos")
 }
 
 model CalendarioNota {
@@ -192,9 +195,9 @@ model Rutina {
 }
 
 model RutinaEjercicio {
-  id              Int    @id @default(autoincrement())
+  id              Int     @id @default(autoincrement())
   rutinaId        Int
-  rutina          Rutina @relation(fields: [rutinaId], references: [id], onDelete: Cascade)
+  rutina          Rutina  @relation(fields: [rutinaId], references: [id], onDelete: Cascade)
   nombreEjercicio String
   dia             String?
   series          Int

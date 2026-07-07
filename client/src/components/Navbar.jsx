@@ -133,8 +133,8 @@ const Navbar = ({ isOpen }) => {
                 </li>
               )}
               <li>
-                <NavLink to="/feriados" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Feriados
+                <NavLink to="/avisos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  Avisos
                 </NavLink>
               </li>
             </ul>

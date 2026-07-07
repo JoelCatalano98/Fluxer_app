@@ -15,7 +15,7 @@ import ClientesTotales from './pages/ClientesTotales';
 import Morosos from './pages/Morosos';
 import Profesionales from './pages/Profesionales';
 import Categorias from './pages/Categorias';
-import Feriados from './pages/Feriados';
+import Avisos from './pages/Avisos';
 import Pagos from './pages/Pagos';
 import Login from './pages/Login';
 import Calendario from './pages/Calendario';
@@ -166,7 +166,7 @@ function AppContent() {
             <Route path="/gestion-planes" element={<GestionPlanes />} />
             <Route path="/configuracion" element={<Configuracion />} />
             <Route path="/categorias" element={<Categorias />} />
-            <Route path="/feriados" element={<Feriados />} />
+            <Route path="/avisos" element={<Avisos />} />
             <Route path="/pagos" element={<Pagos />} />
             <Route path="/calendario" element={<Calendario />} />
             <Route path="/usuarios" element={<Usuarios />} />
