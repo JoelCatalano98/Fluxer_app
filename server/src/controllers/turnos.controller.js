@@ -245,6 +245,7 @@ const getHorarios = async (req, res) => {
     try {
         const horarios = await prisma.horarioConfig.findMany({
             where: { activo: true },
+            include: { categoria: true },
             orderBy: [
                 { dia_semana: 'asc' },
                 { hora_inicio: 'asc' }
@@ -269,7 +270,7 @@ const getHorarios = async (req, res) => {
 // POST /api/turnos/horarios
 const createHorario = async (req, res) => {
     try {
-        const { dia_semana, dias, hora_inicio, hora_fin, categoriaId } = req.body;
+        const { dia_semana, dias, hora_inicio, hora_fin, categoriaId, cupo_maximo } = req.body;
 
         if (!hora_inicio || !hora_fin) {
             return res.status(400).json({
@@ -305,8 +306,11 @@ const createHorario = async (req, res) => {
             const allForDay = await prisma.horarioConfig.findMany({
                 where: { dia_semana: diaInt }
             });
+            const catIdParsed = categoriaId ? parseInt(categoriaId) : null;
             const existing = allForDay.find(h =>
-                formatTime(h.hora_inicio) === inicioStr && formatTime(h.hora_fin) === finStr
+                formatTime(h.hora_inicio) === inicioStr && 
+                formatTime(h.hora_fin) === finStr &&
+                h.categoriaId === catIdParsed
             );
 
             if (existing) {
@@ -315,7 +319,7 @@ const createHorario = async (req, res) => {
                     where: { id: existing.id },
                     data: { 
                         activo: true, 
-                        categoriaId: categoriaId ? parseInt(categoriaId) : null 
+                        categoriaId: catIdParsed
                     }
                 });
                 createdHorarios.push(reactivado);
@@ -326,7 +330,7 @@ const createHorario = async (req, res) => {
                         hora_inicio: inicioDate,
                         hora_fin: finDate,
                         activo: true,
-                        categoriaId: categoriaId ? parseInt(categoriaId) : null
+                        categoriaId: catIdParsed
                     }
                 });
                 createdHorarios.push(nuevoHorario);
@@ -418,17 +422,19 @@ const updateHorario = async (req, res) => {
                         data: { 
                             hora_inicio: targetInicio, 
                             hora_fin: targetFin,
-                            categoriaId: categoriaId ? parseInt(categoriaId) : null 
+                            categoriaId: categoriaId ? parseInt(categoriaId) : null
                         }
                     });
                     results.push(actualizado);
                 } else {
-                    // No existe hermano activo → buscar si hay un registro inactivo para este día con las NUEVAS horas
+                    // No existe hermano activo → buscar si hay un registro inactivo para este día con las NUEVAS horas y misma categoría
+                    const catIdParsed = categoriaId ? parseInt(categoriaId) : null;
                     const inactivoConNuevaHora = allHorarios.find(h =>
                         h.dia_semana === dia &&
                         h.activo === false &&
                         formatTime(h.hora_inicio) === targetInicioStr &&
-                        formatTime(h.hora_fin) === targetFinStr
+                        formatTime(h.hora_fin) === targetFinStr &&
+                        h.categoriaId === catIdParsed
                     );
 
                     // También buscar inactivo con las VIEJAS horas (por si se reactivó la misma franja)
@@ -437,7 +443,8 @@ const updateHorario = async (req, res) => {
                             h.dia_semana === dia &&
                             h.activo === false &&
                             formatTime(h.hora_inicio) === baseInicioStr &&
-                            formatTime(h.hora_fin) === baseFinStr
+                            formatTime(h.hora_fin) === baseFinStr &&
+                            h.categoriaId === horarioBase.categoriaId
                         )
                         : null;
 
@@ -450,7 +457,7 @@ const updateHorario = async (req, res) => {
                                 hora_inicio: targetInicio, 
                                 hora_fin: targetFin, 
                                 activo: true,
-                                categoriaId: categoriaId ? parseInt(categoriaId) : null
+                                categoriaId: catIdParsed
                             }
                         });
                         results.push(reactivado);
@@ -462,7 +469,7 @@ const updateHorario = async (req, res) => {
                                 hora_inicio: targetInicio,
                                 hora_fin: targetFin,
                                 activo: true,
-                                categoriaId: categoriaId ? parseInt(categoriaId) : null
+                                categoriaId: catIdParsed
                             }
                         });
                         results.push(nuevo);

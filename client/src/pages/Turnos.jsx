@@ -121,7 +121,8 @@ const Turnos = () => {
   const [editHorarioDias, setEditHorarioDias] = useState([]);
   const [editHorarioValues, setEditHorarioValues] = useState({
     hora_inicio: '',
-    hora_fin: ''
+    hora_fin: '',
+    categoriaId: ''
   });
 
   // Hook useForm para el modal "Anotar Cliente"
@@ -490,9 +491,22 @@ const Turnos = () => {
                 uniqueRanges.map((range, index) => (
                   <tr key={index}>
                     {/* Primera columna: Sticky con lápiz de edición */}
-                    <td className="etiqueta-hora columna-fija">
+                    <td className="etiqueta-hora columna-fija" style={{ padding: '8px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                         <span>{range}</span>
+                        <button 
+                          onClick={() => {
+                            // Buscar el primer horario de esta fila para editarlo
+                            const firstInRow = horarios.find(h => `${formatTime(h.hora_inicio)} - ${formatTime(h.hora_fin)}` === range);
+                            if (firstInRow) {
+                              handleOpenEditHorario(range, firstInRow.categoriaId);
+                            }
+                          }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '0', display: 'flex' }}
+                          title="Editar franja horaria"
+                        >
+                          <Pencil size={14} />
+                        </button>
                       </div>
                     </td>
                     
@@ -527,39 +541,53 @@ const Turnos = () => {
                       }
 
                       return (
-                        <td key={dia}>
+                        <td key={dia} style={{ padding: 0, verticalAlign: 'top', border: '1px solid #e5e7eb' }}>
                           {tieneSlotConfigurado ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '4px' }}>
-                              {slotsMatching.map(slot => {
+                            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
+                              {slotsMatching.map((slot, sIdx) => {
                                 const turnosDelSlot = turnos.filter(t => t.horarioId === slot.id);
                                 const count = turnosDelSlot.length;
                                 const catNombre = slot.categoria?.nombre || 'General';
                                 const catColor = slot.categoria?.color || '#00a8e8';
 
                                 return (
-                                  <div key={slot.id} className={`caja-turno ${count > 0 ? 'activo' : ''}`} style={{ borderLeft: `4px solid ${catColor}`, backgroundColor: `${catColor}15`, display: 'block' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', borderBottom: `1px solid ${catColor}30`, paddingBottom: '4px' }}>
-                                      <span style={{ fontSize: '0.75rem', fontWeight: 'bold', color: catColor }}>{catNombre}</span>
-                                      <button 
-                                        type="button"
-                                        onClick={() => handleOpenEditHorario(range, slot.categoriaId)} 
-                                        style={{ background:'none', border:'none', cursor:'pointer', color:'#888', padding: '2px' }}
-                                        title="Editar disciplina"
-                                      >
-                                        <Pencil size={12} />
-                                      </button>
+                                  <div 
+                                    key={slot.id} 
+                                    style={{ 
+                                      backgroundColor: `${catColor}15`,
+                                      borderBottom: sIdx < slotsMatching.length - 1 ? `1px solid ${catColor}30` : 'none',
+                                      padding: '4px 6px',
+                                      fontSize: '0.85rem',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      justifyContent: 'center',
+                                      minHeight: '40px',
+                                      flexGrow: 1
+                                    }}
+                                  >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: catColor }}></div>
+                                        <span style={{ color: '#111827', fontWeight: '600', fontSize: '0.75rem', textTransform: 'uppercase' }}>{catNombre}</span>
+                                      </div>
                                     </div>
                                     
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                      {count > 0 ? (
-                                        <>
-                                          <span style={{ fontSize: '0.85rem' }}>{count === 1 ? `${turnosDelSlot[0].cliente?.nombre.split(' ')[0]} ${turnosDelSlot[0].cliente?.apellido.charAt(0)}.` : `${count} pers.`}</span>
-                                          <button className="btn-view-turno" onClick={() => openViewTurnosDetails(turnosDelSlot)}>
-                                            <Eye size={14} />
-                                          </button>
-                                        </>
-                                      ) : (
-                                        <span style={{ color: '#888', fontSize: '0.8rem', fontStyle: 'italic' }}>0 inscritos</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '10px' }}>
+                                      <span style={{ color: count > 0 ? '#059669' : '#6b7280', fontSize: '0.75rem', fontWeight: count > 0 ? '600' : 'normal' }}>
+                                        {count > 0 ? `${count} inscrito${count > 1 ? 's' : ''}` : 'Libre'}
+                                      </span>
+                                      {count > 0 && (
+                                        <button 
+                                          className="btn-view-turno" 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            openViewTurnosDetails(turnosDelSlot);
+                                          }}
+                                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4b5563', padding: '0 4px', display: 'flex' }}
+                                          title="Ver inscritos"
+                                        >
+                                          <Eye size={13} />
+                                        </button>
                                       )}
                                     </div>
                                   </div>
@@ -567,7 +595,7 @@ const Turnos = () => {
                               })}
                             </div>
                           ) : (
-                            <div className="turno-deshabilitado"></div>
+                            <div style={{ width: '100%', height: '100%', minHeight: '40px', backgroundColor: '#fafafa' }}></div>
                           )}
                         </td>
                       );
