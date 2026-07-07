@@ -3,9 +3,9 @@ const prisma = require('../config/prisma');
 // Crear una rutina con días y ejercicios
 const crearRutina = async (req, res) => {
     try {
-        const { nombre, descripcion, clienteId, dias } = req.body;
+        const { nombre, clienteId, ejercicios } = req.body;
 
-        if (!nombre || !clienteId || !dias || !Array.isArray(dias)) {
+        if (!nombre || !clienteId || !ejercicios || !Array.isArray(ejercicios)) {
             return res.status(400).json({
                 success: false,
                 message: 'Faltan datos requeridos o el formato es incorrecto.'
@@ -15,31 +15,19 @@ const crearRutina = async (req, res) => {
         const nuevaRutina = await prisma.rutina.create({
             data: {
                 nombre,
-                descripcion,
                 clienteId: parseInt(clienteId),
-                dias: {
-                    create: dias.map(dia => ({
-                        nombre: dia.nombre,
-                        ejercicios: {
-                            create: dia.ejercicios.map(ej => ({
-                                nombre: ej.nombre,
-                                series: parseInt(ej.series),
-                                repeticiones: ej.repeticiones,
-                                descanso: ej.descanso,
-                                pesoSugerido: ej.pesoSugerido,
-                                notas: ej.notas,
-                                videoUrl: ej.videoUrl
-                            }))
-                        }
+                ejercicios: {
+                    create: ejercicios.map(ej => ({
+                        nombreEjercicio: ej.nombreEjercicio || ej.nombre, // fallback if frontend sends 'nombre'
+                        dia: ej.dia || null,
+                        series: parseInt(ej.series),
+                        repeticiones: String(ej.repeticiones),
+                        pesoSugerido: parseFloat(ej.pesoSugerido || 0)
                     }))
                 }
             },
             include: {
-                dias: {
-                    include: {
-                        ejercicios: true
-                    }
-                }
+                ejercicios: true
             }
         });
 
@@ -67,14 +55,10 @@ const obtenerRutinasPorCliente = async (req, res) => {
                 clienteId: parseInt(clienteId)
             },
             include: {
-                dias: {
-                    include: {
-                        ejercicios: true
-                    }
-                }
+                ejercicios: true
             },
             orderBy: {
-                fechaInicio: 'desc'
+                createdAt: 'desc'
             }
         });
 

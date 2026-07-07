@@ -109,11 +109,22 @@ const ModalRutinas = ({ isOpen, onClose, cliente }) => {
 
     try {
       setLoading(true);
+
+      // Convertimos el estado agrupado por días a un array plano
+      const ejerciciosPlanos = [];
+      nuevaRutina.dias.forEach(dia => {
+        dia.ejercicios.forEach(ej => {
+          ejerciciosPlanos.push({
+            ...ej,
+            dia: dia.nombre // Pasamos el nombre del día como string
+          });
+        });
+      });
+
       const payload = {
         nombre: nuevaRutina.nombre,
-        descripcion: nuevaRutina.descripcion,
         clienteId: cliente.id,
-        dias: nuevaRutina.dias
+        ejercicios: ejerciciosPlanos
       };
 
       const res = await api.post('/api/rutinas', payload);
@@ -327,7 +338,7 @@ const ModalRutinas = ({ isOpen, onClose, cliente }) => {
                         <div>
                           <h3 style={{ margin: '0 0 4px', fontSize: '1.1rem', color: '#333' }}>{rutina.nombre}</h3>
                           <span style={{ fontSize: '0.8rem', color: '#888' }}>
-                            Creada: {new Date(rutina.fechaInicio).toLocaleDateString()} • {rutina.dias?.length || 0} días
+                            Creada: {new Date(rutina.createdAt || rutina.fechaInicio).toLocaleDateString()} • {rutina.ejercicios?.length || 0} ejercicios
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -348,35 +359,46 @@ const ModalRutinas = ({ isOpen, onClose, cliente }) => {
                             <p style={{ margin: '0 0 15px', fontSize: '0.9rem', color: '#555', fontStyle: 'italic' }}>{rutina.descripcion}</p>
                           )}
                           
-                          {rutina.dias?.map(dia => (
-                            <div key={dia.id} style={{ marginBottom: '20px' }}>
-                              <h4 style={{ margin: '0 0 10px', fontSize: '0.95rem', color: '#00a8e8', borderBottom: '2px solid #e1f0ff', paddingBottom: '5px', display: 'inline-block' }}>
-                                {dia.nombre}
-                              </h4>
-                              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                                <thead>
-                                  <tr style={{ backgroundColor: '#f8f9fa', color: '#666', textAlign: 'left' }}>
-                                    <th style={{ padding: '8px 10px', borderRadius: '4px 0 0 4px' }}>Ejercicio</th>
-                                    <th style={{ padding: '8px 10px' }}>Series</th>
-                                    <th style={{ padding: '8px 10px' }}>Reps</th>
-                                    <th style={{ padding: '8px 10px' }}>Peso</th>
-                                    <th style={{ padding: '8px 10px', borderRadius: '0 4px 4px 0' }}>Notas</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {dia.ejercicios?.map(ej => (
-                                    <tr key={ej.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
-                                      <td style={{ padding: '10px', fontWeight: '500', color: '#333' }}>{ej.nombre}</td>
-                                      <td style={{ padding: '10px', color: '#666' }}>{ej.series}</td>
-                                      <td style={{ padding: '10px', color: '#666' }}>{ej.repeticiones}</td>
-                                      <td style={{ padding: '10px', color: '#666' }}>{ej.pesoSugerido || '-'}</td>
-                                      <td style={{ padding: '10px', color: '#888' }}>{ej.notas || '-'}</td>
+                          {rutina.ejercicios && rutina.ejercicios.length > 0 ? (
+                            Object.entries(
+                              rutina.ejercicios.reduce((acc, ej) => {
+                                const diaNombre = ej.dia || 'Sin Día';
+                                if (!acc[diaNombre]) acc[diaNombre] = [];
+                                acc[diaNombre].push(ej);
+                                return acc;
+                              }, {})
+                            ).map(([diaNombre, ejerciciosDia], idx) => (
+                              <div key={idx} style={{ marginBottom: '20px' }}>
+                                <h4 style={{ margin: '0 0 10px', fontSize: '0.95rem', color: '#00a8e8', borderBottom: '2px solid #e1f0ff', paddingBottom: '5px', display: 'inline-block' }}>
+                                  {diaNombre}
+                                </h4>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                                  <thead>
+                                    <tr style={{ backgroundColor: '#f8f9fa', color: '#666', textAlign: 'left' }}>
+                                      <th style={{ padding: '8px 10px', borderRadius: '4px 0 0 4px' }}>Ejercicio</th>
+                                      <th style={{ padding: '8px 10px' }}>Series</th>
+                                      <th style={{ padding: '8px 10px' }}>Reps</th>
+                                      <th style={{ padding: '8px 10px' }}>Sugerido</th>
+                                      <th style={{ padding: '8px 10px', borderRadius: '0 4px 4px 0' }}>Real</th>
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          ))}
+                                  </thead>
+                                  <tbody>
+                                    {ejerciciosDia.map((ej) => (
+                                      <tr key={ej.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                        <td style={{ padding: '10px', fontWeight: '500', color: '#333' }}>{ej.nombreEjercicio}</td>
+                                        <td style={{ padding: '10px', color: '#666' }}>{ej.series}</td>
+                                        <td style={{ padding: '10px', color: '#666' }}>{ej.repeticiones}</td>
+                                        <td style={{ padding: '10px', color: '#666' }}>{ej.pesoSugerido || '-'}</td>
+                                        <td style={{ padding: '10px', color: '#10b981', fontWeight: 'bold' }}>{ej.pesoReal ? `${ej.pesoReal} kg` : '-'}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            ))
+                          ) : (
+                            <p style={{ margin: 0, color: '#999', fontStyle: 'italic', fontSize: '0.9rem' }}>Esta rutina no tiene ejercicios.</p>
+                          )}
                         </div>
                       )}
                     </div>
