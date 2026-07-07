@@ -276,7 +276,7 @@ const ModalRutinas = ({ isOpen, onClose, cliente }) => {
                         </div>
                         <div>
                           <label style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginBottom: '4px', fontWeight: '500' }}>Peso Sugerido</label>
-                          <input type="text" value={ej.pesoSugerido} onChange={(e) => actualizarEjercicio(diaIdx, ejIdx, 'pesoSugerido', e.target.value)} placeholder="Ej: 20kg" style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '0.9rem' }} />
+                          <input type="text" value={ej.pesoSugerido} onChange={(e) => actualizarEjercicio(diaIdx, ejIdx, 'pesoSugerido', e.target.value)} placeholder="Ej: 40-60-80" style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '0.9rem' }} />
                         </div>
                         <div className="ej-col-span-2 ej-col-span-4">
                           <label style={{ fontSize: '0.75rem', color: '#888', display: 'block', marginBottom: '4px', fontWeight: '500' }}>Notas</label>

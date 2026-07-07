@@ -45,7 +45,7 @@ const actualizarPesoEjercicio = async (req, res) => {
 
         const actualizado = await prisma.rutinaEjercicio.update({
             where: { id: ejercicioId },
-            data: { pesoReal: parseFloat(pesoReal) }
+            data: { pesoReal: String(pesoReal) }
         });
 
         return res.status(200).json({

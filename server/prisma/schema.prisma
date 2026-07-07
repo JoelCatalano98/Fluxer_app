@@ -199,8 +199,8 @@ model RutinaEjercicio {
   dia             String?
   series          Int
   repeticiones    String
-  pesoSugerido    Float
-  pesoReal        Float?
+  pesoSugerido    String?
+  pesoReal        String?
 
   @@map("rutina_ejercicios")
 }

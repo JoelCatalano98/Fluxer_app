@@ -22,7 +22,7 @@ const crearRutina = async (req, res) => {
                         dia: ej.dia || null,
                         series: parseInt(ej.series),
                         repeticiones: String(ej.repeticiones),
-                        pesoSugerido: parseFloat(ej.pesoSugerido || 0)
+                        pesoSugerido: ej.pesoSugerido ? String(ej.pesoSugerido) : null
                     }))
                 }
             },
