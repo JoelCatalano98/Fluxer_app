@@ -154,8 +154,9 @@ model Configuracion {
   id                Int     @id @default(1)
   nombreGimnasio    String?
   logoBase64        String? @db.LongText
-  bloquearCapacidad Boolean @default(false)
-  capacidadMaxima   Int     @default(10)
+  bloqueoCapacidad          Boolean @default(false)
+  cupoGlobal                Int     @default(15)
+  limiteCancelacionMinutos  Int     @default(60)
 
   @@map("configuracion")
 }

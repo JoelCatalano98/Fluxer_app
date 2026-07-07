@@ -9,8 +9,9 @@ const Configuracion = () => {
   const [config, setConfig] = useState({
     nombreGimnasio: '',
     logoBase64: null,
-    bloquearCapacidad: false,
-    capacidadMaxima: 10
+    bloqueoCapacidad: false,
+    cupoGlobal: 15,
+    limiteCancelacionMinutos: 60
   });
 
   const [loading, setLoading] = useState(true);
@@ -27,8 +28,9 @@ const Configuracion = () => {
           setConfig({
             nombreGimnasio: res.data.data.nombreGimnasio || '',
             logoBase64: res.data.data.logoBase64 || null,
-            bloquearCapacidad: res.data.data.bloquearCapacidad || false,
-            capacidadMaxima: res.data.data.capacidadMaxima || 10
+            bloqueoCapacidad: res.data.data.bloqueoCapacidad || false,
+            cupoGlobal: res.data.data.cupoGlobal || 15,
+            limiteCancelacionMinutos: res.data.data.limiteCancelacionMinutos || 60
           });
         }
       } catch (err) {
@@ -224,12 +226,12 @@ const Configuracion = () => {
             <div className="cuerpo-seccion">
               <div className="formulario-config" style={{ gridTemplateColumns: '1fr' }}>
                 <div className="grupo-entrada">
-                  <label htmlFor="capacidadMaxima">Capacidad Máxima por Horario</label>
+                  <label htmlFor="cupoGlobal">Cupo Máximo Global por Turno</label>
                   <div className="input-con-unidad">
                     <input
                       type="number"
-                      id="capacidadMaxima"
-                      value={config.capacidadMaxima}
+                      id="cupoGlobal"
+                      value={config.cupoGlobal}
                       onChange={handleInputChange}
                       min="1"
                       required
@@ -237,18 +239,33 @@ const Configuracion = () => {
                     <span>personas</span>
                   </div>
                 </div>
+
+                <div className="grupo-entrada" style={{ marginTop: '15px' }}>
+                  <label htmlFor="limiteCancelacionMinutos">Tiempo límite para cancelar reserva (en Minutos)</label>
+                  <div className="input-con-unidad">
+                    <input
+                      type="number"
+                      id="limiteCancelacionMinutos"
+                      value={config.limiteCancelacionMinutos}
+                      onChange={handleInputChange}
+                      min="0"
+                      required
+                    />
+                    <span>minutos</span>
+                  </div>
+                </div>
               </div>
 
               <div className="grupo-conmutador">
                 <div className="info-conmutador">
-                  <h4>Bloquear Capacidad por Horario</h4>
-                  <p>Impedir agendamientos si la cantidad de personas anotadas es igual o mayor al límite.</p>
+                  <h4>Bloquear reservas automáticamente al alcanzar el cupo</h4>
+                  <p>Impedir agendamientos si la cantidad de personas anotadas es igual o mayor al límite global.</p>
                 </div>
                 <label className="interruptor">
                   <input
                     type="checkbox"
-                    id="bloquearCapacidad"
-                    checked={config.bloquearCapacidad}
+                    id="bloqueoCapacidad"
+                    checked={config.bloqueoCapacidad}
                     onChange={handleInputChange}
                   />
                   <span className="deslizador">

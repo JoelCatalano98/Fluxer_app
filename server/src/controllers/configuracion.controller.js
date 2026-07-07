@@ -15,8 +15,9 @@ const getConfiguracion = async (req, res) => {
                     id: 1,
                     nombreGimnasio: 'Fluxer Gym',
                     logoBase64: null,
-                    bloquearCapacidad: false,
-                    capacidadMaxima: 10
+                    bloqueoCapacidad: false,
+                    cupoGlobal: 15,
+                    limiteCancelacionMinutos: 60
                 }
             });
         }
@@ -39,7 +40,7 @@ const getConfiguracion = async (req, res) => {
 // PUT /api/configuracion
 const updateConfiguracion = async (req, res) => {
     try {
-        const { nombreGimnasio, logoBase64, bloquearCapacidad, capacidadMaxima } = req.body;
+        const { nombreGimnasio, logoBase64, bloqueoCapacidad, cupoGlobal, limiteCancelacionMinutos } = req.body;
 
         // Upsert para actualizar o crear la configuración única con id 1
         const config = await prisma.configuracion.upsert({
@@ -47,15 +48,17 @@ const updateConfiguracion = async (req, res) => {
             update: {
                 nombreGimnasio,
                 logoBase64: logoBase64 === "" ? null : logoBase64,
-                bloquearCapacidad: bloquearCapacidad === true,
-                capacidadMaxima: parseInt(capacidadMaxima) || 10
+                bloqueoCapacidad: bloqueoCapacidad === true,
+                cupoGlobal: parseInt(cupoGlobal) || 15,
+                limiteCancelacionMinutos: parseInt(limiteCancelacionMinutos) || 60
             },
             create: {
                 id: 1,
                 nombreGimnasio: nombreGimnasio || 'Fluxer Gym',
                 logoBase64: logoBase64 === "" ? null : (logoBase64 || null),
-                bloquearCapacidad: bloquearCapacidad === true,
-                capacidadMaxima: parseInt(capacidadMaxima) || 10
+                bloqueoCapacidad: bloqueoCapacidad === true,
+                cupoGlobal: parseInt(cupoGlobal) || 15,
+                limiteCancelacionMinutos: parseInt(limiteCancelacionMinutos) || 60
             }
         });
 

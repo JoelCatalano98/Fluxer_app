@@ -22,8 +22,8 @@ const getClasesDisponibles = async (req, res) => {
         });
 
         // Obtener configuración global para cupo máximo
-        const configuracion = await prisma.configuracionLocal.findFirst();
-        const maxGlobal = configuracion?.capacidad_max_hora || 15;
+        const configuracion = await prisma.configuracion.findFirst();
+        const maxGlobal = configuracion?.cupoGlobal || 15;
 
         // Formatear para facilitar uso en el front
         const horariosFormateados = horarios.map(h => {
@@ -86,29 +86,32 @@ const reservarTurno = async (req, res) => {
             });
         }
 
-        const configuracion = await prisma.configuracionLocal.findFirst();
-        const maxGlobal = configuracion?.capacidad_max_hora || 15;
+        const configuracion = await prisma.configuracion.findFirst();
+        const maxGlobal = configuracion?.cupoGlobal || 15;
+        const bloqueo = configuracion?.bloqueoCapacidad;
         const cupo = maxGlobal;
 
-        if (horario.turnos.length >= cupo) {
+        if (horario.turnos.length >= cupo && bloqueo) {
             return res.status(400).json({
                 success: false,
-                message: 'La clase ya está llena para este horario y fecha'
+                message: 'Cupo máximo alcanzado'
             });
         }
 
-        // Validar límite de tiempo para reservar (ej: configuracion.margen_cancelacion_horas)
-        const margenHoras = configuracion?.margen_cancelacion_horas || 1;
-        const ahora = new Date();
+        // Validar límite de tiempo para reservar (ej: limiteCancelacionMinutos)
+        const margenMinutos = configuracion?.limiteCancelacionMinutos || 60;
+        // Construir la fecha/hora real de la clase forzando -03:00
+        const fechaIso = new Date(d).toISOString().split('T')[0];
+        const hrObj = new Date(horario.hora_inicio);
+        const hh = String(hrObj.getUTCHours()).padStart(2, '0');
+        const mm = String(hrObj.getUTCMinutes()).padStart(2, '0');
         
-        // Construir la fecha/hora real de la clase
-        const horaInicio = new Date(horario.hora_inicio);
-        const inicioClase = new Date(d);
-        inicioClase.setUTCHours(horaInicio.getUTCHours(), horaInicio.getUTCMinutes(), 0, 0);
+        const fechaClaseExacta = new Date(`${fechaIso}T${hh}:${mm}:00-03:00`);
+        const ahora = new Date();
 
         // Si ya pasó la clase o falta menos del margen permitido (asumiendo que sirve para reserva)
-        const horasFaltantes = (inicioClase - ahora) / (1000 * 60 * 60);
-        if (horasFaltantes < 0) {
+        const minutosFaltantes = (fechaClaseExacta.getTime() - ahora.getTime()) / (1000 * 60);
+        if (minutosFaltantes < 0) {
             return res.status(400).json({
                 success: false,
                 message: 'No puedes reservar un turno de una clase que ya pasó o está por empezar.'
@@ -182,20 +185,23 @@ const cancelarTurno = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Turno no encontrado' });
         }
 
-        const configuracion = await prisma.configuracionLocal.findFirst();
-        const margenHoras = configuracion?.margen_cancelacion_horas || 1;
+        const configuracion = await prisma.configuracion.findFirst();
+        const margenMinutos = configuracion?.limiteCancelacionMinutos || 60;
 
+        const fechaIso = new Date(turno.fecha).toISOString().split('T')[0];
+        const hrObj = new Date(turno.horario.hora_inicio);
+        const hh = String(hrObj.getUTCHours()).padStart(2, '0');
+        const mm = String(hrObj.getUTCMinutes()).padStart(2, '0');
+
+        const fechaClaseExacta = new Date(`${fechaIso}T${hh}:${mm}:00-03:00`);
         const ahora = new Date();
-        const horaInicio = new Date(turno.horario.hora_inicio);
-        const inicioClase = new Date(turno.fecha);
-        inicioClase.setUTCHours(horaInicio.getUTCHours(), horaInicio.getUTCMinutes(), 0, 0);
 
-        const horasFaltantes = (inicioClase - ahora) / (1000 * 60 * 60);
+        const diferenciaMinutos = (fechaClaseExacta.getTime() - ahora.getTime()) / (1000 * 60);
 
-        if (horasFaltantes < margenHoras) {
+        if (diferenciaMinutos < margenMinutos) {
             return res.status(400).json({
                 success: false,
-                message: `El tiempo límite para cancelar es de ${margenHoras} hora(s) antes del inicio.`
+                message: `El tiempo límite para cancelar es de ${margenMinutos} minutos antes del inicio.`
             });
         }
 
