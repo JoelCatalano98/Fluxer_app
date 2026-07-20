@@ -103,7 +103,13 @@ const Turnos = () => {
   const [clientesList, setClientesList] = useState([]);
   const [profesionalesList, setProfesionalesList] = useState([]);
   const [feriadosList, setFeriadosList] = useState([]);
-  const [categoriasList, setCategoriasList] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [diasPermitidos, setDiasPermitidos] = useState([1, 2, 3, 4, 5, 6]);
+
+  const TODOS_LOS_DIAS = [
+    { id: 0, label: 'Domingo' }, { id: 1, label: 'Lunes' }, { id: 2, label: 'Martes' },
+    { id: 3, label: 'Miércoles' }, { id: 4, label: 'Jueves' }, { id: 5, label: 'Viernes' }, { id: 6, label: 'Sábado' }
+  ];
 
   const [nuevoHorario, setNuevoHorario] = useState({ inicio: '', fin: '', dias: [], categoriaId: '' });
 
@@ -131,26 +137,32 @@ const Turnos = () => {
     profesionalId: ''
   });
 
-  // Cargar clientes, profesionales y feriados
+  // Cargar clientes, profesionales, feriados y configuración de días
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [resFeriados, resCategorias] = await Promise.all([
-          api.get('/api/feriados'),
-          api.get('/api/categorias')
-        ]);
-        if (resFeriados.data) {
-          setFeriadosList(resFeriados.data);
-        }
-        if (resCategorias.data.success) {
-          setCategoriasList(resCategorias.data.data);
-        }
-      } catch (err) {
-        console.error('Error al cargar feriados:', err);
-      }
-    };
-    loadData();
-  }, [semanaBase]); // Reload feriados if needed
+    // Carga de Feriados
+    api.get('/api/feriados').then(res => {
+      if (res.data) setFeriadosList(res.data);
+    }).catch(err => console.error("Error feriados:", err));
+
+    // 1. Carga de Configuración
+    api.get('/api/configuracion')
+      .then(res => {
+        console.log("🛠️ DEBUG CONFIG:", res.data);
+        const configData = Array.isArray(res.data) ? res.data[0] : (res.data?.data || res.data);
+        const diasStr = configData?.diasApertura || "1,2,3,4,5,6";
+        setDiasPermitidos(diasStr.split(',').map(Number));
+      })
+      .catch(err => console.error("❌ ERROR CONFIG:", err));
+
+    // 2. Carga de Categorías/Disciplinas
+    api.get('/api/categorias')
+      .then(res => {
+        console.log("🛠️ DEBUG CATEGORIAS:", res.data);
+        const cats = res.data?.data || res.data || [];
+        setCategorias(cats);
+      })
+      .catch(err => console.error("❌ ERROR CATEGORIAS:", err));
+  }, [semanaBase]);
 
   useEffect(() => {
     const loadFormData = async () => {
@@ -276,7 +288,7 @@ const Turnos = () => {
         if (match) {
           turnosToCreate.push({ fecha, horarioId: match.id });
         } else {
-          const dayNames = { 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado' };
+          const dayNames = { 0: 'Domingo', 1: 'Lunes', 2: 'Martes', 3: 'Miércoles', 4: 'Jueves', 5: 'Viernes', 6: 'Sábado' };
           missingConfigs.push(`${dayNames[diaNum]} (${range})`);
         }
       });
@@ -627,22 +639,24 @@ const Turnos = () => {
             <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
               <label style={{ fontWeight: '600' }}>Días de la Semana</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '8px' }}>
-                {[
-                  { val: '1', label: 'Lunes' },
-                  { val: '2', label: 'Martes' },
-                  { val: '3', label: 'Miércoles' },
-                  { val: '4', label: 'Jueves' },
-                  { val: '5', label: 'Viernes' },
-                  { val: '6', label: 'Sábado' }
-                ].map(d => (
-                  <label key={d.val} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={nuevoHorario.dias.includes(d.val)}
-                      onChange={() => toggleConfigDia(d.val)}
-                    />
-                    <span>{d.label}</span>
-                  </label>
+                {[{id:0, l:'Dom'}, {id:1, l:'Lun'}, {id:2, l:'Mar'}, {id:3, l:'Mié'}, {id:4, l:'Jue'}, {id:5, l:'Vie'}, {id:6, l:'Sáb'}]
+                  .filter(dia => diasPermitidos.includes(dia.id))
+                  .map(dia => (
+                    <label key={dia.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                      <input 
+                        type="checkbox" 
+                        value={dia.id}
+                        checked={nuevoHorario.dias.includes(dia.id.toString())}
+                        onChange={(e) => {
+                          const val = dia.id.toString();
+                          if (e.target.checked) {
+                            setNuevoHorario({...nuevoHorario, dias: [...nuevoHorario.dias, val]});
+                          } else {
+                            setNuevoHorario({...nuevoHorario, dias: nuevoHorario.dias.filter(d => d !== val)});
+                          }
+                        }}
+                      /> <span>{dia.l}</span>
+                    </label>
                 ))}
               </div>
             </div>
@@ -650,13 +664,15 @@ const Turnos = () => {
             <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
               <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Etiqueta (Disciplina)</label>
               <select 
-                value={nuevoHorario.categoriaId}
-                onChange={(e) => setNuevoHorario({...nuevoHorario, categoriaId: e.target.value})}
                 style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
+                name="categoriaId"
+                value={nuevoHorario.categoriaId} 
+                onChange={(e) => setNuevoHorario({...nuevoHorario, categoriaId: e.target.value})}
               >
-                <option value="">Selecciona una disciplina</option>
-                {categoriasList.map(c => (
-                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                <option value="">Selecciona una disciplina...</option>
+                {categorias.length === 0 && <option value="" disabled>⚠️ No hay disciplinas en la Base de Datos</option>}
+                {categorias.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.nombre}</option>
                 ))}
               </select>
             </div>
@@ -767,27 +783,20 @@ const Turnos = () => {
             </select>
           </div>
 
-          {/* Múltiples Días checkboxes */}
+          {/* Múltiples Días checkboxes o select */}
           <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
             <label style={{ fontWeight: '600' }}>Seleccionar Día(s)</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '8px' }}>
-              {[
-                { val: 1, label: 'Lunes' },
-                { val: 2, label: 'Martes' },
-                { val: 3, label: 'Miércoles' },
-                { val: 4, label: 'Jueves' },
-                { val: 5, label: 'Viernes' },
-                { val: 6, label: 'Sábado' }
-              ].map(d => (
+              {TODOS_LOS_DIAS.filter(dia => diasPermitidos.includes(dia.id)).map(d => (
                 <label key={d.val} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
                   <input 
                     type="checkbox"
-                    checked={diasSeleccionados.includes(d.val)}
+                    checked={diasSeleccionados.includes(d.id)}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setDiasSeleccionados([...diasSeleccionados, d.val]);
+                        setDiasSeleccionados([...diasSeleccionados, d.id]);
                       } else {
-                        setDiasSeleccionados(diasSeleccionados.filter(v => v !== d.val));
+                        setDiasSeleccionados(diasSeleccionados.filter(v => v !== d.id));
                       }
                     }}
                   />
@@ -851,19 +860,12 @@ const Turnos = () => {
             <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
               <label style={{ fontWeight: '600' }}>Días de la Semana</label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '8px' }}>
-                {[
-                  { val: 1, label: 'Lunes' },
-                  { val: 2, label: 'Martes' },
-                  { val: 3, label: 'Miércoles' },
-                  { val: 4, label: 'Jueves' },
-                  { val: 5, label: 'Viernes' },
-                  { val: 6, label: 'Sábado' }
-                ].map(d => (
-                  <label key={d.val} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                {TODOS_LOS_DIAS.filter(dia => diasPermitidos.includes(dia.id)).map(d => (
+                  <label key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
                     <input 
                       type="checkbox" 
-                      checked={editHorarioDias.includes(d.val)}
-                      onChange={() => toggleEditDia(d.val)}
+                      checked={editHorarioDias.includes(d.id)}
+                      onChange={() => toggleEditDia(d.id)}
                     />
                     <span>{d.label}</span>
                   </label>
@@ -874,14 +876,14 @@ const Turnos = () => {
             <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
               <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Etiqueta (Disciplina)</label>
               <select 
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
                 name="categoriaId"
                 value={editHorarioValues.categoriaId}
                 onChange={handleEditHorarioChange}
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
               >
-                <option value="">Selecciona una disciplina</option>
-                {categoriasList.map(c => (
-                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                <option value="">Selecciona una disciplina...</option>
+                {categorias.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.nombre}</option>
                 ))}
               </select>
             </div>
