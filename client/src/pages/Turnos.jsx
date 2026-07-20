@@ -483,12 +483,13 @@ const Turnos = () => {
             <thead>
               <tr>
                 <th className="columna-fija">Hora</th>
-                <th>Lun {fechasPorDia[0]}</th>
-                <th>Mar {fechasPorDia[1]}</th>
-                <th>Mié {fechasPorDia[2]}</th>
-                <th>Jue {fechasPorDia[3]}</th>
-                <th>Vie {fechasPorDia[4]}</th>
-                <th>Sáb {fechasPorDia[5]}</th>
+                {TODOS_LOS_DIAS.filter(dia => diasPermitidos.includes(dia.id)).map(dia => {
+                  const offset = dia.id === 0 ? 6 : dia.id - 1;
+                  const d = new Date(getLunesDeSemana(semanaBase));
+                  d.setDate(d.getDate() + offset);
+                  const fechaFormat = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+                  return <th key={dia.id}>{dia.label.substring(0, 3)} {fechaFormat}</th>;
+                })}
               </tr>
             </thead>
             <tbody>
@@ -522,9 +523,16 @@ const Turnos = () => {
                       </div>
                     </td>
                     
-                    {['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'].map((dia, dIdx) => {
-                      const diaSemanaNum = dIdx + 1; // 1 = Lunes, etc.
-                      const fechaExacta = fechasPorDiaFull[dIdx];
+                    {TODOS_LOS_DIAS.filter(dia => diasPermitidos.includes(dia.id)).map(dia => {
+                      const diaSemanaNum = dia.id; // 0 = Dom, 1 = Lun, etc.
+                      const offset = dia.id === 0 ? 6 : dia.id - 1;
+                      const d = new Date(getLunesDeSemana(semanaBase));
+                      d.setDate(d.getDate() + offset);
+                      const y = d.getFullYear();
+                      const m = String(d.getMonth() + 1).padStart(2, '0');
+                      const day = String(d.getDate()).padStart(2, '0');
+                      const fechaExacta = `${y}-${m}-${day}`;
+                      
                       const feriado = feriadosList.find(f => fechaExacta >= f.fechaInicio && fechaExacta <= f.fechaFin);
                       
                       // Buscar horarios configurados para este rango y este día
@@ -553,7 +561,7 @@ const Turnos = () => {
                       }
 
                       return (
-                        <td key={dia} style={{ padding: 0, verticalAlign: 'top', border: '1px solid #e5e7eb' }}>
+                        <td key={dia.id} style={{ padding: 0, verticalAlign: 'top', border: '1px solid #e5e7eb' }}>
                           {tieneSlotConfigurado ? (
                             <div style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}>
                               {slotsMatching.map((slot, sIdx) => {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { SquarePlus, Trash2, Pencil, Loader2, CalendarCheck, AlertTriangle } from 'lucide-react';
+import { SquarePlus, Trash2, Pencil, Loader2, Dumbbell, AlertTriangle } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
 import api from '../services/api';
@@ -8,6 +8,7 @@ import '../styles/style.css';
 const Categorias = () => {
   const [categorias, setCategorias] = useState([]);
   const [planes, setPlanes] = useState([]);
+  const [profesionales, setProfesionales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,7 +19,8 @@ const Categorias = () => {
   // Estado de Formulario
   const [formValues, setFormValues] = useState({
     nombre: '',
-    planId: ''
+    planId: '',
+    profesionalId: ''
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -29,17 +31,20 @@ const Categorias = () => {
       setLoading(true);
       setError(null);
 
-      const [resCategorias, resPlanes] = await Promise.all([
+      const [resCategorias, resPlanes, resProfesionales] = await Promise.all([
         api.get('/api/categorias'),
-        api.get('/api/planes')
+        api.get('/api/planes'),
+        api.get('/api/profesionales')
       ]);
 
       if (resCategorias.data.success) {
         setCategorias(resCategorias.data.data);
       }
       if (resPlanes.data.success) {
-        // Asumiendo que resPlanes.data.data es la lista de planes
         setPlanes(resPlanes.data.data);
+      }
+      if (resProfesionales.data.success) {
+        setProfesionales(resProfesionales.data.data);
       }
     } catch (err) {
       console.error('Error al cargar datos de categorías/planes:', err);
@@ -65,7 +70,8 @@ const Categorias = () => {
     setSelectedCategoria(null);
     setFormValues({
       nombre: '',
-      planId: ''
+      planId: '',
+      profesionalId: ''
     });
     setIsFormModalOpen(true);
   };
@@ -74,7 +80,8 @@ const Categorias = () => {
     setSelectedCategoria(categoria);
     setFormValues({
       nombre: categoria.nombre,
-      planId: categoria.planId ? String(categoria.planId) : ''
+      planId: categoria.planId ? String(categoria.planId) : '',
+      profesionalId: categoria.profesionalId ? String(categoria.profesionalId) : ''
     });
     setIsFormModalOpen(true);
   };
@@ -85,7 +92,8 @@ const Categorias = () => {
       setSubmitting(true);
       const payload = {
         nombre: formValues.nombre,
-        planId: formValues.planId ? parseInt(formValues.planId) : null
+        planId: formValues.planId ? parseInt(formValues.planId) : null,
+        profesionalId: formValues.profesionalId ? parseInt(formValues.profesionalId) : null
       };
 
       if (selectedCategoria) {
@@ -132,8 +140,8 @@ const Categorias = () => {
     <div className="main-content">
       {/* Encabezado */}
       <PageHeader
-        title="Categorías de Actividades"
-        subtitle="Mapea las actividades de tu gimnasio y vinculalas con los planes"
+        title="Gestión de Disciplinas"
+        subtitle="Mapea las disciplinas de tu gimnasio y vinculalas con los planes y profesionales"
         image="/img/welcome-background.png"
       />
 
@@ -159,28 +167,29 @@ const Categorias = () => {
             fontWeight: '600'
           }}
         >
-          <SquarePlus size={18} /> Nueva Categoría
+          <SquarePlus size={18} /> Nueva Disciplina
         </button>
       </div>
 
       {/* Tabla de Datos */}
-      <div className="table-section" style={{ padding: '0 30px 40px 30px' }}>
+      <div className="table-section" style={{ padding: '0 5px 0px 0px' }}>
         <div className="contenedor-scroll">
           <table className="data-table">
             <thead>
               <tr>
                 <th style={{ width: '80px' }}>ID</th>
-                <th>Nombre de la Categoría</th>
+                <th>Nombre de la Disciplina</th>
                 <th>Plan Asociado</th>
+                <th>Profesional</th>
                 <th style={{ width: '120px', textAlign: 'center' }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', padding: '40px' }}>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '40px' }}>
                     <Loader2 className="animate-spin" style={{ margin: '0 auto', color: 'var(--accent-blue)' }} />
-                    <p style={{ marginTop: '10px', color: '#666' }}>Cargando categorías...</p>
+                    <p style={{ marginTop: '10px', color: '#666' }}>Cargando disciplinas...</p>
                   </td>
                 </tr>
               ) : categorias.length > 0 ? (
@@ -203,6 +212,24 @@ const Categorias = () => {
                       ) : (
                         <span style={{ color: '#888', fontStyle: 'italic', fontSize: '0.85rem' }}>
                           Sin Plan asignado
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      {cat.profesional ? (
+                        <span style={{ 
+                          backgroundColor: '#e6fcf5', 
+                          color: '#0ca678', 
+                          padding: '4px 10px', 
+                          borderRadius: '6px', 
+                          fontWeight: '600',
+                          fontSize: '0.85rem'
+                        }}>
+                          {cat.profesional.nombre} {cat.profesional.apellido}
+                        </span>
+                      ) : (
+                        <span style={{ color: '#888', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                          Sin Profesional
                         </span>
                       )}
                     </td>
@@ -246,8 +273,8 @@ const Categorias = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" style={{ textAlign: 'center', padding: '30px', color: '#666' }}>
-                    No hay categorías registradas en el sistema.
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: '#666' }}>
+                    No hay disciplinas registradas en el sistema.
                   </td>
                 </tr>
               )}
@@ -262,8 +289,8 @@ const Categorias = () => {
         onClose={() => setIsFormModalOpen(false)}
         title={
           <span>
-            <CalendarCheck size={20} className="modal-title-icon" />{' '}
-            {selectedCategoria ? 'Editar Categoría' : 'Nueva Categoría'}
+            <Dumbbell size={20} className="modal-title-icon" />{' '}
+            {selectedCategoria ? 'Editar Disciplina' : 'Nueva Disciplina'}
           </span>
         }
       >
@@ -271,12 +298,12 @@ const Categorias = () => {
           <div className="form-section">
             <p style={{ marginBottom: '20px', color: '#666' }}>
               {selectedCategoria 
-                ? 'Modifica los datos de la categoría seleccionada.' 
-                : 'Completa los siguientes campos para registrar una nueva actividad.'}
+                ? 'Modifica los datos de la disciplina seleccionada.' 
+                : 'Completa los siguientes campos para registrar una nueva disciplina.'}
             </p>
 
             <div className="grupo-entrada" style={{ marginBottom: '20px' }}>
-              <label htmlFor="nombre" style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Nombre de la Categoría *</label>
+              <label htmlFor="nombre" style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Nombre de la Disciplina *</label>
               <input
                 type="text"
                 id="nombre"
@@ -300,6 +327,23 @@ const Categorias = () => {
                 {planes.map(plan => (
                   <option key={plan.id} value={plan.id}>
                     {plan.nombre} ({plan.frecuencia})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grupo-entrada" style={{ marginBottom: '20px' }}>
+              <label htmlFor="profesionalId" style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Profesional Asignado</label>
+              <select
+                id="profesionalId"
+                value={formValues.profesionalId}
+                onChange={handleInputChange}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
+              >
+                <option value="">-- Sin Profesional (Selecciona uno) --</option>
+                {profesionales.map(prof => (
+                  <option key={prof.id} value={prof.id}>
+                    {prof.nombre} {prof.apellido}
                   </option>
                 ))}
               </select>

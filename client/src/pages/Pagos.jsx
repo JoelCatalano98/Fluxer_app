@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CirclePlus, CheckCircle, XCircle, AlertCircle, FileText } from 'lucide-react';
+import { CirclePlus, CheckCircle, XCircle, AlertCircle, FileText, Undo2 } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import api from '../services/api';
@@ -47,11 +47,21 @@ const Pagos = () => {
 
   const handleEstadoPago = async (id, nuevoEstado) => {
     try {
+      // Confirmación extra para anulaciones
+      if (nuevoEstado === 'ANULADO') {
+        const ok = window.confirm('¿Estás seguro de ANULAR este pago? El cliente pasará a estado MOROSO.');
+        if (!ok) return;
+      }
+
       await api.patch(`/api/pagos/${id}/estado`, { estado: nuevoEstado });
       // Refetch de los pagos
       const resPagos = await api.get('/api/pagos');
       if (resPagos.data?.success) {
         setPagos(resPagos.data.data);
+      }
+
+      if (nuevoEstado === 'ANULADO') {
+        alert('Pago anulado correctamente. El cliente fue marcado como MOROSO.');
       }
     } catch (error) {
       alert(error.response?.data?.message || "Este pago ya ha sido procesado o no se puede modificar.");
@@ -160,12 +170,13 @@ const Pagos = () => {
                   <th style={{ padding: '12px 10px' }}>Método</th>
                   <th style={{ padding: '12px 10px' }}>Monto</th>
                   <th style={{ padding: '12px 10px', textAlign: 'center' }}>Estado</th>
+                  <th style={{ padding: '12px 10px', textAlign: 'center' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {historialPagos.length === 0 ? (
                   <tr>
-                    <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#999' }}>Aún no hay pagos registrados en el historial.</td>
+                    <td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#999' }}>Aún no hay pagos registrados en el historial.</td>
                   </tr>
                 ) : (
                   historialPagos.map(pago => (
@@ -182,11 +193,29 @@ const Pagos = () => {
                           borderRadius: '20px', 
                           fontSize: '0.85rem', 
                           fontWeight: '600',
-                          backgroundColor: pago.estado === 'APROBADO' ? '#d1fae5' : '#fee2e2',
-                          color: pago.estado === 'APROBADO' ? '#047857' : '#b91c1c'
+                          backgroundColor: pago.estado === 'APROBADO' ? '#d1fae5' : pago.estado === 'ANULADO' ? '#fef3c7' : '#fee2e2',
+                          color: pago.estado === 'APROBADO' ? '#047857' : pago.estado === 'ANULADO' ? '#92400e' : '#b91c1c',
+                          textDecoration: pago.estado === 'ANULADO' ? 'line-through' : 'none'
                         }}>
                           {pago.estado}
                         </span>
+                      </td>
+                      <td style={{ padding: '12px 10px', textAlign: 'center' }}>
+                        {pago.estado === 'APROBADO' && (
+                          <button
+                            onClick={() => handleEstadoPago(pago.id, 'ANULADO')}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '5px',
+                              backgroundColor: '#fef3c7', color: '#92400e', border: '1px solid #fcd34d',
+                              padding: '5px 12px', borderRadius: '6px', cursor: 'pointer',
+                              fontWeight: '600', fontSize: '0.8rem', transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fde68a'; }}
+                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fef3c7'; }}
+                          >
+                            <Undo2 size={14} /> Anular
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))

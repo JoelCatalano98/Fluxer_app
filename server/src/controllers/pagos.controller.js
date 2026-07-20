@@ -104,8 +104,8 @@ const cambiarEstadoPago = async (req, res) => {
         const { id } = req.params;
         const { estado } = req.body;
 
-        if (!estado || (estado !== 'APROBADO' && estado !== 'RECHAZADO')) {
-            return res.status(400).json({ success: false, message: 'Estado inválido. Debe ser APROBADO o RECHAZADO.' });
+        if (!estado || !['APROBADO', 'RECHAZADO', 'ANULADO'].includes(estado)) {
+            return res.status(400).json({ success: false, message: 'Estado inválido. Debe ser APROBADO, RECHAZADO o ANULADO.' });
         }
 
         const pagoId = parseInt(id);
@@ -119,6 +119,39 @@ const cambiarEstadoPago = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Pago no encontrado.' });
         }
 
+        // --- ANULACIÓN: revertir un pago que ya estaba APROBADO ---
+        if (estado === 'ANULADO') {
+            if (pagoActual.estado !== 'APROBADO') {
+                return res.status(400).json({ success: false, message: 'Solo se pueden anular pagos que estén APROBADOS.' });
+            }
+
+            const ayer = new Date(Date.now() - 86400000);
+
+            const [pagoAnulado, clienteRevertido] = await prisma.$transaction([
+                prisma.pago.update({
+                    where: { id: pagoId },
+                    data: { estado: 'ANULADO' }
+                }),
+                prisma.cliente.update({
+                    where: { id: pagoActual.clienteId },
+                    data: {
+                        estado_pago: 'MOROSO',
+                        vencimientoCuota: ayer
+                    }
+                })
+            ]);
+
+            return res.json({
+                success: true,
+                message: 'Pago anulado. El cliente fue marcado como MOROSO.',
+                data: {
+                    pago: pagoAnulado,
+                    vencimientoCuota: clienteRevertido.vencimientoCuota
+                }
+            });
+        }
+
+        // --- Flujo original: solo permitir cambios desde PENDIENTE ---
         if (pagoActual.estado === 'APROBADO') {
             return res.status(400).json({ success: false, message: 'El pago ya se encuentra aprobado, no se pueden sumar días duplicados.' });
         }

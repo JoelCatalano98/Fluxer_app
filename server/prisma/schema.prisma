@@ -93,6 +93,7 @@ model Profesional {
   telefono      String?
   activo        Boolean        @default(true)
   turnosCliente TurnoCliente[]
+  categorias    Categoria[]
 
   @@map("profesionales")
 }
@@ -129,15 +130,17 @@ model TurnoCliente {
 }
 
 model Categoria {
-  id           Int             @id @default(autoincrement())
-  nombre       String
-  activo       Boolean         @default(true)
-  planId       Int?
-  plan         Plan?           @relation(fields: [planId], references: [id])
-  rubro_sector String?
-  color        String?
-  clientes     Cliente[]
-  horarios     HorarioConfig[]
+  id            Int             @id @default(autoincrement())
+  nombre        String
+  activo        Boolean         @default(true)
+  planId        Int?
+  plan          Plan?           @relation(fields: [planId], references: [id])
+  rubro_sector  String?
+  color         String?
+  profesionalId Int?
+  profesional   Profesional?    @relation(fields: [profesionalId], references: [id])
+  clientes      Cliente[]
+  horarios      HorarioConfig[]
 
   @@index([planId], map: "categorias_planId_fkey")
   @@map("categorias")

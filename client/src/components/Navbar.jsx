@@ -6,7 +6,8 @@ import {
   Settings, 
   Briefcase,
   Calendar,
-  Trophy
+  Trophy,
+  Dumbbell
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -123,7 +124,7 @@ const Navbar = ({ isOpen }) => {
             <ul className="submenu">
               <li>
                 <NavLink to="/categorias" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Categorías / Etiquetas
+                  🏋️ Disciplinas / Categorías
                 </NavLink>
               </li>
               {hasPermission('permisoFinanzas') && (
