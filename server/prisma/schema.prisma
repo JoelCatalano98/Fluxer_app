@@ -57,24 +57,26 @@ model Plan {
 }
 
 model Cliente {
-  id             Int            @id @default(autoincrement())
-  codigo_socio   String?        @unique
-  nombre         String
-  apellido       String
-  dni_cuit       String         @unique
-  email          String?        @unique
-  password       String?
-  telefono       String?
-  fecha_inicio   DateTime?      @db.Date
-  observaciones  String?        @db.Text
-  estado_pago    EstadoPago     @default(ALDIA)
-  estado_cliente EstadoCliente  @default(ACTIVO)
-  categoriaId    Int?
-  es_socio       Boolean        @default(false)
-  categoria      Categoria?     @relation(fields: [categoriaId], references: [id])
-  turnosCliente  TurnoCliente[]
-  rutinas        Rutina[]
-  records        Record[]
+  id               Int            @id @default(autoincrement())
+  codigo_socio     String?        @unique
+  nombre           String
+  apellido         String
+  dni_cuit         String         @unique
+  email            String?        @unique
+  password         String?
+  telefono         String?
+  fecha_inicio     DateTime?      @db.Date
+  observaciones    String?        @db.Text
+  estado_pago      EstadoPago     @default(ALDIA)
+  estado_cliente   EstadoCliente  @default(ACTIVO)
+  categoriaId      Int?
+  es_socio         Boolean        @default(false)
+  categoria        Categoria?     @relation(fields: [categoriaId], references: [id])
+  turnosCliente    TurnoCliente[]
+  rutinas          Rutina[]
+  records          Record[]
+  pagos            Pago[]
+  vencimientoCuota DateTime?
 
   @@index([categoriaId], map: "clientes_categoriaId_fkey")
   @@map("clientes")
@@ -162,6 +164,7 @@ model Configuracion {
   adminApellido            String?
   adminDni                 String?
   adminEmail               String?
+  diasApertura             String? @default("1,2,3,4,5,6")
 
   @@map("configuracion")
 }
@@ -223,4 +226,16 @@ model Record {
 
   @@unique([clienteId, ejercicio])
   @@map("records")
+}
+
+model Pago {
+  id         Int      @id @default(autoincrement())
+  clienteId  Int
+  cliente    Cliente  @relation(fields: [clienteId], references: [id])
+  monto      Float
+  metodoPago String // Ej: 'EFECTIVO', 'TRANSFERENCIA', 'MERCADO_PAGO'
+  concepto   String // Ej: 'Cuota Mensual Pase Libre'
+  fecha      DateTime @default(now())
+  notas      String?
+  estado     String   @default("APROBADO")
 }

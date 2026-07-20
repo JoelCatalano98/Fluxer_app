@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Palette, Upload, ShoppingBag, CircleCheck, Briefcase, RotateCcw, Loader2, User } from 'lucide-react';
+import { Palette, Upload, ShoppingBag, CircleCheck, Briefcase, RotateCcw, Loader2, User, Calendar } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import api from '../services/api';
 import '../styles/style.css';
@@ -15,8 +15,19 @@ const Configuracion = () => {
     adminNombre: '',
     adminApellido: '',
     adminDni: '',
-    adminEmail: ''
+    adminEmail: '',
+    diasApertura: '1,2,3,4,5,6'
   });
+
+  const DIAS_SEMANA = [
+    { value: '1', label: 'Lunes' },
+    { value: '2', label: 'Martes' },
+    { value: '3', label: 'Miércoles' },
+    { value: '4', label: 'Jueves' },
+    { value: '5', label: 'Viernes' },
+    { value: '6', label: 'Sábado' },
+    { value: '0', label: 'Domingo' }
+  ];
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -38,7 +49,8 @@ const Configuracion = () => {
             adminNombre: res.data.data.adminNombre || '',
             adminApellido: res.data.data.adminApellido || '',
             adminDni: res.data.data.adminDni || '',
-            adminEmail: res.data.data.adminEmail || ''
+            adminEmail: res.data.data.adminEmail || '',
+            diasApertura: res.data.data.diasApertura || '1,2,3,4,5,6'
           });
         }
       } catch (err) {
@@ -58,6 +70,17 @@ const Configuracion = () => {
       ...prev,
       [id]: type === 'checkbox' ? checked : value
     }));
+  };
+
+  const handleDiaAperturaChange = (diaValue) => {
+    let diasArray = config.diasApertura ? config.diasApertura.split(',') : [];
+    if (diasArray.includes(diaValue)) {
+      diasArray = diasArray.filter(d => d !== diaValue);
+    } else {
+      diasArray.push(diaValue);
+    }
+    diasArray.sort();
+    setConfig(prev => ({ ...prev, diasApertura: diasArray.join(',') }));
   };
 
   const handleLogoChange = (e) => {
@@ -335,6 +358,43 @@ const Configuracion = () => {
                     placeholder="Ej: profe@fluxer.com"
                   />
                 </div>
+              </div>
+            </div>
+          </section>
+
+          {/* 4. DÍAS DE APERTURA */}
+          <section className="seccion-configuracion">
+            <div className="cabecera-seccion">
+              <Calendar size={24} className="icon-blue" />
+              <h2>4. Días de Apertura</h2>
+            </div>
+            <div className="cuerpo-seccion">
+              <p className="p-ayuda" style={{ marginBottom: '20px' }}>
+                Selecciona los días en los que el gimnasio se encuentra abierto. Las aplicaciones mostrarán los calendarios de turnos en base a esta selección.
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+                {DIAS_SEMANA.map(dia => {
+                  const diasArray = config.diasApertura ? config.diasApertura.split(',') : [];
+                  const isChecked = diasArray.includes(dia.value);
+                  return (
+                    <label key={dia.value} style={{
+                      display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer',
+                      backgroundColor: isChecked ? '#eef2ff' : '#f9fafb',
+                      border: `1px solid ${isChecked ? '#6366f1' : '#e5e7eb'}`,
+                      padding: '10px 15px', borderRadius: '8px',
+                      fontWeight: isChecked ? '600' : '400', color: isChecked ? '#4f46e5' : '#374151',
+                      transition: 'all 0.2s'
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => handleDiaAperturaChange(dia.value)}
+                        style={{ cursor: 'pointer', width: '18px', height: '18px', accentColor: '#4f46e5' }}
+                      />
+                      {dia.label}
+                    </label>
+                  );
+                })}
               </div>
             </div>
           </section>
