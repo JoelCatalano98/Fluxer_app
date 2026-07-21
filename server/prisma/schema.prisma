@@ -172,6 +172,7 @@ model Configuracion {
   adminDni                 String?
   adminEmail               String?
   diasApertura             String? @default("1,2,3,4,5,6")
+  maxReservasSemana        Int     @default(0)
 
   @@map("configuracion")
 }

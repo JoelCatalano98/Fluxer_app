@@ -41,7 +41,7 @@ const getConfiguracion = async (req, res) => {
 // PUT /api/configuracion
 const updateConfiguracion = async (req, res) => {
     try {
-        const { nombreGimnasio, logoBase64, bloqueoCapacidad, cupoGlobal, limiteCancelacionMinutos, profesoresPorTurno, adminNombre, adminApellido, adminDni, adminEmail, diasApertura } = req.body;
+        const { nombreGimnasio, logoBase64, bloqueoCapacidad, cupoGlobal, limiteCancelacionMinutos, profesoresPorTurno, adminNombre, adminApellido, adminDni, adminEmail, diasApertura, maxReservasSemana } = req.body;
 
         // Upsert para actualizar o crear la configuración única con id 1
         const config = await prisma.configuracion.upsert({
@@ -57,7 +57,8 @@ const updateConfiguracion = async (req, res) => {
                 adminApellido,
                 adminDni,
                 adminEmail,
-                diasApertura
+                diasApertura,
+                maxReservasSemana: parseInt(maxReservasSemana) || 0
             },
             create: {
                 id: 1,
@@ -71,7 +72,8 @@ const updateConfiguracion = async (req, res) => {
                 adminApellido,
                 adminDni,
                 adminEmail,
-                diasApertura: diasApertura || '1,2,3,4,5,6'
+                diasApertura: diasApertura || '1,2,3,4,5,6',
+                maxReservasSemana: parseInt(maxReservasSemana) || 0
             }
         });
 

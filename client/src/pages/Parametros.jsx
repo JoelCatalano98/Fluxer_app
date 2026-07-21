@@ -14,7 +14,8 @@ const Parametros = () => {
   const isSadmin = user?.esSuperAdmin || localUser?.esSuperAdmin;
 
   const [config, setConfig] = useState({
-    profesoresPorTurno: false
+    profesoresPorTurno: false,
+    maxReservasSemana: 0
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -31,7 +32,8 @@ const Parametros = () => {
           const configData = Array.isArray(res.data) ? res.data[0] : (res.data?.data || res.data);
           setConfig(prev => ({
             ...prev,
-            profesoresPorTurno: configData.profesoresPorTurno || false
+            profesoresPorTurno: configData.profesoresPorTurno || false,
+            maxReservasSemana: configData.maxReservasSemana || 0
           }));
         }
       } catch (err) {
@@ -78,7 +80,8 @@ const Parametros = () => {
 
       const payload = {
         ...oldConfig,
-        profesoresPorTurno: config.profesoresPorTurno
+        profesoresPorTurno: config.profesoresPorTurno,
+        maxReservasSemana: parseInt(config.maxReservasSemana) || 0
       };
 
       const res = await api.put('/api/configuracion', payload);
@@ -152,6 +155,18 @@ const Parametros = () => {
                     <span className="perilla"></span>
                   </span>
                 </label>
+              </div>
+
+              <div className="grupo-input" style={{ marginTop: '20px' }}>
+                <label htmlFor="maxReservasSemana">Límite de Reservas por Semana (0 = Sin límite)</label>
+                <input
+                  type="number"
+                  id="maxReservasSemana"
+                  value={config.maxReservasSemana}
+                  onChange={handleInputChange}
+                  min="0"
+                  className="input-base"
+                />
               </div>
             </div>
           </section>

@@ -120,20 +120,36 @@ const reservarTurno = async (req, res) => {
             });
         }
 
-        // Valida que el cliente no supere el máximo de reservas permitidas por día (ej. 1 al día)
-        const turnosDelClienteHoy = await prisma.turnoCliente.count({
-            where: {
-                clienteId: parseInt(clienteId),
-                fecha: d
-            }
-        });
+        // Validar límite dinámico semanal
+        if (configuracion?.maxReservasSemana > 0) {
+            // Calcular Lunes y Domingo de la semana de la fecha solicitada
+            const diaSemana = d.getDay(); // 0 = Domingo, 1 = Lunes, etc.
+            const diffLunes = d.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
+            
+            const lunes = new Date(d);
+            lunes.setDate(diffLunes);
+            lunes.setUTCHours(0, 0, 0, 0);
 
-        // Limite arbitrario: 2 turnos por día si no existe en la config
-        if (turnosDelClienteHoy >= 2) {
-            return res.status(400).json({
-                success: false,
-                message: 'Alcanzaste el límite de reservas por día (máx. 2).'
+            const domingo = new Date(lunes);
+            domingo.setDate(lunes.getDate() + 6);
+            domingo.setUTCHours(23, 59, 59, 999);
+
+            const turnosSemana = await prisma.turnoCliente.count({
+                where: {
+                    clienteId: parseInt(clienteId),
+                    fecha: {
+                        gte: lunes,
+                        lte: domingo
+                    }
+                }
             });
+
+            if (turnosSemana >= configuracion.maxReservasSemana) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Has alcanzado tu límite máximo de clases permitidas para esta semana."
+                });
+            }
         }
 
         // Verificar si el usuario ya está anotado
