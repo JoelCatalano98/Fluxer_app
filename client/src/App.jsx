@@ -21,6 +21,7 @@ import Pagos from './pages/Pagos';
 import Login from './pages/Login';
 import Calendario from './pages/Calendario';
 import Usuarios from './pages/Usuarios';
+import Parametros from './pages/Parametros';
 import api from './services/api';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -172,6 +173,7 @@ function AppContent() {
             <Route path="/pagos" element={<Pagos />} />
             <Route path="/calendario" element={<Calendario />} />
             <Route path="/usuarios" element={<Usuarios />} />
+            <Route path="/parametros" element={<Parametros />} />
           </Routes>
         </main>
         

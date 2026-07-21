@@ -83,31 +83,34 @@ model Cliente {
 }
 
 model Profesional {
-  id            Int            @id @default(autoincrement())
+  id            Int             @id @default(autoincrement())
   nombre        String
   apellido      String
-  dni           String         @unique
+  dni           String          @unique
   especialidad  String?
   matricula     String?
-  email         String?        @unique
+  email         String?         @unique
   telefono      String?
-  activo        Boolean        @default(true)
+  activo        Boolean         @default(true)
   turnosCliente TurnoCliente[]
   categorias    Categoria[]
+  horarios      HorarioConfig[]
 
   @@map("profesionales")
 }
 
 model HorarioConfig {
-  id          Int            @id @default(autoincrement())
-  dia_semana  Int
-  hora_inicio DateTime       @db.Time(0)
-  hora_fin    DateTime       @db.Time(0)
-  activo      Boolean        @default(true)
-  cupo_maximo Int? // Nuevo campo para sobreescribir el cupo global
-  categoriaId Int?
-  categoria   Categoria?     @relation(fields: [categoriaId], references: [id])
-  turnos      TurnoCliente[]
+  id            Int            @id @default(autoincrement())
+  dia_semana    Int
+  hora_inicio   DateTime       @db.Time(0)
+  hora_fin      DateTime       @db.Time(0)
+  activo        Boolean        @default(true)
+  cupo_maximo   Int?
+  categoriaId   Int?
+  profesionalId Int?
+  profesional   Profesional?   @relation(fields: [profesionalId], references: [id])
+  categoria     Categoria?     @relation(fields: [categoriaId], references: [id])
+  turnos        TurnoCliente[]
 
   @@map("horarios_config")
 }
@@ -163,6 +166,7 @@ model Configuracion {
   bloqueoCapacidad         Boolean @default(false)
   cupoGlobal               Int     @default(15)
   limiteCancelacionMinutos Int     @default(60)
+  profesoresPorTurno       Boolean @default(false)
   adminNombre              String?
   adminApellido            String?
   adminDni                 String?

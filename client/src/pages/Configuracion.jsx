@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { Palette, Upload, ShoppingBag, CircleCheck, Briefcase, RotateCcw, Loader2, User, Calendar } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import '../styles/style.css';
 import '../styles/Servicios/configuracion_local.css';
 
 const Configuracion = () => {
+  const { user } = useAuth();
   const [config, setConfig] = useState({
     nombreGimnasio: '',
     logoBase64: null,
@@ -16,7 +18,10 @@ const Configuracion = () => {
     adminApellido: '',
     adminDni: '',
     adminEmail: '',
-    diasApertura: '1,2,3,4,5,6'
+    adminDni: '',
+    adminEmail: '',
+    diasApertura: '1,2,3,4,5,6',
+    profesoresPorTurno: false
   });
 
   const DIAS_SEMANA = [
@@ -50,7 +55,8 @@ const Configuracion = () => {
             adminApellido: res.data.data.adminApellido || '',
             adminDni: res.data.data.adminDni || '',
             adminEmail: res.data.data.adminEmail || '',
-            diasApertura: res.data.data.diasApertura || '1,2,3,4,5,6'
+            diasApertura: res.data.data.diasApertura || '1,2,3,4,5,6',
+            profesoresPorTurno: res.data.data.profesoresPorTurno || false
           });
         }
       } catch (err) {

@@ -17,7 +17,8 @@ const getConfiguracion = async (req, res) => {
                     logoBase64: null,
                     bloqueoCapacidad: false,
                     cupoGlobal: 15,
-                    limiteCancelacionMinutos: 60
+                    limiteCancelacionMinutos: 60,
+                    profesoresPorTurno: false
                 }
             });
         }
@@ -40,7 +41,7 @@ const getConfiguracion = async (req, res) => {
 // PUT /api/configuracion
 const updateConfiguracion = async (req, res) => {
     try {
-        const { nombreGimnasio, logoBase64, bloqueoCapacidad, cupoGlobal, limiteCancelacionMinutos, adminNombre, adminApellido, adminDni, adminEmail, diasApertura } = req.body;
+        const { nombreGimnasio, logoBase64, bloqueoCapacidad, cupoGlobal, limiteCancelacionMinutos, profesoresPorTurno, adminNombre, adminApellido, adminDni, adminEmail, diasApertura } = req.body;
 
         // Upsert para actualizar o crear la configuración única con id 1
         const config = await prisma.configuracion.upsert({
@@ -51,6 +52,7 @@ const updateConfiguracion = async (req, res) => {
                 bloqueoCapacidad: bloqueoCapacidad === true,
                 cupoGlobal: parseInt(cupoGlobal) || 15,
                 limiteCancelacionMinutos: parseInt(limiteCancelacionMinutos) || 60,
+                profesoresPorTurno: profesoresPorTurno === true,
                 adminNombre,
                 adminApellido,
                 adminDni,
@@ -64,6 +66,7 @@ const updateConfiguracion = async (req, res) => {
                 bloqueoCapacidad: bloqueoCapacidad === true,
                 cupoGlobal: parseInt(cupoGlobal) || 15,
                 limiteCancelacionMinutos: parseInt(limiteCancelacionMinutos) || 60,
+                profesoresPorTurno: profesoresPorTurno === true,
                 adminNombre,
                 adminApellido,
                 adminDni,

@@ -13,7 +13,11 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = ({ isOpen }) => {
-  const { hasPermission } = useAuth();
+  const { user, hasPermission } = useAuth();
+  
+  const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const isSadmin = user?.esSuperAdmin || localUser?.esSuperAdmin;
+
   const [config, setConfig] = useState({
     nombreGimnasio: 'FLUXER',
     logoBase64: null
@@ -144,6 +148,13 @@ const Navbar = ({ isOpen }) => {
                   Ranking 1RM
                 </NavLink>
               </li>
+              {isSadmin && (
+                <li>
+                  <NavLink to="/parametros" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit', color: '#856404', backgroundColor: '#fff3cd' }}>
+                    ⚙️ Parámetros (SADMIN)
+                  </NavLink>
+                </li>
+              )}
             </ul>
           </details>
         </li>

@@ -111,7 +111,8 @@ const Turnos = () => {
     { id: 3, label: 'Miércoles' }, { id: 4, label: 'Jueves' }, { id: 5, label: 'Viernes' }, { id: 6, label: 'Sábado' }
   ];
 
-  const [nuevoHorario, setNuevoHorario] = useState({ inicio: '', fin: '', dias: [], categoriaId: '' });
+  const [configGlobal, setConfigGlobal] = useState({});
+  const [nuevoHorario, setNuevoHorario] = useState({ inicio: '', fin: '', dias: [], categoriaId: '', profesionalId: '' });
 
   // Búsqueda local en modales
   const [clienteSearch, setClienteSearch] = useState('');
@@ -128,7 +129,8 @@ const Turnos = () => {
   const [editHorarioValues, setEditHorarioValues] = useState({
     hora_inicio: '',
     hora_fin: '',
-    categoriaId: ''
+    categoriaId: '',
+    profesionalId: ''
   });
 
   // Hook useForm para el modal "Anotar Cliente"
@@ -149,6 +151,7 @@ const Turnos = () => {
       .then(res => {
         console.log("🛠️ DEBUG CONFIG:", res.data);
         const configData = Array.isArray(res.data) ? res.data[0] : (res.data?.data || res.data);
+        setConfigGlobal(configData);
         const diasStr = configData?.diasApertura || "1,2,3,4,5,6";
         setDiasPermitidos(diasStr.split(',').map(Number));
       })
@@ -181,10 +184,10 @@ const Turnos = () => {
         console.error('Error al cargar datos de Clientes y Profesionales:', err);
       }
     };
-    if (isAnotarModalOpen) {
+    if (isAnotarModalOpen || configGlobal.profesoresPorTurno) {
       loadFormData();
     }
-  }, [isAnotarModalOpen]);
+  }, [isAnotarModalOpen, configGlobal.profesoresPorTurno]);
 
   const formatTime = (dateStr) => {
     if (!dateStr) return '';
@@ -251,10 +254,11 @@ const Turnos = () => {
         dias: nuevoHorario.dias.map(d => parseInt(d)),
         hora_inicio: nuevoHorario.inicio,
         hora_fin: nuevoHorario.fin,
-        categoriaId: parseInt(nuevoHorario.categoriaId)
+        categoriaId: parseInt(nuevoHorario.categoriaId),
+        profesionalId: nuevoHorario.profesionalId ? parseInt(nuevoHorario.profesionalId) : null
       });
       setIsConfigModalOpen(false);
-      setNuevoHorario({ inicio: '', fin: '', dias: [], categoriaId: '' });
+      setNuevoHorario({ inicio: '', fin: '', dias: [], categoriaId: '', profesionalId: '' });
       alert("¡Nueva(s) franja(s) horaria(s) agregada(s) con éxito!");
     } catch (err) {
       alert("Error al configurar horario: " + err.message);
@@ -345,7 +349,8 @@ const Turnos = () => {
     setEditHorarioValues({
       hora_inicio: formatTime(first.hora_inicio),
       hora_fin: formatTime(first.hora_fin),
-      categoriaId: first.categoriaId || ''
+      categoriaId: first.categoriaId || '',
+      profesionalId: first.profesionalId || ''
     });
     setIsEditHorarioModalOpen(true);
   };
@@ -381,7 +386,8 @@ const Turnos = () => {
         dias: editHorarioDias,
         hora_inicio: editHorarioValues.hora_inicio,
         hora_fin: editHorarioValues.hora_fin,
-        categoriaId: editHorarioValues.categoriaId ? parseInt(editHorarioValues.categoriaId) : null
+        categoriaId: editHorarioValues.categoriaId ? parseInt(editHorarioValues.categoriaId) : null,
+        profesionalId: editHorarioValues.profesionalId ? parseInt(editHorarioValues.profesionalId) : null
       });
       setIsEditHorarioModalOpen(false);
       alert("¡Franja horaria actualizada con éxito!");
@@ -569,6 +575,7 @@ const Turnos = () => {
                                 const count = turnosDelSlot.length;
                                 const catNombre = slot.categoria?.nombre || 'General';
                                 const catColor = slot.categoria?.color || '#00a8e8';
+                                const profNombre = slot.profesional ? `${slot.profesional.nombre} ${slot.profesional.apellido}` : '';
 
                                 return (
                                   <div 
@@ -590,6 +597,9 @@ const Turnos = () => {
                                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: catColor }}></div>
                                         <span style={{ color: '#111827', fontWeight: '600', fontSize: '0.75rem', textTransform: 'uppercase' }}>{catNombre}</span>
                                       </div>
+                                      {profNombre && configGlobal.profesoresPorTurno && (
+                                        <span style={{ color: '#4b5563', fontSize: '0.70rem', textTransform: 'capitalize' }}>({profNombre})</span>
+                                      )}
                                     </div>
                                     
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '10px' }}>
@@ -684,6 +694,23 @@ const Turnos = () => {
                 ))}
               </select>
             </div>
+
+            {configGlobal.profesoresPorTurno && (
+              <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
+                <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Asignar Profesional (Opcional)</label>
+                <select 
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
+                  name="profesionalId"
+                  value={nuevoHorario.profesionalId} 
+                  onChange={(e) => setNuevoHorario({...nuevoHorario, profesionalId: e.target.value})}
+                >
+                  <option value="">-- Sin Asignar --</option>
+                  {profesionalesList.map(p => (
+                    <option key={p.id} value={p.id}>{p.nombre} {p.apellido} ({p.especialidad || 'General'})</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="form-row">
               <div className="grupo-entrada">
@@ -895,6 +922,23 @@ const Turnos = () => {
                 ))}
               </select>
             </div>
+
+            {configGlobal.profesoresPorTurno && (
+              <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
+                <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Asignar Profesional (Opcional)</label>
+                <select 
+                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
+                  name="profesionalId"
+                  value={editHorarioValues.profesionalId}
+                  onChange={handleEditHorarioChange}
+                >
+                  <option value="">-- Sin Asignar --</option>
+                  {profesionalesList.map(p => (
+                    <option key={p.id} value={p.id}>{p.nombre} {p.apellido} ({p.especialidad || 'General'})</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="form-row">
               <div className="grupo-entrada">
