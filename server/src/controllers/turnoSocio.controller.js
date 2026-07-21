@@ -14,6 +14,7 @@ const getClasesDisponibles = async (req, res) => {
             where,
             include: { 
                 categoria: true,
+                profesional: true,
                 turnos: {
                     include: { cliente: true }
                 } // Trae todos los turnos con los datos de sus clientes
@@ -35,6 +36,7 @@ const getClasesDisponibles = async (req, res) => {
                 dia_semana: h.dia_semana,
                 hora_inicio: h.hora_inicio,
                 hora_fin: h.hora_fin,
+                categoriaId: h.categoriaId || h.categoria?.id || null,
                 categoria: h.categoria,
                 cupoMaximo: maxGlobal,
                 turnos: h.turnos

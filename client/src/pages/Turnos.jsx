@@ -145,7 +145,7 @@ const Turnos = () => {
     // Carga de Feriados
     api.get('/api/feriados').then(res => {
       if (res.data) setFeriadosList(res.data);
-    }).catch(err => console.error("Error feriados:", err));
+    }).catch(() => setFeriadosList([]));
 
     // 1. Carga de Configuración
     api.get('/api/configuracion')
@@ -154,7 +154,7 @@ const Turnos = () => {
         const configData = Array.isArray(res.data) ? res.data[0] : (res.data?.data || res.data);
         setConfigGlobal(configData);
         const diasStr = configData?.diasApertura || "1,2,3,4,5,6";
-        setDiasPermitidos(diasStr.split(',').map(Number));
+        setDiasPermitidos(diasStr.split(',').map(d => parseInt(d, 10)).filter(val => val !== null && !isNaN(val) && val >= 0));
       })
       .catch(err => console.error("❌ ERROR CONFIG:", err));
 
@@ -243,11 +243,47 @@ const Turnos = () => {
     setIsAnotarModalOpen(true);
   };
 
+  const handleCheckboxNuevoHorario = (diaId) => {
+    const numId = Number(diaId);
+    setNuevoHorario(prev => {
+      const numDias = prev.dias.map(Number);
+      if (numDias.includes(numId)) {
+        return { ...prev, dias: numDias.filter(d => d !== numId) };
+      } else {
+        return { ...prev, dias: [...numDias, numId] };
+      }
+    });
+  };
+
+  const handleCheckboxDiasSeleccionados = (diaId) => {
+    const numId = Number(diaId);
+    setDiasSeleccionados(prev => {
+      const numDias = prev.map(Number);
+      if (numDias.includes(numId)) {
+        return numDias.filter(d => d !== numId);
+      } else {
+        return [...numDias, numId];
+      }
+    });
+  };
+
+  const handleCheckboxEditHorario = (diaId) => {
+    const numId = Number(diaId);
+    setEditHorarioDias(prev => {
+      const numDias = prev.map(Number);
+      if (numDias.includes(numId)) {
+        return numDias.filter(d => d !== numId);
+      } else {
+        return [...numDias, numId];
+      }
+    });
+  };
+
   const handleAddHorario = async (e) => {
     e.preventDefault();
     setErrorValidacion("");
 
-    if (!nuevoHorario.inicio || !nuevoHorario.fin || nuevoHorario.dias.length === 0 || !nuevoHorario.categoriaId) {
+    if (!nuevoHorario.inicio || !nuevoHorario.fin || nuevoHorario.dias.length === 0 || nuevoHorario.categoriaId === '') {
       return setErrorValidacion("Por favor, completa los días, horarios y disciplina.");
     }
 
@@ -348,7 +384,7 @@ const Turnos = () => {
     setSelectedRangeSchedules(matching);
     
     // Marcar por defecto los días que ya tienen configurada esta franja
-    const configuredDays = matching.map(h => h.dia_semana);
+    const configuredDays = matching.map(h => Number(h.dia_semana));
     setEditHorarioDias(configuredDays);
 
     const first = matching[0];
@@ -384,7 +420,7 @@ const Turnos = () => {
     if (!selectedHorarioId) return;
     setErrorValidacion("");
 
-    if (editHorarioDias.length === 0 || !editHorarioValues.hora_inicio || !editHorarioValues.hora_fin || !editHorarioValues.categoriaId) {
+    if (editHorarioDias.length === 0 || !editHorarioValues.hora_inicio || !editHorarioValues.hora_fin || editHorarioValues.categoriaId === '') {
       return setErrorValidacion("Por favor, completa los días, horarios y disciplina. Si deseas quitar la franja, haz clic en 'Dar de Baja'.");
     }
 
@@ -675,15 +711,8 @@ const Turnos = () => {
                       <input 
                         type="checkbox" 
                         value={dia.id}
-                        checked={nuevoHorario.dias.includes(dia.id.toString())}
-                        onChange={(e) => {
-                          const val = dia.id.toString();
-                          if (e.target.checked) {
-                            setNuevoHorario({...nuevoHorario, dias: [...nuevoHorario.dias, val]});
-                          } else {
-                            setNuevoHorario({...nuevoHorario, dias: nuevoHorario.dias.filter(d => d !== val)});
-                          }
-                        }}
+                        checked={nuevoHorario.dias.map(Number).includes(Number(dia.id))}
+                        onChange={() => handleCheckboxNuevoHorario(dia.id)}
                       /> <span>{dia.l}</span>
                     </label>
                 ))}
@@ -844,14 +873,9 @@ const Turnos = () => {
                 <label key={d.val} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
                   <input 
                     type="checkbox"
-                    checked={diasSeleccionados.includes(d.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setDiasSeleccionados([...diasSeleccionados, d.id]);
-                      } else {
-                        setDiasSeleccionados(diasSeleccionados.filter(v => v !== d.id));
-                      }
-                    }}
+                    value={d.id}
+                    checked={diasSeleccionados.map(Number).includes(Number(d.id))}
+                    onChange={() => handleCheckboxDiasSeleccionados(d.id)}
                   />
                   <span>{d.label}</span>
                 </label>
@@ -917,8 +941,9 @@ const Turnos = () => {
                   <label key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
                     <input 
                       type="checkbox" 
-                      checked={editHorarioDias.includes(d.id)}
-                      onChange={() => toggleEditDia(d.id)}
+                      value={d.id}
+                      checked={editHorarioDias.map(Number).includes(Number(d.id))}
+                      onChange={() => handleCheckboxEditHorario(d.id)}
                     />
                     <span>{d.label}</span>
                   </label>
