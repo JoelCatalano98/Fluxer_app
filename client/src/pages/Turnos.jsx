@@ -98,6 +98,7 @@ const Turnos = () => {
   const [isAnotarModalOpen, setIsAnotarModalOpen] = useState(false);
   const [isDetallesModalOpen, setIsDetallesModalOpen] = useState(false);
   const [isEditHorarioModalOpen, setIsEditHorarioModalOpen] = useState(false);
+  const [errorValidacion, setErrorValidacion] = useState("");
 
   const [selectedCellTurnos, setSelectedCellTurnos] = useState([]);
   const [clientesList, setClientesList] = useState([]);
@@ -244,9 +245,14 @@ const Turnos = () => {
 
   const handleAddHorario = async (e) => {
     e.preventDefault();
+    setErrorValidacion("");
+
     if (!nuevoHorario.inicio || !nuevoHorario.fin || nuevoHorario.dias.length === 0 || !nuevoHorario.categoriaId) {
-      alert("Por favor completa la hora de inicio, fin, selecciona al menos un día y una disciplina/etiqueta.");
-      return;
+      return setErrorValidacion("Por favor, completa los días, horarios y disciplina.");
+    }
+
+    if (configGlobal?.profesoresPorTurno && !nuevoHorario.profesionalId) {
+      return setErrorValidacion("Gestión Avanzada: Por favor, selecciona un profesional para este horario.");
     }
 
     try {
@@ -330,6 +336,7 @@ const Turnos = () => {
 
   // Apertura y manejo de edición de horarios
   const handleOpenEditHorario = (range, categoriaId) => {
+    setErrorValidacion("");
     const matching = horarios.filter(h => {
       const hRange = `${formatTime(h.hora_inicio)} - ${formatTime(h.hora_fin)}`;
       // Comparación estricta de string para rango y coincidencia de categoría (incluso si es null)
@@ -375,10 +382,14 @@ const Turnos = () => {
   const handleEditHorarioSubmit = async (e) => {
     e.preventDefault();
     if (!selectedHorarioId) return;
+    setErrorValidacion("");
 
-    if (editHorarioDias.length === 0) {
-      alert("Por favor selecciona al menos un día. Si deseas quitar la franja por completo, haz clic en 'Dar de Baja'.");
-      return;
+    if (editHorarioDias.length === 0 || !editHorarioValues.hora_inicio || !editHorarioValues.hora_fin || !editHorarioValues.categoriaId) {
+      return setErrorValidacion("Por favor, completa los días, horarios y disciplina. Si deseas quitar la franja, haz clic en 'Dar de Baja'.");
+    }
+
+    if (configGlobal?.profesoresPorTurno && !editHorarioValues.profesionalId) {
+      return setErrorValidacion("Gestión Avanzada: Por favor, selecciona un profesional para este horario.");
     }
 
     try {
@@ -445,7 +456,7 @@ const Turnos = () => {
         <div className="header-actions">
           <button 
             className="btn-config-horarios" 
-            onClick={() => setIsConfigModalOpen(true)}
+            onClick={() => { setErrorValidacion(""); setIsConfigModalOpen(true); }}
           >
             <Settings size={16} /> <span>Crear Nuevo Horario</span>
           </button>
@@ -733,6 +744,13 @@ const Turnos = () => {
               </div>
             </div>
           </div>
+
+          {errorValidacion && (
+            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4 rounded text-sm" style={{ backgroundColor: '#fee2e2', borderLeft: '4px solid #ef4444', color: '#b91c1c', padding: '12px', marginBottom: '16px', borderRadius: '4px', fontSize: '0.875rem' }}>
+              ⚠️ {errorValidacion}
+            </div>
+          )}
+
           <div className="pie-formulario">
             <button type="button" className="btn-cancel" onClick={() => setIsConfigModalOpen(false)}>
               Cancelar
@@ -964,6 +982,12 @@ const Turnos = () => {
             </div>
           </div>
           
+          {errorValidacion && (
+            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-3 mb-4 rounded text-sm" style={{ backgroundColor: '#fee2e2', borderLeft: '4px solid #ef4444', color: '#b91c1c', padding: '12px', marginBottom: '16px', borderRadius: '4px', fontSize: '0.875rem' }}>
+              ⚠️ {errorValidacion}
+            </div>
+          )}
+
           <div className="pie-formulario" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px' }}>
             <button 
               type="button" 
