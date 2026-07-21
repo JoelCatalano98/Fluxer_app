@@ -416,7 +416,7 @@ const updateHorario = async (req, res) => {
 
         const results = [];
 
-        for (let dia = 1; dia <= 6; dia++) {
+        for (let dia = 0; dia <= 6; dia++) {
             const estaMarcado = diasMarcados.includes(dia);
             const hermanoExistente = hermanosPorDia[dia];
 

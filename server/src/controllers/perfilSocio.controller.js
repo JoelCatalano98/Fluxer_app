@@ -20,9 +20,6 @@ const obtenerPerfil = async (req, res) => {
             include: {
                 categoria: {
                     include: { plan: true }
-                },
-                plan: {
-                    include: { categoria: true }
                 }
             }
         });
