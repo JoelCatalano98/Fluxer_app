@@ -29,7 +29,12 @@ const registrarPago = async (req, res) => {
 
         // Consultar cliente actual
         const cliente = await prisma.cliente.findUnique({
-            where: { id: clienteIdInt }
+            where: { id: clienteIdInt },
+            include: {
+                categoria: {
+                    include: { plan: true }
+                }
+            }
         });
 
         if (!cliente) {
@@ -44,23 +49,36 @@ const registrarPago = async (req, res) => {
             }
             nuevaFechaVencimiento.setDate(nuevaFechaVencimiento.getDate() + 30);
 
-            // Transacción para registrar el pago y actualizar al cliente
+            const montoPagado = parseFloat(monto);
+            const montoPlan = cliente.categoria?.plan?.precio ? parseFloat(cliente.categoria.plan.precio) : 0;
+            const diferencia = montoPagado - montoPlan;
+
+            // Transacción para registrar el pago, movimiento y actualizar al cliente
             const [nuevoPago, clienteActualizado] = await prisma.$transaction([
                 prisma.pago.create({
                     data: {
                         clienteId: clienteIdInt,
-                        monto: parseFloat(monto),
+                        monto: montoPagado,
                         metodoPago,
                         concepto,
                         notas,
-                        estado: 'APROBADO'
+                        estado: 'APROBADO',
+                        movimientos: {
+                            create: {
+                                monto: montoPagado,
+                                tipo: 'INGRESO',
+                                descripcion: 'Registro de Pago / Cuota',
+                                clienteId: clienteIdInt
+                            }
+                        }
                     }
                 }),
                 prisma.cliente.update({
                     where: { id: clienteIdInt },
                     data: {
                         vencimientoCuota: nuevaFechaVencimiento,
-                        estado_pago: 'ALDIA' // Actualizamos el estado de pago del cliente a ALDIA
+                        estado_pago: 'ALDIA', // Actualizamos el estado de pago del cliente a ALDIA
+                        saldo: { increment: diferencia }
                     }
                 })
             ]);
@@ -112,7 +130,15 @@ const cambiarEstadoPago = async (req, res) => {
 
         const pagoActual = await prisma.pago.findUnique({
             where: { id: pagoId },
-            include: { cliente: true }
+            include: { 
+                cliente: {
+                    include: {
+                        categoria: {
+                            include: { plan: true }
+                        }
+                    }
+                } 
+            }
         });
 
         if (!pagoActual) {
@@ -126,6 +152,10 @@ const cambiarEstadoPago = async (req, res) => {
             }
 
             const ayer = new Date(Date.now() - 86400000);
+            
+            const montoPagadoOriginal = parseFloat(pagoActual.monto);
+            const montoPlanOriginal = pagoActual.cliente.categoria?.plan?.precio ? parseFloat(pagoActual.cliente.categoria.plan.precio) : 0;
+            const diferenciaOriginal = montoPagadoOriginal - montoPlanOriginal;
 
             const [pagoAnulado, clienteRevertido] = await prisma.$transaction([
                 prisma.pago.update({
@@ -136,14 +166,24 @@ const cambiarEstadoPago = async (req, res) => {
                     where: { id: pagoActual.clienteId },
                     data: {
                         estado_pago: 'MOROSO',
-                        vencimientoCuota: ayer
+                        vencimientoCuota: ayer,
+                        saldo: { decrement: diferenciaOriginal }
+                    }
+                }),
+                prisma.movimientoCuenta.create({
+                    data: {
+                        monto: -montoPagadoOriginal,
+                        tipo: 'ANULACION',
+                        descripcion: `Anulación de Pago #${pagoId}`,
+                        clienteId: pagoActual.clienteId,
+                        pagoId: pagoId
                     }
                 })
             ]);
 
             return res.json({
                 success: true,
-                message: 'Pago anulado. El cliente fue marcado como MOROSO.',
+                message: 'Pago anulado. El cliente fue marcado como MOROSO y el saldo fue revertido.',
                 data: {
                     pago: pagoAnulado,
                     vencimientoCuota: clienteRevertido.vencimientoCuota
@@ -164,6 +204,10 @@ const cambiarEstadoPago = async (req, res) => {
             }
             nuevaFechaVencimiento.setDate(nuevaFechaVencimiento.getDate() + 30);
 
+            const montoPagado = parseFloat(pagoActual.monto);
+            const montoPlan = cliente.categoria?.plan?.precio ? parseFloat(cliente.categoria.plan.precio) : 0;
+            const diferencia = montoPagado - montoPlan;
+
             const [pagoActualizado, clienteActualizado] = await prisma.$transaction([
                 prisma.pago.update({
                     where: { id: pagoId },
@@ -173,7 +217,17 @@ const cambiarEstadoPago = async (req, res) => {
                     where: { id: cliente.id },
                     data: {
                         vencimientoCuota: nuevaFechaVencimiento,
-                        estado_pago: 'ALDIA'
+                        estado_pago: 'ALDIA',
+                        saldo: { increment: diferencia }
+                    }
+                }),
+                prisma.movimientoCuenta.create({
+                    data: {
+                        monto: montoPagado,
+                        tipo: 'INGRESO',
+                        descripcion: 'Aprobación de Pago / Cuota',
+                        clienteId: cliente.id,
+                        pagoId: pagoId
                     }
                 })
             ]);

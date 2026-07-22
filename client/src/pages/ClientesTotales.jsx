@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
-import { Pencil, Trash, UserPlus, Save, X, Loader2, AlertTriangle, Check, User, RefreshCw, MessageCircle, Dumbbell, Search, Unlock } from 'lucide-react';
+import { Pencil, Trash, UserPlus, Save, X, Loader2, AlertTriangle, Check, User, RefreshCw, MessageCircle, Dumbbell, Search, Unlock, Wallet } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
@@ -22,6 +22,12 @@ const ClientesTotales = () => {
   const [clienteRutinaSeleccionado, setClienteRutinaSeleccionado] = useState(null);
   const [categoriasList, setCategoriasList] = useState([]);
   const [busqueda, setBusqueda] = useState('');
+  
+  // Estado de Cuenta
+  const [showEstadoCuenta, setShowEstadoCuenta] = useState(false);
+  const [clienteEstadoCuenta, setClienteEstadoCuenta] = useState(null);
+  const [estadoCuentaData, setEstadoCuentaData] = useState(null);
+  const [loadingEstadoCuenta, setLoadingEstadoCuenta] = useState(false);
 
   // Cargar categorías
   useEffect(() => {
@@ -146,6 +152,23 @@ const ClientesTotales = () => {
     } catch (err) {
       console.error('Error handleResetPassword:', err);
       alert('Error al blanquear la contraseña: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleOpenEstadoCuenta = async (cliente) => {
+    setClienteEstadoCuenta(cliente);
+    setShowEstadoCuenta(true);
+    setLoadingEstadoCuenta(true);
+    try {
+      const res = await api.get(`/api/clientes/${cliente.id}/movimientos`);
+      if (res.data.success) {
+        setEstadoCuentaData(res.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching estado cuenta:', err);
+      alert('Error al obtener el estado de cuenta');
+    } finally {
+      setLoadingEstadoCuenta(false);
     }
   };
 
@@ -348,6 +371,13 @@ const ClientesTotales = () => {
                           <Dumbbell size={16} />
                         </button>
                         <button
+                          onClick={() => handleOpenEstadoCuenta(cliente)}
+                          title="Estado de Cuenta"
+                          style={{ display: 'flex', alignItems: 'center', background: '#e3f2fd', color: '#1e88e5', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                        >
+                          <Wallet size={16} />
+                        </button>
+                        <button
                           onClick={() => handleResetPassword(cliente)}
                           title="Blanquear contraseña"
                           style={{ display: 'flex', alignItems: 'center', background: '#fff8e1', color: '#f59f00', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
@@ -493,6 +523,102 @@ const ClientesTotales = () => {
           onClose={() => setClienteRutinaSeleccionado(null)}
           cliente={clienteRutinaSeleccionado}
         />
+
+        <Modal isOpen={showEstadoCuenta} onClose={() => setShowEstadoCuenta(false)} title={`Estado de Cuenta - ${clienteEstadoCuenta?.nombre || ''}`}>
+          <div style={{ padding: '20px' }}>
+            {loadingEstadoCuenta ? (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <Loader2 className="animate-spin" style={{ margin: '0 auto', color: 'var(--accent-blue)' }} />
+                <p>Cargando información...</p>
+              </div>
+            ) : estadoCuentaData ? (
+              <>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '15px',
+                  marginBottom: '20px',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '6px',
+                  padding: '15px',
+                  backgroundColor: '#f9fafb'
+                }}>
+                  <div style={{ textAlign: 'center', borderRight: '1px solid #e5e7eb' }}>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Saldo Deudor Histórico</p>
+                    <p style={{ margin: '5px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', color: '#374151', fontFamily: 'monospace' }}>
+                      ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.monto < 0).reduce((acc, m) => acc + Math.abs(m.monto), 0).toFixed(2) : '0.00'}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'center', borderRight: '1px solid #e5e7eb' }}>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Pagos (Haber)</p>
+                    <p style={{ margin: '5px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', color: '#374151', fontFamily: 'monospace' }}>
+                      ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.monto > 0).reduce((acc, m) => acc + m.monto, 0).toFixed(2) : '0.00'}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Balance Actual</p>
+                    <p style={{ margin: '5px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', fontFamily: 'monospace', color: estadoCuentaData.saldo < 0 ? '#b91c1c' : estadoCuentaData.saldo > 0 ? '#15803d' : '#374151' }}>
+                      ${Number(estadoCuentaData.saldo).toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="w-full overflow-x-auto bg-white rounded-lg shadow" style={{ maxHeight: '400px', border: '1px solid #e5e7eb', borderRadius: '6px', overflowX: 'auto', width: '100%' }}>
+                  <table className="w-full text-left border-collapse min-w-[600px]" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                    <thead style={{ backgroundColor: '#f3f4f6', position: 'sticky', top: 0 }}>
+                      <tr>
+                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', color: '#4b5563', fontWeight: '600' }}>Fecha y Hora</th>
+                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', color: '#4b5563', fontWeight: '600' }}>Concepto / Comprobante</th>
+                        <th style={{ padding: '10px', textAlign: 'right', borderBottom: '1px solid #e5e7eb', color: '#4b5563', fontWeight: '600' }}>Debe (Cargos)</th>
+                        <th style={{ padding: '10px', textAlign: 'right', borderBottom: '1px solid #e5e7eb', color: '#4b5563', fontWeight: '600' }}>Haber (Pagos)</th>
+                        <th style={{ padding: '10px', textAlign: 'right', borderBottom: '1px solid #e5e7eb', color: '#4b5563', fontWeight: '600' }}>Saldo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {estadoCuentaData.movimientos && estadoCuentaData.movimientos.length > 0 ? (
+                        (() => {
+                          let runningBalance = Number(estadoCuentaData.saldo);
+                          return estadoCuentaData.movimientos.map((mov, index) => {
+                            const currentSaldo = runningBalance;
+                            runningBalance -= Number(mov.monto);
+                            
+                            return (
+                              <tr key={mov.id} style={{ borderBottom: '1px solid #f3f4f6', backgroundColor: '#ffffff' }}>
+                                <td style={{ padding: '10px', color: '#374151', whiteSpace: 'nowrap' }}>
+                                  {new Date(mov.fecha).toLocaleString()}
+                                </td>
+                                <td style={{ padding: '10px', color: '#374151' }}>
+                                  {mov.descripcion}
+                                </td>
+                                <td style={{ padding: '10px', textAlign: 'right', fontFamily: 'monospace', color: mov.monto < 0 ? '#b91c1c' : '#9ca3af' }}>
+                                  {mov.monto < 0 ? `$${Math.abs(mov.monto).toFixed(2)}` : '-'}
+                                </td>
+                                <td style={{ padding: '10px', textAlign: 'right', fontFamily: 'monospace', color: mov.monto > 0 ? '#15803d' : '#9ca3af' }}>
+                                  {mov.monto > 0 ? `$${mov.monto.toFixed(2)}` : '-'}
+                                </td>
+                                <td style={{ padding: '10px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '600', color: currentSaldo < 0 ? '#b91c1c' : '#374151' }}>
+                                  ${currentSaldo.toFixed(2)}
+                                </td>
+                              </tr>
+                            );
+                          });
+                        })()
+                      ) : (
+                        <tr>
+                          <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#6b7280', fontStyle: 'italic' }}>
+                            No hay movimientos registrados en el libro mayor.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : (
+              <p style={{ textAlign: 'center', color: '#e03131' }}>Error al cargar los datos.</p>
+            )}
+          </div>
+        </Modal>
       </div>
     </div>
   );

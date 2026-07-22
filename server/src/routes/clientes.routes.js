@@ -20,4 +20,7 @@ router.patch('/:id/estado-pago', clientesController.updateEstadoPago);
 // Blanquear la contraseña de un cliente por ID (resetea a "123456")
 router.patch('/:id/reset-password', clientesController.resetPasswordCliente);
 
+// Obtener movimientos y saldo del cliente
+router.get('/:id/movimientos', clientesController.getMovimientosCliente);
+
 module.exports = router;

@@ -459,11 +459,62 @@ const resetPasswordCliente = async (req, res) => {
     }
 };
 
+// GET /api/clientes/:id/movimientos
+// Obtiene el saldo actual y el historial de movimientos de un cliente
+const getMovimientosCliente = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({
+                success: false,
+                data: null,
+                message: 'ID de cliente no válido'
+            });
+        }
+
+        const cliente = await prisma.cliente.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                nombre: true,
+                apellido: true,
+                saldo: true,
+                movimientos: {
+                    orderBy: { fecha: 'desc' },
+                    include: { pago: true }
+                }
+            }
+        });
+
+        if (!cliente) {
+            return res.status(404).json({
+                success: false,
+                data: null,
+                message: 'Cliente no encontrado'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: cliente,
+            message: 'Movimientos obtenidos con éxito'
+        });
+    } catch (error) {
+        console.error('Error al obtener movimientos del cliente:', error);
+        return res.status(500).json({
+            success: false,
+            data: null,
+            message: 'Error interno del servidor al obtener movimientos'
+        });
+    }
+};
+
 module.exports = {
     getClientes,
     createCliente,
     updateCliente,
     deleteCliente,
     updateEstadoPago,
-    resetPasswordCliente
+    resetPasswordCliente,
+    getMovimientosCliente
 };

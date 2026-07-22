@@ -57,26 +57,28 @@ model Plan {
 }
 
 model Cliente {
-  id               Int            @id @default(autoincrement())
-  codigo_socio     String?        @unique
+  id               Int                @id @default(autoincrement())
+  codigo_socio     String?            @unique
   nombre           String
   apellido         String
-  dni_cuit         String         @unique
-  email            String?        @unique
+  dni_cuit         String             @unique
+  email            String?            @unique
   password         String?
   telefono         String?
-  fecha_inicio     DateTime?      @db.Date
-  observaciones    String?        @db.Text
-  estado_pago      EstadoPago     @default(ALDIA)
-  estado_cliente   EstadoCliente  @default(ACTIVO)
+  fecha_inicio     DateTime?          @db.Date
+  observaciones    String?            @db.Text
+  estado_pago      EstadoPago         @default(ALDIA)
+  estado_cliente   EstadoCliente      @default(ACTIVO)
   categoriaId      Int?
-  es_socio         Boolean        @default(false)
-  categoria        Categoria?     @relation(fields: [categoriaId], references: [id])
+  es_socio         Boolean            @default(false)
+  categoria        Categoria?         @relation(fields: [categoriaId], references: [id])
   turnosCliente    TurnoCliente[]
   rutinas          Rutina[]
   records          Record[]
   pagos            Pago[]
   vencimientoCuota DateTime?
+  saldo            Float              @default(0)
+  movimientos      MovimientoCuenta[]
 
   @@index([categoriaId], map: "clientes_categoriaId_fkey")
   @@map("clientes")
@@ -237,13 +239,28 @@ model Record {
 }
 
 model Pago {
-  id         Int      @id @default(autoincrement())
-  clienteId  Int
-  cliente    Cliente  @relation(fields: [clienteId], references: [id])
-  monto      Float
-  metodoPago String // Ej: 'EFECTIVO', 'TRANSFERENCIA', 'MERCADO_PAGO'
-  concepto   String // Ej: 'Cuota Mensual Pase Libre'
-  fecha      DateTime @default(now())
-  notas      String?
-  estado     String   @default("APROBADO")
+  id          Int                @id @default(autoincrement())
+  clienteId   Int
+  cliente     Cliente            @relation(fields: [clienteId], references: [id])
+  monto       Float
+  metodoPago  String // Ej: 'EFECTIVO', 'TRANSFERENCIA', 'MERCADO_PAGO'
+  concepto    String // Ej: 'Cuota Mensual Pase Libre'
+  fecha       DateTime           @default(now())
+  notas       String?
+  estado      String             @default("APROBADO")
+  movimientos MovimientoCuenta[]
+}
+
+model MovimientoCuenta {
+  id          Int      @id @default(autoincrement())
+  monto       Float
+  tipo        String
+  descripcion String
+  fecha       DateTime @default(now())
+
+  clienteId Int
+  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
+  pagoId Int?
+  pago   Pago? @relation(fields: [pagoId], references: [id], onDelete: SetNull)
 }
