@@ -524,8 +524,8 @@ const ClientesTotales = () => {
           cliente={clienteRutinaSeleccionado}
         />
 
-        <Modal isOpen={showEstadoCuenta} onClose={() => setShowEstadoCuenta(false)} title={`Estado de Cuenta - ${clienteEstadoCuenta?.nombre || ''}`}>
-          <div style={{ padding: '20px' }}>
+        <Modal isOpen={showEstadoCuenta} onClose={() => setShowEstadoCuenta(false)} title={`Estado de Cuenta - ${clienteEstadoCuenta?.nombre || ''}`} contentClassName="modal-estado-cuenta">
+          <div style={{ padding: '16px' }}>
             {loadingEstadoCuenta ? (
               <div style={{ textAlign: 'center', padding: '40px' }}>
                 <Loader2 className="animate-spin" style={{ margin: '0 auto', color: 'var(--accent-blue)' }} />
@@ -533,29 +533,21 @@ const ClientesTotales = () => {
               </div>
             ) : estadoCuentaData ? (
               <>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(3, 1fr)',
-                  gap: '15px',
-                  marginBottom: '20px',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '6px',
-                  padding: '15px',
-                  backgroundColor: '#f9fafb'
-                }}>
-                  <div style={{ textAlign: 'center', borderRight: '1px solid #e5e7eb' }}>
+                {/* Resumen de Saldos — responsive grid */}
+                <div className="estado-cuenta-resumen">
+                  <div className="estado-cuenta-resumen-item">
                     <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Saldo Deudor Histórico</p>
                     <p style={{ margin: '5px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', color: '#374151', fontFamily: 'monospace' }}>
                       ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.monto < 0).reduce((acc, m) => acc + Math.abs(m.monto), 0).toFixed(2) : '0.00'}
                     </p>
                   </div>
-                  <div style={{ textAlign: 'center', borderRight: '1px solid #e5e7eb' }}>
+                  <div className="estado-cuenta-resumen-item">
                     <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Pagos (Haber)</p>
                     <p style={{ margin: '5px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', color: '#374151', fontFamily: 'monospace' }}>
                       ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.monto > 0).reduce((acc, m) => acc + m.monto, 0).toFixed(2) : '0.00'}
                     </p>
                   </div>
-                  <div style={{ textAlign: 'center' }}>
+                  <div className="estado-cuenta-resumen-item" style={{ borderRight: 'none' }}>
                     <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Balance Actual</p>
                     <p style={{ margin: '5px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', fontFamily: 'monospace', color: estadoCuentaData.saldo < 0 ? '#b91c1c' : estadoCuentaData.saldo > 0 ? '#15803d' : '#374151' }}>
                       ${Number(estadoCuentaData.saldo).toFixed(2)}
@@ -563,40 +555,41 @@ const ClientesTotales = () => {
                   </div>
                 </div>
 
-                <div className="w-full overflow-x-auto bg-white rounded-lg shadow" style={{ maxHeight: '400px', border: '1px solid #e5e7eb', borderRadius: '6px', overflowX: 'auto', width: '100%' }}>
-                  <table className="w-full text-left border-collapse min-w-[600px]" style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                    <thead style={{ backgroundColor: '#f3f4f6', position: 'sticky', top: 0 }}>
+                {/* Tabla Contable — scroll horizontal en mobile */}
+                <div className="estado-cuenta-tabla-wrapper">
+                  <table className="estado-cuenta-tabla">
+                    <thead>
                       <tr>
-                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', color: '#4b5563', fontWeight: '600' }}>Fecha y Hora</th>
-                        <th style={{ padding: '10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb', color: '#4b5563', fontWeight: '600' }}>Concepto / Comprobante</th>
-                        <th style={{ padding: '10px', textAlign: 'right', borderBottom: '1px solid #e5e7eb', color: '#4b5563', fontWeight: '600' }}>Debe (Cargos)</th>
-                        <th style={{ padding: '10px', textAlign: 'right', borderBottom: '1px solid #e5e7eb', color: '#4b5563', fontWeight: '600' }}>Haber (Pagos)</th>
-                        <th style={{ padding: '10px', textAlign: 'right', borderBottom: '1px solid #e5e7eb', color: '#4b5563', fontWeight: '600' }}>Saldo</th>
+                        <th style={{ textAlign: 'left' }}>Fecha y Hora</th>
+                        <th style={{ textAlign: 'left' }}>Concepto / Comprobante</th>
+                        <th style={{ textAlign: 'right' }}>Debe (Cargos)</th>
+                        <th style={{ textAlign: 'right' }}>Haber (Pagos)</th>
+                        <th style={{ textAlign: 'right' }}>Saldo</th>
                       </tr>
                     </thead>
                     <tbody>
                       {estadoCuentaData.movimientos && estadoCuentaData.movimientos.length > 0 ? (
                         (() => {
                           let runningBalance = Number(estadoCuentaData.saldo);
-                          return estadoCuentaData.movimientos.map((mov, index) => {
+                          return estadoCuentaData.movimientos.map((mov) => {
                             const currentSaldo = runningBalance;
                             runningBalance -= Number(mov.monto);
                             
                             return (
-                              <tr key={mov.id} style={{ borderBottom: '1px solid #f3f4f6', backgroundColor: '#ffffff' }}>
-                                <td style={{ padding: '10px', color: '#374151', whiteSpace: 'nowrap' }}>
+                              <tr key={mov.id}>
+                                <td>
                                   {new Date(mov.fecha).toLocaleString()}
                                 </td>
-                                <td style={{ padding: '10px', color: '#374151' }}>
+                                <td>
                                   {mov.descripcion}
                                 </td>
-                                <td style={{ padding: '10px', textAlign: 'right', fontFamily: 'monospace', color: mov.monto < 0 ? '#b91c1c' : '#9ca3af' }}>
+                                <td style={{ textAlign: 'right', color: mov.monto < 0 ? '#b91c1c' : '#d1d5db' }}>
                                   {mov.monto < 0 ? `$${Math.abs(mov.monto).toFixed(2)}` : '-'}
                                 </td>
-                                <td style={{ padding: '10px', textAlign: 'right', fontFamily: 'monospace', color: mov.monto > 0 ? '#15803d' : '#9ca3af' }}>
+                                <td style={{ textAlign: 'right', color: mov.monto > 0 ? '#15803d' : '#d1d5db' }}>
                                   {mov.monto > 0 ? `$${mov.monto.toFixed(2)}` : '-'}
                                 </td>
-                                <td style={{ padding: '10px', textAlign: 'right', fontFamily: 'monospace', fontWeight: '600', color: currentSaldo < 0 ? '#b91c1c' : '#374151' }}>
+                                <td className="estado-cuenta-saldo-cell" style={{ color: currentSaldo < 0 ? '#b91c1c' : '#374151' }}>
                                   ${currentSaldo.toFixed(2)}
                                 </td>
                               </tr>
@@ -605,7 +598,7 @@ const ClientesTotales = () => {
                         })()
                       ) : (
                         <tr>
-                          <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#6b7280', fontStyle: 'italic' }}>
+                          <td colSpan="5" style={{ padding: '20px', textAlign: 'center', color: '#6b7280', fontStyle: 'italic', whiteSpace: 'normal' }}>
                             No hay movimientos registrados en el libro mayor.
                           </td>
                         </tr>

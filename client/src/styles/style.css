@@ -426,6 +426,158 @@ th.columna-fija {
     to { transform: translateY(0); opacity: 1; }
 }
 
+/* ============================
+   ESTADO DE CUENTA — Modal Contable Responsive
+   ============================ */
+
+/* Contenedor del modal: usa ancho completo en mobile sin romperse */
+.modal-estado-cuenta {
+    width: 100%;
+    max-width: 56rem; /* ~896px, equivalente a max-w-4xl */
+    margin-left: 1rem;
+    margin-right: 1rem;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+/* Resumen de saldos: 3 columnas en desktop, 1 en mobile */
+.estado-cuenta-resumen {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 15px;
+    background-color: #f9fafb;
+}
+
+.estado-cuenta-resumen-item {
+    text-align: center;
+    border-right: 1px solid #e5e7eb;
+}
+
+/* Wrapper de la tabla: fuerza scroll horizontal limpio */
+.estado-cuenta-tabla-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+    padding-bottom: 1rem;
+    max-height: 400px;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background-color: #fff;
+    /* Scrollbar sutil en WebKit */
+    -webkit-overflow-scrolling: touch;
+}
+
+.estado-cuenta-tabla-wrapper::-webkit-scrollbar {
+    height: 6px;
+}
+
+.estado-cuenta-tabla-wrapper::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 3px;
+}
+
+.estado-cuenta-tabla-wrapper::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 3px;
+}
+
+/* La tabla contable */
+.estado-cuenta-tabla {
+    width: 100%;
+    min-width: 600px; /* Nunca colapsa por debajo de esto */
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    text-align: left;
+}
+
+/* Cabeceras */
+.estado-cuenta-tabla thead {
+    background-color: #f3f4f6;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.estado-cuenta-tabla th {
+    padding: 12px 16px;
+    border-bottom: 2px solid #e5e7eb;
+    color: #4b5563;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* Celdas de datos */
+.estado-cuenta-tabla td {
+    padding: 12px 16px;
+    color: #374151;
+    white-space: nowrap;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* Filas con borde inferior sutil */
+.estado-cuenta-tabla tbody tr {
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.estado-cuenta-tabla tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* Columnas numéricas (Debe, Haber, Saldo): fuente monospace */
+.estado-cuenta-tabla td:nth-child(3),
+.estado-cuenta-tabla td:nth-child(4),
+.estado-cuenta-tabla td:nth-child(5) {
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* Celda de saldo con peso extra */
+.estado-cuenta-saldo-cell {
+    text-align: right;
+    font-weight: 600;
+}
+
+/* ============================
+   RESPONSIVE: Pantallas < 768px
+   ============================ */
+@media (max-width: 768px) {
+    /* El modal usa casi todo el ancho en mobile */
+    .modal-estado-cuenta {
+        margin-left: 0.5rem;
+        margin-right: 0.5rem;
+        max-width: 100%;
+        border-radius: 10px;
+    }
+
+    /* Resumen: se apila en 1 columna */
+    .estado-cuenta-resumen {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .estado-cuenta-resumen-item {
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 10px;
+    }
+
+    .estado-cuenta-resumen-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    /* Tabla: padding más compacto en mobile */
+    .estado-cuenta-tabla th,
+    .estado-cuenta-tabla td {
+        padding: 10px 12px;
+        font-size: 0.8rem;
+    }
+}
+
 
 /* --- FOOTER --- */
 
