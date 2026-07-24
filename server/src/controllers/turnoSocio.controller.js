@@ -3,7 +3,32 @@ const prisma = require('../config/prisma');
 // Obtener horarios disponibles para el socio
 const getClasesDisponibles = async (req, res) => {
     try {
-        const { dia_semana } = req.query; // Para filtrar por el día seleccionado en el carrusel (1 a 6)
+        const { dia_semana, fecha } = req.query; // Para filtrar por el día seleccionado en el carrusel (1 a 6)
+
+        let targetDate = new Date();
+        if (fecha) {
+            targetDate = new Date(fecha);
+            targetDate.setUTCHours(0, 0, 0, 0);
+        }
+
+        // Buscar bloqueos activos para la fecha consultada
+        const bloqueos = await prisma.aviso.findMany({
+            where: {
+                activo: true,
+                esBloqueo: true,
+                fechaDesde: { lte: targetDate },
+                OR: [
+                    { fechaHasta: { gte: targetDate } },
+                    { fechaHasta: null }
+                ]
+            }
+        });
+
+        // Bloqueo estricto: Día Completo
+        const bloqueoDiaCompleto = bloqueos.some(b => b.bloquearTodoElDia);
+        if (bloqueoDiaCompleto) {
+            return res.status(200).json({ success: true, data: [] });
+        }
 
         const where = { activo: true };
         if (dia_semana) {
@@ -22,15 +47,39 @@ const getClasesDisponibles = async (req, res) => {
             orderBy: { hora_inicio: 'asc' }
         });
 
+        // Filtrado adicional por Rango Horario o IDs específicos
+        const horariosFiltradosPorBloqueo = horarios.filter(h => {
+            const hInicioObj = new Date(h.hora_inicio);
+            const horaClaseFormateada = String(hInicioObj.getUTCHours()).padStart(2, '0') + ':' + String(hInicioObj.getUTCMinutes()).padStart(2, '0');
+
+            for (let b of bloqueos) {
+                // 1. Filtrar por Turnos/Clases Específicas
+                if (b.horariosBloqueados) {
+                    let idsBloqueados = [];
+                    try {
+                        idsBloqueados = typeof b.horariosBloqueados === 'string' ? JSON.parse(b.horariosBloqueados) : b.horariosBloqueados;
+                    } catch(e) {}
+                    if (Array.isArray(idsBloqueados) && idsBloqueados.includes(h.id)) {
+                        return false; // Bloqueado
+                    }
+                }
+                
+                // 2. Filtrar por Rango Horario
+                if (b.horaInicioBloqueo && b.horaFinBloqueo) {
+                    if (horaClaseFormateada >= b.horaInicioBloqueo && horaClaseFormateada <= b.horaFinBloqueo) {
+                        return false; // Bloqueado
+                    }
+                }
+            }
+            return true; // Pasa el filtro
+        });
+
         // Obtener configuración global para cupo máximo
         const configuracion = await prisma.configuracion.findFirst();
         const maxGlobal = configuracion?.cupoGlobal || 15;
 
         // Formatear para facilitar uso en el front
-        const horariosFormateados = horarios.map(h => {
-            const fechaActual = new Date();
-            // Lógica simplificada: filtraremos los turnos de la UI o devolvemos un total.
-            // Para Crossfy style devolvemos un count directo.
+        const horariosFormateados = horariosFiltradosPorBloqueo.map(h => {
             return {
                 id: h.id,
                 dia_semana: h.dia_semana,

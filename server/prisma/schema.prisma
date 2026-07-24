@@ -180,13 +180,18 @@ model Configuracion {
 }
 
 model Aviso {
-  id         Int       @id @default(autoincrement())
-  titulo     String
-  mensaje    String?   @db.Text
-  tipo       String    @default("INFO")
-  fechaDesde DateTime
-  fechaHasta DateTime?
-  activo     Boolean   @default(true)
+  id                 Int       @id @default(autoincrement())
+  titulo             String
+  mensaje            String?   @db.Text
+  tipo               String    @default("INFO")
+  esBloqueo          Boolean   @default(false)
+  fechaDesde         DateTime  @db.Date
+  fechaHasta         DateTime? @db.Date
+  activo             Boolean   @default(true)
+  bloquearTodoElDia  Boolean   @default(true)
+  horaInicioBloqueo  String?
+  horaFinBloqueo     String?
+  horariosBloqueados Json?
 
   @@map("avisos")
 }

@@ -33,7 +33,7 @@ const getAvisosSocio = async (req, res) => {
 };
 
 const createAviso = async (req, res) => {
-    const { titulo, mensaje, tipo, fechaDesde, fechaHasta } = req.body;
+    const { titulo, mensaje, tipo, fechaDesde, fechaHasta, esBloqueo, bloquearTodoElDia, horaInicioBloqueo, horaFinBloqueo, horariosBloqueados } = req.body;
     try {
         const nuevoAviso = await prisma.aviso.create({
             data: {
@@ -41,7 +41,12 @@ const createAviso = async (req, res) => {
                 mensaje,
                 tipo: tipo || 'INFO',
                 fechaDesde: new Date(fechaDesde),
-                fechaHasta: fechaHasta ? new Date(fechaHasta) : null
+                fechaHasta: fechaHasta ? new Date(fechaHasta) : null,
+                esBloqueo: esBloqueo || false,
+                bloquearTodoElDia: bloquearTodoElDia !== undefined ? bloquearTodoElDia : true,
+                horaInicioBloqueo: horaInicioBloqueo || null,
+                horaFinBloqueo: horaFinBloqueo || null,
+                horariosBloqueados: horariosBloqueados || null
             }
         });
         res.json(nuevoAviso);
@@ -53,7 +58,7 @@ const createAviso = async (req, res) => {
 
 const updateAviso = async (req, res) => {
     const { id } = req.params;
-    const { titulo, mensaje, tipo, fechaDesde, fechaHasta, activo } = req.body;
+    const { titulo, mensaje, tipo, fechaDesde, fechaHasta, activo, esBloqueo, bloquearTodoElDia, horaInicioBloqueo, horaFinBloqueo, horariosBloqueados } = req.body;
     try {
         const avisoActualizado = await prisma.aviso.update({
             where: { id: parseInt(id) },
@@ -63,7 +68,12 @@ const updateAviso = async (req, res) => {
                 tipo,
                 fechaDesde: fechaDesde ? new Date(fechaDesde) : undefined,
                 fechaHasta: fechaHasta !== undefined ? (fechaHasta ? new Date(fechaHasta) : null) : undefined,
-                activo
+                activo,
+                esBloqueo: esBloqueo !== undefined ? esBloqueo : undefined,
+                bloquearTodoElDia: bloquearTodoElDia !== undefined ? bloquearTodoElDia : undefined,
+                horaInicioBloqueo: horaInicioBloqueo !== undefined ? horaInicioBloqueo : undefined,
+                horaFinBloqueo: horaFinBloqueo !== undefined ? horaFinBloqueo : undefined,
+                horariosBloqueados: horariosBloqueados !== undefined ? horariosBloqueados : undefined
             }
         });
         res.json(avisoActualizado);

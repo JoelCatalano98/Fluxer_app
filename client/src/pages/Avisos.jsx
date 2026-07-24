@@ -12,18 +12,36 @@ const Avisos = () => {
   const [selectedAviso, setSelectedAviso] = useState(null);
 
   const [avisos, setAvisos] = useState([]);
+  const [horariosLista, setHorariosLista] = useState([]);
 
   const [nuevoAviso, setNuevoAviso] = useState({
     titulo: '',
     mensaje: '',
     tipo: 'INFO',
     fechaDesde: new Date().toISOString().split('T')[0],
-    fechaHasta: ''
+    fechaHasta: '',
+    esBloqueo: false,
+    alcanceBloqueo: 'DIA_COMPLETO',
+    horaInicioBloqueo: '',
+    horaFinBloqueo: '',
+    horariosBloqueados: []
   });
 
   useEffect(() => {
     fetchAvisos();
+    fetchHorarios();
   }, []);
+
+  const fetchHorarios = async () => {
+    try {
+      const res = await api.get('/api/turnos/horarios');
+      if (res.data.success) {
+        setHorariosLista(res.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching horarios:', error);
+    }
+  };
 
   const fetchAvisos = async () => {
     try {
@@ -49,14 +67,28 @@ const Avisos = () => {
         return;
     }
     try {
-      await api.post('/api/avisos', nuevoAviso);
+      const payload = {
+        ...nuevoAviso,
+        esBloqueo: nuevoAviso.tipo === 'FERIADO' || nuevoAviso.esBloqueo,
+        bloquearTodoElDia: nuevoAviso.alcanceBloqueo === 'DIA_COMPLETO',
+        horaInicioBloqueo: nuevoAviso.alcanceBloqueo === 'RANGO_HORARIO' ? nuevoAviso.horaInicioBloqueo : null,
+        horaFinBloqueo: nuevoAviso.alcanceBloqueo === 'RANGO_HORARIO' ? nuevoAviso.horaFinBloqueo : null,
+        horariosBloqueados: nuevoAviso.alcanceBloqueo === 'TURNOS_ESPECIFICOS' ? JSON.stringify(nuevoAviso.horariosBloqueados) : null
+      };
+
+      await api.post('/api/avisos', payload);
       setIsModalOpen(false);
       setNuevoAviso({
         titulo: '',
         mensaje: '',
         tipo: 'INFO',
         fechaDesde: new Date().toISOString().split('T')[0],
-        fechaHasta: ''
+        fechaHasta: '',
+        esBloqueo: false,
+        alcanceBloqueo: 'DIA_COMPLETO',
+        horaInicioBloqueo: '',
+        horaFinBloqueo: '',
+        horariosBloqueados: []
       });
       alert("Aviso registrado con éxito");
       fetchAvisos();
@@ -163,6 +195,81 @@ const Avisos = () => {
               <option value="URGENTE">Urgente</option>
             </select>
           </div>
+
+          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <input 
+              type="checkbox" 
+              id="esBloqueo" 
+              checked={nuevoAviso.esBloqueo || nuevoAviso.tipo === 'FERIADO'} 
+              onChange={(e) => setNuevoAviso(prev => ({ ...prev, esBloqueo: e.target.checked }))} 
+              disabled={nuevoAviso.tipo === 'FERIADO'}
+              style={{ width: '18px', height: '18px' }}
+            />
+            <label htmlFor="esBloqueo" style={{ marginBottom: 0, cursor: 'pointer', fontSize: '0.9rem', color: '#475569' }}>Es un Bloqueo de Reservas (Impide sacar turnos)</label>
+          </div>
+
+          {(nuevoAviso.tipo === 'FERIADO' || nuevoAviso.esBloqueo) && (
+            <div style={{ backgroundColor: '#f8fafc', padding: '15px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <label style={{ fontWeight: 'bold', color: '#334155', fontSize: '0.95rem' }}>Alcance del Bloqueo</label>
+              
+              <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '0.9rem' }}>
+                  <input type="radio" name="alcanceBloqueo" value="DIA_COMPLETO" checked={nuevoAviso.alcanceBloqueo === 'DIA_COMPLETO'} onChange={(e) => setNuevoAviso(prev => ({...prev, alcanceBloqueo: e.target.value}))} />
+                  Cierra todo el día
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '0.9rem' }}>
+                  <input type="radio" name="alcanceBloqueo" value="RANGO_HORARIO" checked={nuevoAviso.alcanceBloqueo === 'RANGO_HORARIO'} onChange={(e) => setNuevoAviso(prev => ({...prev, alcanceBloqueo: e.target.value}))} />
+                  Rango de Horario
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '0.9rem' }}>
+                  <input type="radio" name="alcanceBloqueo" value="TURNOS_ESPECIFICOS" checked={nuevoAviso.alcanceBloqueo === 'TURNOS_ESPECIFICOS'} onChange={(e) => setNuevoAviso(prev => ({...prev, alcanceBloqueo: e.target.value}))} />
+                  Turnos/Clases específicas
+                </label>
+              </div>
+
+              {nuevoAviso.alcanceBloqueo === 'RANGO_HORARIO' && (
+                <div style={{ display: 'flex', gap: '15px' }}>
+                  <div className="form-group" style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.85rem' }}>Hora Inicio</label>
+                    <input type="time" id="horaInicioBloqueo" value={nuevoAviso.horaInicioBloqueo} onChange={handleInputChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} />
+                  </div>
+                  <div className="form-group" style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.85rem' }}>Hora Fin</label>
+                    <input type="time" id="horaFinBloqueo" value={nuevoAviso.horaFinBloqueo} onChange={handleInputChange} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} />
+                  </div>
+                </div>
+              )}
+
+              {nuevoAviso.alcanceBloqueo === 'TURNOS_ESPECIFICOS' && (
+                <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', padding: '10px', borderRadius: '6px', backgroundColor: 'white' }}>
+                  {horariosLista.length === 0 ? <p style={{ fontSize: '0.85rem', color: '#666' }}>Cargando horarios...</p> : horariosLista.map(horario => {
+                    const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+                    const nombreDia = diasSemana[horario.dia_semana] || '';
+                    const time = new Date(horario.hora_inicio);
+                    const label = `${horario.categoria?.nombre || 'General'} - ${nombreDia} ${String(time.getUTCHours()).padStart(2, '0')}:${String(time.getUTCMinutes()).padStart(2, '0')}hs`;
+                    const isChecked = nuevoAviso.horariosBloqueados.includes(horario.id);
+                    return (
+                      <label key={horario.id} style={{ display: 'block', marginBottom: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setNuevoAviso(prev => ({ ...prev, horariosBloqueados: [...prev.horariosBloqueados, horario.id] }));
+                            } else {
+                              setNuevoAviso(prev => ({ ...prev, horariosBloqueados: prev.horariosBloqueados.filter(id => id !== horario.id) }));
+                            }
+                          }}
+                          style={{ marginRight: '8px' }}
+                        />
+                        {label}
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
           <div className="form-group">
             <label htmlFor="titulo">Título</label>
             <input 
@@ -221,10 +328,14 @@ const Avisos = () => {
 
       <ConfirmDeleteModal
         isOpen={isDeleteConfirmOpen}
-        onClose={() => setIsDeleteConfirmOpen(false)}
+        onCancel={() => setIsDeleteConfirmOpen(false)}
         onConfirm={handleConfirmDelete}
         title="Eliminar Aviso"
         message={`¿Estás seguro que deseas eliminar el aviso "${selectedAviso?.titulo}"?`}
+        confirmLabel={<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Trash2 size={16} /> Eliminar</div>}
+        confirmClassName="flex items-center justify-center gap-2 px-4 py-2 bg-[#00a8e8] text-white hover:bg-[#0092c9] rounded-lg transition-colors text-sm font-medium"
+        cancelLabel="Cancelar"
+        cancelClassName="flex items-center justify-center px-4 py-2 bg-[#e6f6fd] text-[#00a8e8] hover:bg-[#ccebfc] rounded-lg transition-colors text-sm font-medium"
       />
     </div>
   );
