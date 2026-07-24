@@ -23,4 +23,7 @@ router.patch('/:id/reset-password', clientesController.resetPasswordCliente);
 // Obtener movimientos y saldo del cliente
 router.get('/:id/movimientos', clientesController.getMovimientosCliente);
 
+// Hard Reset financiero de un cliente (elimina pagos, movimientos y resetea saldo)
+router.delete('/:id/reset-finanzas', clientesController.resetFinanzasCliente);
+
 module.exports = router;

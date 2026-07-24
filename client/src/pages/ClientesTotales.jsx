@@ -549,8 +549,8 @@ const ClientesTotales = () => {
                   </div>
                   <div className="estado-cuenta-resumen-item" style={{ borderRight: 'none' }}>
                     <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Balance Actual</p>
-                    <p style={{ margin: '5px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', fontFamily: 'monospace', color: estadoCuentaData.saldo < 0 ? '#b91c1c' : estadoCuentaData.saldo > 0 ? '#15803d' : '#374151' }}>
-                      ${Number(estadoCuentaData.saldo).toFixed(2)}
+                    <p style={{ margin: '5px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', fontFamily: 'monospace', color: estadoCuentaData.saldo < 0 ? '#dc2626' : estadoCuentaData.saldo > 0 ? '#16a34a' : '#1f2937' }}>
+                      {estadoCuentaData.saldo > 0 ? `+ $${Math.abs(estadoCuentaData.saldo).toFixed(2)} (A favor)` : estadoCuentaData.saldo < 0 ? `- $${Math.abs(estadoCuentaData.saldo).toFixed(2)} (Deuda)` : '$0.00'}
                     </p>
                   </div>
                 </div>
@@ -583,14 +583,14 @@ const ClientesTotales = () => {
                                 <td>
                                   {mov.descripcion}
                                 </td>
-                                <td style={{ textAlign: 'right', color: mov.monto < 0 ? '#b91c1c' : '#d1d5db' }}>
+                                <td style={{ textAlign: 'right', color: mov.monto < 0 ? '#dc2626' : '#d1d5db' }}>
                                   {mov.monto < 0 ? `$${Math.abs(mov.monto).toFixed(2)}` : '-'}
                                 </td>
-                                <td style={{ textAlign: 'right', color: mov.monto > 0 ? '#15803d' : '#d1d5db' }}>
+                                <td style={{ textAlign: 'right', color: mov.monto > 0 ? '#16a34a' : '#d1d5db' }}>
                                   {mov.monto > 0 ? `$${mov.monto.toFixed(2)}` : '-'}
                                 </td>
-                                <td className="estado-cuenta-saldo-cell" style={{ color: currentSaldo < 0 ? '#b91c1c' : '#374151' }}>
-                                  ${currentSaldo.toFixed(2)}
+                                <td className="estado-cuenta-saldo-cell" style={{ color: currentSaldo < 0 ? '#dc2626' : currentSaldo > 0 ? '#16a34a' : '#1f2937' }}>
+                                  {currentSaldo > 0 ? `+ $${Math.abs(currentSaldo).toFixed(2)}` : currentSaldo < 0 ? `- $${Math.abs(currentSaldo).toFixed(2)}` : '$0.00'}
                                 </td>
                               </tr>
                             );

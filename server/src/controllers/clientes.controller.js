@@ -509,6 +509,59 @@ const getMovimientosCliente = async (req, res) => {
     }
 };
 
+// DELETE /api/clientes/:id/reset-finanzas
+// Hard Reset financiero: elimina todos los movimientos y pagos del cliente,
+// y resetea su saldo a 0 con estado_pago = 'ALDIA'.
+// ⚠️ Operación destructiva e irreversible — solo para uso de SADMIN.
+const resetFinanzasCliente = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({
+                success: false,
+                data: null,
+                message: 'ID de cliente no válido'
+            });
+        }
+
+        // Verificar que el cliente existe antes de proceder
+        const clienteExiste = await prisma.cliente.findUnique({ where: { id } });
+        if (!clienteExiste) {
+            return res.status(404).json({
+                success: false,
+                data: null,
+                message: 'Cliente no encontrado'
+            });
+        }
+
+        // Transacción atómica: eliminar movimientos, pagos y resetear saldo
+        await prisma.$transaction([
+            prisma.movimientoCuenta.deleteMany({ where: { clienteId: id } }),
+            prisma.pago.deleteMany({ where: { clienteId: id } }),
+            prisma.cliente.update({
+                where: { id },
+                data: {
+                    saldo: 0,
+                    estado_pago: 'ALDIA'
+                }
+            })
+        ]);
+
+        return res.status(200).json({
+            success: true,
+            data: null,
+            message: `Reset financiero completado para el cliente ${clienteExiste.nombre} ${clienteExiste.apellido}. Saldo: 0, Pagos eliminados, Movimientos eliminados.`
+        });
+    } catch (error) {
+        console.error('Error al resetear finanzas del cliente:', error);
+        return res.status(500).json({
+            success: false,
+            data: null,
+            message: 'Error interno del servidor al resetear las finanzas del cliente'
+        });
+    }
+};
+
 module.exports = {
     getClientes,
     createCliente,
@@ -516,5 +569,6 @@ module.exports = {
     deleteCliente,
     updateEstadoPago,
     resetPasswordCliente,
-    getMovimientosCliente
+    getMovimientosCliente,
+    resetFinanzasCliente
 };

@@ -12,6 +12,7 @@ const Pagos = () => {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [usarSaldo, setUsarSaldo] = useState(false);
 
   const [nuevoPago, setNuevoPago] = useState({
     clienteId: '',
@@ -20,6 +21,16 @@ const Pagos = () => {
     concepto: 'Cuota Mensual Pase Libre',
     notas: ''
   });
+
+  // Cliente seleccionado actualmente en el formulario
+  const clienteSeleccionado = clientes.find(c => c.id === parseInt(nuevoPago.clienteId)) || null;
+  const saldoDisponible = clienteSeleccionado ? parseFloat(clienteSeleccionado.saldo) || 0 : 0;
+  const precioPlan = clienteSeleccionado?.categoria?.plan?.precio ? parseFloat(clienteSeleccionado.categoria.plan.precio) : 0;
+  const montoIngresado = parseFloat(nuevoPago.monto) || 0;
+
+  // Cálculo dinámico de saldo a usar y efectivo final
+  const saldoAplicado = usarSaldo ? Math.min(saldoDisponible, montoIngresado > 0 ? montoIngresado : precioPlan) : 0;
+  const totalAPagarEfectivo = montoIngresado > 0 ? Math.max(0, montoIngresado - saldoAplicado) : Math.max(0, precioPlan - saldoAplicado);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -71,20 +82,44 @@ const Pagos = () => {
   const handleNewPagoChange = (e) => {
     const { id, value } = e.target;
     setNuevoPago(prev => ({ ...prev, [id]: value }));
+    // Si cambia el cliente, resetear checkbox de saldo
+    if (id === 'clienteId') {
+      setUsarSaldo(false);
+    }
   };
 
   const handleCreatePago = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/api/pagos', { ...nuevoPago, estado: 'APROBADO' });
+      // Determinar el monto que realmente se abona en efectivo/medio de pago
+      const montoTotal = montoIngresado > 0 ? montoIngresado : precioPlan;
+      const montoEfectivoFinal = usarSaldo ? Math.max(0, montoTotal - saldoAplicado) : montoTotal;
+
+      const payload = {
+        clienteId: nuevoPago.clienteId,
+        montoAbonado: montoEfectivoFinal,
+        saldoUsado: saldoAplicado,
+        metodoPago: nuevoPago.metodoPago,
+        concepto: nuevoPago.concepto,
+        notas: nuevoPago.notas,
+        estado: 'APROBADO'
+      };
+
+      const res = await api.post('/api/pagos', payload);
       setIsModalOpen(false);
+      setUsarSaldo(false);
       setNuevoPago({ clienteId: '', monto: '', metodoPago: 'EFECTIVO', concepto: 'Cuota Mensual Pase Libre', notas: '' });
       
-      const resPagos = await api.get('/api/pagos');
-      if (resPagos.data?.success) {
-        setPagos(resPagos.data.data);
-      }
-      alert("Pago registrado con éxito");
+      // Refetch pagos y clientes (para actualizar saldos)
+      const [resPagos, resClientes] = await Promise.all([
+        api.get('/api/pagos'),
+        api.get('/api/clientes')
+      ]);
+      if (resPagos.data?.success) setPagos(resPagos.data.data);
+      if (resClientes.data?.success) setClientes(resClientes.data.data.clientes || resClientes.data.data);
+
+      const msgSaldo = saldoAplicado > 0 ? ` (Se aplicaron $${saldoAplicado} de saldo a favor)` : '';
+      alert(`Pago registrado con éxito${msgSaldo}`);
     } catch (error) {
       alert(error.response?.data?.message || "Error al registrar el pago.");
     }
@@ -250,15 +285,74 @@ const Pagos = () => {
                 ))}
               </select>
             </div>
+
+            {/* Bloque de Saldo a Favor */}
+            {clienteSeleccionado && saldoDisponible > 0 && (
+              <div className="grid-full-width" style={{
+                backgroundColor: '#ecfdf5',
+                border: '1px solid #a7f3d0',
+                borderRadius: '10px',
+                padding: '14px 16px',
+                margin: '4px 0'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                  <div>
+                    <p style={{ margin: '0 0 2px 0', fontWeight: '600', color: '#065f46', fontSize: '0.95rem' }}>
+                      💰 Saldo a favor disponible: <span style={{ fontSize: '1.1rem' }}>${saldoDisponible.toFixed(2)}</span>
+                    </p>
+                    {precioPlan > 0 && (
+                      <p style={{ margin: 0, color: '#047857', fontSize: '0.8rem', opacity: 0.85 }}>
+                        Plan actual: ${precioPlan.toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' }}>
+                    <input
+                      type="checkbox"
+                      checked={usarSaldo}
+                      onChange={(e) => setUsarSaldo(e.target.checked)}
+                      style={{ width: '18px', height: '18px', accentColor: '#10b981', cursor: 'pointer' }}
+                    />
+                    <span style={{ fontWeight: '600', color: '#065f46', fontSize: '0.9rem' }}>Aplicar saldo a favor</span>
+                  </label>
+                </div>
+
+                {usarSaldo && (
+                  <div style={{
+                    marginTop: '12px',
+                    backgroundColor: '#d1fae5',
+                    borderRadius: '8px',
+                    padding: '10px 14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#065f46' }}>
+                      <span>Monto del plan/pago:</span>
+                      <strong>${(montoIngresado > 0 ? montoIngresado : precioPlan).toFixed(2)}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#047857' }}>
+                      <span>Saldo aplicado:</span>
+                      <strong>- ${saldoAplicado.toFixed(2)}</strong>
+                    </div>
+                    <div style={{ borderTop: '1px dashed #a7f3d0', paddingTop: '6px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', color: '#064e3b', fontWeight: '700' }}>
+                      <span>Total a pagar en efectivo:</span>
+                      <span>${totalAPagarEfectivo.toFixed(2)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="grupo-campo">
-              <label htmlFor="monto">Monto ($)</label>
+              <label htmlFor="monto">Monto ($){usarSaldo && saldoAplicado > 0 ? ' — antes de descuento' : ''}</label>
               <input 
                 type="number" 
                 id="monto" 
                 value={nuevoPago.monto} 
                 onChange={handleNewPagoChange} 
-                placeholder="Ej: 15000" 
-                required 
+                placeholder={precioPlan > 0 ? `Plan: $${precioPlan}` : 'Ej: 15000'}
+                required={!usarSaldo || totalAPagarEfectivo > 0}
                 style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
               />
             </div>

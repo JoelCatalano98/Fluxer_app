@@ -19,13 +19,14 @@ const obtenerPagos = async (req, res) => {
 
 const registrarPago = async (req, res) => {
     try {
-        const { clienteId, monto, metodoPago, concepto, notas, estado = 'APROBADO' } = req.body;
+        const { clienteId, monto, montoAbonado, saldoUsado = 0, metodoPago, concepto, notas, estado = 'APROBADO' } = req.body;
 
-        if (!clienteId || monto === undefined || !metodoPago || !concepto) {
+        if (!clienteId || (monto === undefined && montoAbonado === undefined) || !metodoPago || !concepto) {
             return res.status(400).json({ success: false, message: 'Faltan campos requeridos' });
         }
 
         const clienteIdInt = parseInt(clienteId);
+        const saldoUsadoFloat = parseFloat(saldoUsado) || 0;
 
         // Consultar cliente actual
         const cliente = await prisma.cliente.findUnique({
@@ -41,7 +42,19 @@ const registrarPago = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Cliente no encontrado' });
         }
 
+        // Validación de seguridad: el saldoUsado no puede exceder el saldo real del cliente
+        if (saldoUsadoFloat > 0 && saldoUsadoFloat > parseFloat(cliente.saldo)) {
+            return res.status(400).json({
+                success: false,
+                message: `El saldo a usar ($${saldoUsadoFloat}) excede el saldo real del cliente ($${cliente.saldo}).`
+            });
+        }
+
         if (estado === 'APROBADO') {
+            // Compatibilidad: si viene 'monto' (flujo legacy), usarlo; si viene 'montoAbonado', calcular total
+            const montoEfectivo = montoAbonado !== undefined ? parseFloat(montoAbonado) : parseFloat(monto);
+            const montoTotalPago = montoEfectivo + saldoUsadoFloat;
+
             // Lógica de cálculo de nueva fecha de vencimiento (30 días)
             let nuevaFechaVencimiento = new Date();
             if (cliente.vencimientoCuota && cliente.vencimientoCuota > new Date()) {
@@ -49,45 +62,77 @@ const registrarPago = async (req, res) => {
             }
             nuevaFechaVencimiento.setDate(nuevaFechaVencimiento.getDate() + 30);
 
-            const montoPagado = parseFloat(monto);
             const montoPlan = cliente.categoria?.plan?.precio ? parseFloat(cliente.categoria.plan.precio) : 0;
-            const diferencia = montoPagado - montoPlan;
+            // El saldo neto cambia según lo que pagó en efectivo vs el plan.
+            // saldoUsado ya era del cliente, se usa para cubrir parte del plan → decrement.
+            // Si montoEfectivo > lo que faltaba del plan → genera nuevo saldo a favor.
+            const diferenciaNeta = montoTotalPago - montoPlan; // excedente total (podría venir de efectivo)
 
-            // Transacción para registrar el pago, movimiento y actualizar al cliente
-            const [nuevoPago, clienteActualizado] = await prisma.$transaction([
+            // Construir operaciones de la transacción
+            const transactionOps = [
+                // 1. Crear el Pago con el monto total
                 prisma.pago.create({
                     data: {
                         clienteId: clienteIdInt,
-                        monto: montoPagado,
-                        metodoPago,
+                        monto: montoTotalPago,
+                        metodoPago: saldoUsadoFloat > 0 ? `${metodoPago} + SALDO` : metodoPago,
                         concepto,
-                        notas,
+                        notas: saldoUsadoFloat > 0
+                            ? `${notas || ''} [Saldo aplicado: $${saldoUsadoFloat}]`.trim()
+                            : notas,
                         estado: 'APROBADO',
                         movimientos: {
                             create: {
-                                monto: montoPagado,
+                                monto: montoTotalPago,
                                 tipo: 'INGRESO',
-                                descripcion: 'Registro de Pago / Cuota',
+                                descripcion: saldoUsadoFloat > 0
+                                    ? `Registro de Pago / Cuota (Efectivo: $${montoEfectivo} + Saldo: $${saldoUsadoFloat})`
+                                    : 'Registro de Pago / Cuota',
                                 clienteId: clienteIdInt
                             }
                         }
                     }
                 }),
+                // 2. Actualizar cliente: vencimiento, estado, y ajustar saldo
+                //    - Restamos saldoUsado (se consumió de la billetera)
+                //    - Sumamos la diferencia neta (excedente si pagó de más)
+                //    Neto: increment(diferenciaNeta - saldoUsadoFloat)
+                //    Equivalente a: increment(montoEfectivo - montoPlan) cuando saldoUsado se cancela
                 prisma.cliente.update({
                     where: { id: clienteIdInt },
                     data: {
                         vencimientoCuota: nuevaFechaVencimiento,
-                        estado_pago: 'ALDIA', // Actualizamos el estado de pago del cliente a ALDIA
-                        saldo: { increment: diferencia }
+                        estado_pago: 'ALDIA',
+                        saldo: { increment: diferenciaNeta - saldoUsadoFloat }
                     }
                 })
-            ]);
+            ];
+
+            // 3. Si se usó saldo, crear movimiento EGRESO adicional
+            if (saldoUsadoFloat > 0) {
+                transactionOps.push(
+                    prisma.movimientoCuenta.create({
+                        data: {
+                            monto: -saldoUsadoFloat,
+                            tipo: 'EGRESO',
+                            descripcion: 'Aplicación de saldo a favor para cuota',
+                            clienteId: clienteIdInt
+                        }
+                    })
+                );
+            }
+
+            const resultados = await prisma.$transaction(transactionOps);
+            const nuevoPago = resultados[0];
+            const clienteActualizado = resultados[1];
 
             return res.status(201).json({ 
                 success: true, 
                 data: { 
                     pago: nuevoPago, 
-                    vencimientoCuota: clienteActualizado.vencimientoCuota 
+                    vencimientoCuota: clienteActualizado.vencimientoCuota,
+                    saldoUsado: saldoUsadoFloat,
+                    nuevoSaldo: clienteActualizado.saldo
                 } 
             });
         } else if (estado === 'PENDIENTE') {

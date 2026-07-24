@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, CircleCheck, Loader2, Server } from 'lucide-react';
+import { Settings, CircleCheck, Loader2, Server, AlertTriangle } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -20,6 +20,11 @@ const Parametros = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
+
+  // Estados para la herramienta de reset financiero
+  const [clientes, setClientes] = useState([]);
+  const [clienteResetId, setClienteResetId] = useState("");
+  const [resetting, setResetting] = useState(false);
 
   useEffect(() => {
     if (!isSadmin) return; // No cargar nada si no tiene permiso
@@ -44,7 +49,19 @@ const Parametros = () => {
       }
     };
 
+    const fetchClientes = async () => {
+      try {
+        const res = await api.get('/api/clientes?limit=9999');
+        if (res.data.success) {
+          setClientes(res.data.data.clientes || []);
+        }
+      } catch (err) {
+        console.error('Error al cargar clientes para reset:', err);
+      }
+    };
+
     fetchConfig();
+    fetchClientes();
   }, [isSadmin]);
 
   if (!isSadmin) {
@@ -94,6 +111,40 @@ const Parametros = () => {
       setMessage({ text: 'Error al guardar los parámetros.', type: 'error' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleResetFinanzas = async () => {
+    if (!clienteResetId) {
+      alert('Selecciona un cliente primero.');
+      return;
+    }
+
+    const clienteSeleccionado = clientes.find(c => c.id === parseInt(clienteResetId));
+    const nombreCompleto = clienteSeleccionado
+      ? `${clienteSeleccionado.nombre} ${clienteSeleccionado.apellido}`
+      : `ID ${clienteResetId}`;
+
+    const confirmado = window.confirm(
+      `⚠️ ¿ESTÁS SEGURO?\n\nEsto borrará permanentemente TODOS los pagos, movimientos y el saldo del cliente:\n\n➤ ${nombreCompleto}\n\nEsta acción NO se puede deshacer.`
+    );
+
+    if (!confirmado) return;
+
+    try {
+      setResetting(true);
+      const res = await api.delete(`/api/clientes/${clienteResetId}/reset-finanzas`);
+      if (res.data.success) {
+        alert(`✅ ${res.data.message}`);
+        setClienteResetId("");
+      } else {
+        alert(`❌ Error: ${res.data.message}`);
+      }
+    } catch (err) {
+      console.error('Error al resetear finanzas:', err);
+      alert(`❌ Error al resetear finanzas: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -186,6 +237,100 @@ const Parametros = () => {
           </button>
         </div>
       </form>
+
+      {/* ═══════════════════════════════════════════════════════════════
+          ZONA PELIGROSA — Herramientas de Desarrollador
+      ═══════════════════════════════════════════════════════════════ */}
+      <div style={{
+        margin: '40px 30px 30px 30px',
+        border: '2px solid #e03131',
+        borderRadius: '12px',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          backgroundColor: '#fff1f1',
+          padding: '16px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          borderBottom: '1px solid #ffc9c9'
+        }}>
+          <AlertTriangle size={24} style={{ color: '#e03131', flexShrink: 0 }} />
+          <div>
+            <h3 style={{ color: '#c92a2a', margin: 0, fontSize: '1.1rem' }}>Zona Peligrosa / Herramientas de Desarrollador</h3>
+            <p style={{ color: '#e03131', margin: '4px 0 0 0', fontSize: '0.85rem', opacity: 0.85 }}>
+              Las acciones en esta sección son destructivas e irreversibles. Usar solo para limpieza de datos de testing.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ padding: '20px', backgroundColor: '#fff8f8' }}>
+          <h4 style={{ color: '#c92a2a', marginBottom: '12px', fontSize: '0.95rem' }}>
+            🔄 Hard Reset Financiero de Cliente
+          </h4>
+          <p style={{ color: '#666', fontSize: '0.85rem', marginBottom: '16px' }}>
+            Elimina <strong>todos los pagos</strong> y <strong>movimientos de cuenta</strong> del cliente seleccionado y devuelve su saldo a $0.
+          </p>
+
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <select
+              value={clienteResetId}
+              onChange={(e) => setClienteResetId(e.target.value)}
+              className="input-base"
+              style={{
+                flex: '1 1 300px',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: '1px solid #ddd',
+                fontSize: '0.9rem',
+                minWidth: '250px'
+              }}
+            >
+              <option value="">-- Seleccionar cliente --</option>
+              {clientes.map(c => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre} {c.apellido} (ID: {c.id})
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={handleResetFinanzas}
+              disabled={!clienteResetId || resetting}
+              style={{
+                backgroundColor: !clienteResetId || resetting ? '#ccc' : '#e03131',
+                color: '#fff',
+                border: 'none',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                fontWeight: '600',
+                fontSize: '0.9rem',
+                cursor: !clienteResetId || resetting ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'background-color 0.2s ease',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseEnter={(e) => {
+                if (clienteResetId && !resetting) e.target.style.backgroundColor = '#c92a2a';
+              }}
+              onMouseLeave={(e) => {
+                if (clienteResetId && !resetting) e.target.style.backgroundColor = '#e03131';
+              }}
+            >
+              {resetting ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} /> Reseteando...
+                </>
+              ) : (
+                '⚠️ Resetear Finanzas del Cliente'
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
