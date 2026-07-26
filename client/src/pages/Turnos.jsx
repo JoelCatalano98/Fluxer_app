@@ -147,10 +147,8 @@ const Turnos = () => {
       if (res.data) setFeriadosList(res.data);
     }).catch(() => setFeriadosList([]));
 
-    // 1. Carga de Configuración
     api.get('/api/configuracion')
       .then(res => {
-        console.log("🛠️ DEBUG CONFIG:", res.data);
         const configData = Array.isArray(res.data) ? res.data[0] : (res.data?.data || res.data);
         setConfigGlobal(configData);
         const diasStr = configData?.diasApertura || "1,2,3,4,5,6";
@@ -161,7 +159,6 @@ const Turnos = () => {
     // 2. Carga de Categorías/Disciplinas
     api.get('/api/categorias')
       .then(res => {
-        console.log("🛠️ DEBUG CATEGORIAS:", res.data);
         const cats = res.data?.data || res.data || [];
         setCategorias(cats);
       })
