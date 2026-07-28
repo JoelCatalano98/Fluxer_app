@@ -18,6 +18,7 @@ import Categorias from './pages/Categorias';
 import Avisos from './pages/Avisos';
 import RankingAdmin from './pages/RankingAdmin';
 import Pagos from './pages/Pagos';
+import Sueldos from './pages/Sueldos';
 import Login from './pages/Login';
 import Calendario from './pages/Calendario';
 import Usuarios from './pages/Usuarios';
@@ -171,6 +172,7 @@ function AppContent() {
             <Route path="/avisos" element={<Avisos />} />
             <Route path="/ranking" element={<RankingAdmin />} />
             <Route path="/pagos" element={<Pagos />} />
+            <Route path="/sueldos" element={<Sueldos />} />
             <Route path="/calendario" element={<Calendario />} />
             <Route path="/usuarios" element={<Usuarios />} />
             <Route path="/parametros" element={<Parametros />} />

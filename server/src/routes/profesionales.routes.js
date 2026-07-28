@@ -5,6 +5,7 @@ const profesionalesController = require('../controllers/profesionales.controller
 router.get('/', profesionalesController.getProfesionales);
 router.post('/', profesionalesController.createProfesional);
 router.put('/:id', profesionalesController.updateProfesional);
+router.put('/:id/tarifa', profesionalesController.updateTarifa);
 router.delete('/:id', profesionalesController.deleteProfesional);
 
 module.exports = router;

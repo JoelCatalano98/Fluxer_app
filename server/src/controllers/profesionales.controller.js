@@ -207,9 +207,52 @@ const deleteProfesional = async (req, res) => {
     }
 };
 
+// PUT /api/profesionales/:id/tarifa
+const updateTarifa = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({
+                success: false,
+                data: null,
+                message: 'ID de profesional no válido'
+            });
+        }
+
+        const { tarifaPorClase } = req.body;
+
+        if (tarifaPorClase === undefined || isNaN(parseFloat(tarifaPorClase))) {
+            return res.status(400).json({
+                success: false,
+                data: null,
+                message: 'La tarifa por clase es inválida'
+            });
+        }
+
+        const profesionalActualizado = await prisma.profesional.update({
+            where: { id },
+            data: { tarifaPorClase: parseFloat(tarifaPorClase) }
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: profesionalActualizado,
+            message: 'Tarifa actualizada con éxito'
+        });
+    } catch (error) {
+        console.error('Error al actualizar tarifa:', error);
+        return res.status(500).json({
+            success: false,
+            data: null,
+            message: 'Error al actualizar la tarifa'
+        });
+    }
+};
+
 module.exports = {
     getProfesionales,
     createProfesional,
     updateProfesional,
-    deleteProfesional
+    deleteProfesional,
+    updateTarifa
 };

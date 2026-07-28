@@ -132,11 +132,18 @@ const Navbar = ({ isOpen }) => {
                 </NavLink>
               </li>
               {hasPermission('permisoFinanzas') && (
-                <li>
-                  <NavLink to="/pagos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    Medios de Pago
-                  </NavLink>
-                </li>
+                <>
+                  <li>
+                    <NavLink to="/pagos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      Medios de Pago
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink to="/sueldos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      Liquidación de Sueldos
+                    </NavLink>
+                  </li>
+                </>
               )}
               <li>
                 <NavLink to="/avisos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>

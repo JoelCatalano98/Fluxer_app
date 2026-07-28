@@ -34,6 +34,7 @@ const actividadRoutes = require('./routes/actividad.routes');
 const claseRoutes = require('./routes/clase.routes');
 const rankingRoutes = require('./routes/ranking.routes');
 const pagosRoutes = require('./routes/pagos.routes');
+const sueldosRoutes = require('./routes/sueldos.routes');
 const { verifyToken, requirePermiso } = require('./middlewares/auth.middleware');
 
 app.use('/api/auth', authRoutes);
@@ -56,5 +57,6 @@ app.use('/api/actividades', verifyToken, actividadRoutes);
 app.use('/api/clases', verifyToken, claseRoutes);
 app.use('/api/ranking', rankingRoutes);
 app.use('/api/pagos', pagosRoutes);
+app.use('/api/sueldos', verifyToken, requirePermiso('permisoFinanzas'), sueldosRoutes);
 
 module.exports = app;
