@@ -76,148 +76,80 @@ const getTurnos = async (req, res) => {
 //   a) Modo explícito (nuevo): { turnos: [{ fecha, horarioId }], clienteId, profesionalId }
 //   b) Modo legacy (simple):   { fecha, horarioId, clienteId, profesionalId }
 const createTurno = async (req, res) => {
-    try {
-        const { turnos, fecha, horarioId, clienteId, profesionalId } = req.body;
+  try {
+    const { clienteId, profesionalId, turnos, horarioId, fecha } = req.body;
 
-        if (!clienteId) {
-            return res.status(400).json({
-                success: false,
-                data: null,
-                message: 'El campo clienteId es obligatorio'
-            });
-        }
-
-        const parsedClienteId = parseInt(clienteId);
-        const parsedProfesionalId = profesionalId ? parseInt(profesionalId) : null;
-
-        // Construir la lista limpia de inserciones
-        const creations = [];
-
-        if (Array.isArray(turnos) && turnos.length > 0) {
-            // MODO EXPLÍCITO: cada item trae { fecha: "YYYY-MM-DD", horarioId: N }
-            for (const t of turnos) {
-                if (!t.fecha || !t.horarioId) continue;
-                const fechaStr = String(t.fecha).split('T')[0]; // limpiar a YYYY-MM-DD
-                creations.push({
-                    fecha: new Date(fechaStr + 'T00:00:00.000Z'),
-                    horarioId: parseInt(t.horarioId),
-                    clienteId: parsedClienteId,
-                    profesionalId: parsedProfesionalId
-                });
-            }
-        } else if (fecha && horarioId) {
-            // MODO LEGACY: un solo turno
-            const fechaStr = String(fecha).split('T')[0];
-            creations.push({
-                fecha: new Date(fechaStr + 'T00:00:00.000Z'),
-                horarioId: parseInt(horarioId),
-                clienteId: parsedClienteId,
-                profesionalId: parsedProfesionalId
-            });
-        }
-
-        if (creations.length === 0) {
-            return res.status(400).json({
-                success: false,
-                data: null,
-                message: 'Debe especificar al menos un turno con fecha y horarioId'
-            });
-        }
-
-        // Validar conflictos y feriados
-        for (const item of creations) {
-            const fechaStr = item.fecha.toISOString().split('T')[0];
-            const feriados = await prisma.feriado.findMany({
-                where: {
-                    fechaInicio: { lte: fechaStr },
-                    fechaFin: { gte: fechaStr }
-                }
-            });
-            if (feriados.length > 0) {
-                return res.status(400).json({
-                    success: false,
-                    data: null,
-                    message: `Día bloqueado por feriado: ${feriados[0].motivo}`
-                });
-            }
-
-            const existing = await prisma.turnoCliente.findFirst({
-                where: {
-                    fecha: item.fecha,
-                    horarioId: item.horarioId,
-                    clienteId: item.clienteId
-                }
-            });
-            if (existing) {
-                return res.status(400).json({
-                    success: false,
-                    data: null,
-                    message: `El cliente ya tiene un turno reservado el ${fechaStr} en el horario seleccionado`
-                });
-            }
-        }
-
-        // Validar capacidad máxima si bloquearCapacidad está activo
-        const config = await prisma.configuracion.findUnique({ where: { id: 1 } });
-        if (config && config.bloquearCapacidad) {
-            const limite = config.capacidadMaxima;
-            for (const item of creations) {
-                const count = await prisma.turnoCliente.count({
-                    where: {
-                        fecha: item.fecha,
-                        horarioId: item.horarioId
-                    }
-                });
-
-                if (count >= limite) {
-                    return res.status(400).json({
-                        success: false,
-                        data: null,
-                        message: `Capacidad Máxima Alcanzada (Límite: ${limite} personas)`
-                    });
-                }
-            }
-        }
-
-        // Insertar en MySQL
-        const results = [];
-        for (const item of creations) {
-            const nuevo = await prisma.turnoCliente.create({
-                data: {
-                    fecha: item.fecha,
-                    horarioId: item.horarioId,
-                    clienteId: item.clienteId,
-                    profesionalId: item.profesionalId
-                },
-                include: {
-                    cliente: true,
-                    profesional: true,
-                    horario: true
-                }
-            });
-            results.push(nuevo);
-        }
-
-        return res.status(201).json({
-            success: true,
-            data: results.length === 1 ? results[0] : results,
-            message: results.length === 1 ? 'Turno reservado con éxito' : `${results.length} turnos reservados con éxito`
-        });
-    } catch (error) {
-        console.error('Error al crear turno(s):', error);
-        if (error.code === 'P2002') {
-            return res.status(400).json({
-                success: false,
-                data: null,
-                message: 'Este cliente ya tiene reservado un turno en esta fecha y horario'
-            });
-        }
-        return res.status(500).json({
-            success: false,
-            data: null,
-            message: 'Error interno del servidor al registrar el turno'
-        });
+    if (!clienteId) {
+      return res.status(400).json({ success: false, message: "El cliente es obligatorio." });
     }
+
+    const clienteParsed = parseInt(clienteId);
+    const profParsed = profesionalId ? parseInt(profesionalId) : null;
+
+    let itemsToCreate = [];
+
+    // Soportar tanto formato de array de turnos [{fecha, horarioId}] como formato individual
+    if (turnos && Array.isArray(turnos) && turnos.length > 0) {
+      itemsToCreate = turnos.map(t => ({
+        clienteId: clienteParsed,
+        profesionalId: profParsed,
+        horarioId: parseInt(t.horarioId),
+        fecha: new Date(t.fecha).toISOString().split('T')[0]
+      }));
+    } else if (horarioId && fecha) {
+      itemsToCreate = [{
+        clienteId: clienteParsed,
+        profesionalId: profParsed,
+        horarioId: parseInt(horarioId),
+        fecha: new Date(fecha).toISOString().split('T')[0]
+      }];
+    } else {
+      return res.status(400).json({ success: false, message: "Datos de turnos incompletos." });
+    }
+
+    // Inserción masiva o múltiple segura
+    const createdTurnos = [];
+    for (const item of itemsToCreate) {
+      // Prisma requiere objeto Date para campos DateTime, aseguramos el formato UTC correcto a medianoche
+      const fechaObj = new Date(item.fecha + 'T00:00:00.000Z');
+      
+      // Verificar si ya existe para evitar duplicar exactamente el mismo turno al mismo cliente
+      const existente = await prisma.turnoCliente.findFirst({
+        where: {
+          clienteId: item.clienteId,
+          horarioId: item.horarioId,
+          fecha: fechaObj
+        }
+      });
+
+      if (!existente) {
+        const nuevo = await prisma.turnoCliente.create({
+          data: {
+            clienteId: item.clienteId,
+            profesionalId: item.profesionalId,
+            horarioId: item.horarioId,
+            fecha: fechaObj
+          },
+          include: {
+            cliente: true,
+            profesional: true,
+            horario: true
+          }
+        });
+        createdTurnos.push(nuevo);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: "¡Turno(s) registrado(s) con éxito!",
+      data: createdTurnos.length === 1 ? createdTurnos[0] : createdTurnos
+    });
+
+  } catch (error) {
+    console.error("Error en createTurno:", error);
+    res.status(500).json({ success: false, message: "Error interno al crear el turno", error: error.message });
+  }
 };
 
 // DELETE /api/turnos/:id
