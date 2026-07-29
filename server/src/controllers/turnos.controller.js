@@ -358,158 +358,84 @@ const createHorario = async (req, res) => {
 // PUT /api/turnos/horarios/:id
 // Editar una franja horaria: soporta replicación/desactivación multidía mediante array "dias"
 const updateHorario = async (req, res) => {
-    try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) {
-            return res.status(400).json({ success: false, data: null, message: 'ID de horario no válido' });
-        }
+  try {
+    const { id } = req.params;
+    const { dias, hora_inicio, hora_fin, categoriaId, profesionalId, ids } = req.body;
 
-        const { dias, dia_semana, hora_inicio, hora_fin, categoriaId, profesionalId } = req.body;
-
-        const horarioBase = await prisma.horarioConfig.findUnique({ where: { id } });
-        if (!horarioBase) {
-            return res.status(404).json({ success: false, data: null, message: 'Horario base no encontrado' });
-        }
-
-        // MODO CLÁSICO (sin array de días): edición simple de un solo registro
-        if (!dias || !Array.isArray(dias)) {
-            const dataToUpdate = {};
-            if (dia_semana !== undefined && dia_semana !== null) {
-                dataToUpdate.dia_semana = parseInt(dia_semana);
-            }
-            if (hora_inicio) dataToUpdate.hora_inicio = parseTimeStr(hora_inicio);
-            if (hora_fin) dataToUpdate.hora_fin = parseTimeStr(hora_fin);
-            if (categoriaId !== undefined) dataToUpdate.categoriaId = categoriaId ? parseInt(categoriaId) : null;
-            if (profesionalId !== undefined) dataToUpdate.profesionalId = profesionalId ? parseInt(profesionalId) : null;
-
-            const horarioActualizado = await prisma.horarioConfig.update({
-                where: { id },
-                data: dataToUpdate
-            });
-            return res.status(200).json({ success: true, data: horarioActualizado, message: 'Horario actualizado con éxito' });
-        }
-
-        // MODO MULTIDÍA: sincronizar la familia de franjas hermanas del mismo rango horario
-        const baseInicioStr = formatTime(horarioBase.hora_inicio);
-        const baseFinStr = formatTime(horarioBase.hora_fin);
-
-        // Buscar TODOS los registros de la tabla (activos e inactivos) para poder reutilizar registros
-        const allHorarios = await prisma.horarioConfig.findMany();
-
-        // Hermanos activos = mismo rango horario y categoria que el base (comparación en memoria, ambos del DB)
-        const hermanosActivos = allHorarios.filter(h =>
-            h.activo === true &&
-            formatTime(h.hora_inicio) === baseInicioStr &&
-            formatTime(h.hora_fin) === baseFinStr &&
-            h.categoriaId === horarioBase.categoriaId &&
-            h.profesionalId === horarioBase.profesionalId
-        );
-
-        const hermanosPorDia = {};
-        hermanosActivos.forEach(h => { hermanosPorDia[h.dia_semana] = h; });
-
-        const targetInicio = parseTimeStr(hora_inicio);
-        const targetFin = parseTimeStr(hora_fin);
-        const targetInicioStr = formatTime(targetInicio);
-        const targetFinStr = formatTime(targetFin);
-        const diasMarcados = dias.map(d => parseInt(d));
-
-        const results = [];
-
-        for (let dia = 0; dia <= 6; dia++) {
-            const estaMarcado = diasMarcados.includes(dia);
-            const hermanoExistente = hermanosPorDia[dia];
-
-            if (estaMarcado) {
-                if (hermanoExistente) {
-                    // Existe activo para este día → actualizar sus horas y categoria
-                    const actualizado = await prisma.horarioConfig.update({
-                        where: { id: hermanoExistente.id },
-                        data: { 
-                            hora_inicio: targetInicio, 
-                            hora_fin: targetFin,
-                            categoriaId: categoriaId ? parseInt(categoriaId) : null,
-                            profesionalId: profesionalId ? parseInt(profesionalId) : null
-                        }
-                    });
-                    results.push(actualizado);
-                } else {
-                    // No existe hermano activo → buscar si hay un registro inactivo para este día con las NUEVAS horas y misma categoría
-                    const catIdParsed = categoriaId ? parseInt(categoriaId) : null;
-                    const profIdParsed = profesionalId ? parseInt(profesionalId) : null;
-                    const inactivoConNuevaHora = allHorarios.find(h =>
-                        h.dia_semana === dia &&
-                        h.activo === false &&
-                        formatTime(h.hora_inicio) === targetInicioStr &&
-                        formatTime(h.hora_fin) === targetFinStr &&
-                        h.categoriaId === catIdParsed &&
-                        h.profesionalId === profIdParsed
-                    );
-
-                    // También buscar inactivo con las VIEJAS horas (por si se reactivó la misma franja)
-                    const inactivoConViejaHora = !inactivoConNuevaHora
-                        ? allHorarios.find(h =>
-                            h.dia_semana === dia &&
-                            h.activo === false &&
-                            formatTime(h.hora_inicio) === baseInicioStr &&
-                            formatTime(h.hora_fin) === baseFinStr &&
-                            h.categoriaId === horarioBase.categoriaId &&
-                            h.profesionalId === horarioBase.profesionalId
-                        )
-                        : null;
-
-                    const inactivo = inactivoConNuevaHora || inactivoConViejaHora;
-
-                    if (inactivo) {
-                        const reactivado = await prisma.horarioConfig.update({
-                            where: { id: inactivo.id },
-                            data: { 
-                                hora_inicio: targetInicio, 
-                                hora_fin: targetFin, 
-                                activo: true,
-                                categoriaId: catIdParsed,
-                                profesionalId: profIdParsed
-                            }
-                        });
-                        results.push(reactivado);
-                    } else {
-                        // No existe ningún registro reutilizable → crear nuevo
-                        const nuevo = await prisma.horarioConfig.create({
-                            data: {
-                                dia_semana: dia,
-                                hora_inicio: targetInicio,
-                                hora_fin: targetFin,
-                                activo: true,
-                                categoriaId: catIdParsed,
-                                profesionalId: profIdParsed
-                            }
-                        });
-                        results.push(nuevo);
-                    }
-                }
-            } else {
-                // Día NO marcado → si tenía hermano activo, desactivar
-                if (hermanoExistente) {
-                    await prisma.horarioConfig.update({
-                        where: { id: hermanoExistente.id },
-                        data: { activo: false }
-                    });
-                }
-            }
-        }
-
-        return res.status(200).json({
-            success: true,
-            data: results.length > 0 ? results[0] : null,
-            message: 'Franja horaria actualizada con éxito para los días seleccionados'
-        });
-    } catch (error) {
-        console.error('Error al actualizar horario:', error);
-        return res.status(500).json({
-            success: false, data: null,
-            message: 'Error interno del servidor al actualizar el horario'
-        });
+    if (!dias || !Array.isArray(dias)) {
+      return res.status(400).json({ message: "El array de días es requerido o inválido." });
     }
+
+    const catIdParsed = categoriaId ? parseInt(categoriaId) : null;
+    const baseProfId = profesionalId !== undefined 
+      ? (profesionalId ? parseInt(profesionalId) : null) 
+      : null;
+
+    const horaInicioDate = new Date(`1970-01-01T${hora_inicio}:00Z`);
+    const horaFinDate = new Date(`1970-01-01T${hora_fin}:00Z`);
+
+    // Si el frontend envía los IDs de los registros actuales de esta franja, los usamos; si no, usamos el param id
+    const idsToProcess = (ids && Array.isArray(ids) && ids.length > 0) ? ids.map(i => parseInt(i)) : [parseInt(id)];
+
+    // Buscar los registros actuales en la base de datos
+    const registrosActuales = await prisma.horarioConfig.findMany({
+      where: { id: { in: idsToProcess } }
+    });
+
+    const idsProcesados = [];
+
+    // Iterar sobre los días que el usuario seleccionó en el frontend
+    for (const diaNum of dias) {
+      const diaParsed = parseInt(diaNum);
+
+      // Ver si ya teníamos un registro para este día exacto entre los actuales
+      const existente = registrosActuales.find(r => r.dia_semana === diaParsed);
+
+      if (existente) {
+        // Actualizar el registro existente (conserva el ID, evitando duplicados)
+        await prisma.horarioConfig.update({
+          where: { id: existente.id },
+          data: {
+            activo: true,
+            hora_inicio: horaInicioDate,
+            hora_fin: horaFinDate,
+            categoriaId: catIdParsed,
+            profesionalId: baseProfId
+          }
+        });
+        idsProcesados.push(existente.id);
+      } else {
+        // Es un día nuevo que se acaba de tildar, lo creamos
+        const nuevo = await prisma.horarioConfig.create({
+          data: {
+            dia_semana: diaParsed,
+            hora_inicio: horaInicioDate,
+            hora_fin: horaFinDate,
+            activo: true,
+            categoriaId: catIdParsed,
+            profesionalId: baseProfId
+          }
+        });
+        idsProcesados.push(nuevo.id);
+      }
+    }
+
+    // Los registros actuales que NO fueron procesados (porque el usuario los destildó) se desactivan
+    for (const reg of registrosActuales) {
+      if (!idsProcesados.includes(reg.id)) {
+        await prisma.horarioConfig.update({
+          where: { id: reg.id },
+          data: { activo: false }
+        });
+      }
+    }
+
+    res.json({ success: true, message: "Horarios actualizados con precisión absoluta" });
+
+  } catch (error) {
+    console.error("Error en updateHorario:", error);
+    res.status(500).json({ message: "Error interno del servidor", error: error.message });
+  }
 };
 
 // DELETE /api/turnos/horarios/:id

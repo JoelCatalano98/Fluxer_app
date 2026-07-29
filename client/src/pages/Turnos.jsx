@@ -144,7 +144,8 @@ const Turnos = () => {
   useEffect(() => {
     // Carga de Feriados
     api.get('/api/feriados').then(res => {
-      if (res.data) setFeriadosList(res.data);
+      const data = res.data?.data || res.data;
+      setFeriadosList(Array.isArray(data) ? data : []);
     }).catch(() => setFeriadosList([]));
 
     api.get('/api/configuracion')
@@ -431,7 +432,8 @@ const Turnos = () => {
         hora_inicio: editHorarioValues.hora_inicio,
         hora_fin: editHorarioValues.hora_fin,
         categoriaId: editHorarioValues.categoriaId ? parseInt(editHorarioValues.categoriaId) : null,
-        profesionalId: editHorarioValues.profesionalId ? parseInt(editHorarioValues.profesionalId) : null
+        profesionalId: editHorarioValues.profesionalId ? parseInt(editHorarioValues.profesionalId) : null,
+        ids: selectedRangeSchedules.map(h => h.id)
       });
       setIsEditHorarioModalOpen(false);
       alert("¡Franja horaria actualizada con éxito!");
@@ -583,7 +585,7 @@ const Turnos = () => {
                       const day = String(d.getDate()).padStart(2, '0');
                       const fechaExacta = `${y}-${m}-${day}`;
                       
-                      const feriado = feriadosList.find(f => fechaExacta >= f.fechaInicio && fechaExacta <= f.fechaFin);
+                      const feriado = (Array.isArray(feriadosList) ? feriadosList : []).find(f => fechaExacta >= f.fechaInicio && fechaExacta <= f.fechaFin);
                       
                       // Buscar horarios configurados para este rango y este día
                       const slotsMatching = horarios.filter(h => {

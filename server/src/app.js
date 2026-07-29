@@ -35,6 +35,7 @@ const claseRoutes = require('./routes/clase.routes');
 const rankingRoutes = require('./routes/ranking.routes');
 const pagosRoutes = require('./routes/pagos.routes');
 const sueldosRoutes = require('./routes/sueldos.routes');
+const feriadosRoutes = require('./routes/feriados.routes');
 const { verifyToken, requirePermiso } = require('./middlewares/auth.middleware');
 
 app.use('/api/auth', authRoutes);
@@ -50,6 +51,7 @@ app.use('/api/turnos', verifyToken, requirePermiso('permisoTurnos'), turnosRoute
 app.use('/api/configuracion', verifyToken, configuracionRoutes);
 app.use('/api/categorias', verifyToken, categoriasRoutes);
 app.use('/api/avisos', verifyToken, requirePermiso('permisoFeriados'), avisosRoutes);
+app.use('/api/feriados', verifyToken, feriadosRoutes);
 app.use('/api/calendario', verifyToken, calendarioRoutes);
 app.use('/api/dashboard', verifyToken, requirePermiso('permisoFinanzas'), dashboardRoutes);
 app.use('/api/rutinas', rutinasRoutes);
