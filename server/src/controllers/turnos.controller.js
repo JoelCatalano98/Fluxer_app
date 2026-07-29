@@ -270,26 +270,12 @@ const getHorarios = async (req, res) => {
 // POST /api/turnos/horarios
 const createHorario = async (req, res) => {
     try {
-        const { dia_semana, dias, hora_inicio, hora_fin, categoriaId, cupo_maximo, profesionalId } = req.body;
+        const { hora_inicio, hora_fin, diasConfig } = req.body;
 
-        if (!hora_inicio || !hora_fin) {
+        if (!hora_inicio || !hora_fin || !diasConfig || !Array.isArray(diasConfig) || diasConfig.length === 0) {
             return res.status(400).json({
                 success: false, data: null,
-                message: 'Los campos hora_inicio y hora_fin son obligatorios'
-            });
-        }
-
-        let targetDias = [];
-        if (Array.isArray(dias)) {
-            targetDias = dias;
-        } else if (dia_semana !== undefined && dia_semana !== null) {
-            targetDias = Array.isArray(dia_semana) ? dia_semana : [dia_semana];
-        }
-
-        if (targetDias.length === 0) {
-            return res.status(400).json({
-                success: false, data: null,
-                message: 'Debe especificar al menos un día (dia_semana o dias)'
+                message: 'Los campos hora_inicio, hora_fin y diasConfig son obligatorios'
             });
         }
 
@@ -299,15 +285,15 @@ const createHorario = async (req, res) => {
         const finStr = formatTime(finDate);
 
         const createdHorarios = [];
-        for (const dia of targetDias) {
-            const diaInt = parseInt(dia);
+        for (const config of diasConfig) {
+            const diaInt = parseInt(config.dia_semana);
+            const catIdParsed = config.categoriaId ? parseInt(config.categoriaId) : null;
+            const profIdParsed = config.profesionalId ? parseInt(config.profesionalId) : null;
 
             // Buscar si ya existe uno (activo o inactivo) para ese día y hora
             const allForDay = await prisma.horarioConfig.findMany({
                 where: { dia_semana: diaInt }
             });
-            const catIdParsed = categoriaId ? parseInt(categoriaId) : null;
-            const profIdParsed = profesionalId ? parseInt(profesionalId) : null;
             const existing = allForDay.find(h =>
                 formatTime(h.hora_inicio) === inicioStr && 
                 formatTime(h.hora_fin) === finStr &&
@@ -360,68 +346,97 @@ const createHorario = async (req, res) => {
 const updateHorario = async (req, res) => {
   try {
     const { id } = req.params;
-    const { dias, hora_inicio, hora_fin, categoriaId, profesionalId, ids } = req.body;
+    const { hora_inicio, hora_fin, diasConfig } = req.body;
 
-    if (!dias || !Array.isArray(dias)) {
-      return res.status(400).json({ message: "El array de días es requerido o inválido." });
+    if (!diasConfig || !Array.isArray(diasConfig)) {
+      return res.status(400).json({ message: "El array diasConfig es requerido." });
     }
-
-    const catIdParsed = categoriaId ? parseInt(categoriaId) : null;
-    const baseProfId = profesionalId !== undefined 
-      ? (profesionalId ? parseInt(profesionalId) : null) 
-      : null;
 
     const horaInicioDate = new Date(`1970-01-01T${hora_inicio}:00Z`);
     const horaFinDate = new Date(`1970-01-01T${hora_fin}:00Z`);
 
-    // Si el frontend envía los IDs de los registros actuales de esta franja, los usamos; si no, usamos el param id
-    const idsToProcess = (ids && Array.isArray(ids) && ids.length > 0) ? ids.map(i => parseInt(i)) : [parseInt(id)];
-
-    // Buscar los registros actuales en la base de datos
-    const registrosActuales = await prisma.horarioConfig.findMany({
-      where: { id: { in: idsToProcess } }
+    const idParsed = parseInt(id);
+    const horarioBase = await prisma.horarioConfig.findUnique({
+      where: { id: idParsed }
     });
+
+    if (!horarioBase) {
+      return res.status(404).json({ message: "Horario base no encontrado." });
+    }
+
+    const baseInicioStr = formatTime(horarioBase.hora_inicio);
+    const baseFinStr = formatTime(horarioBase.hora_fin);
+
+    // Buscar TODOS los registros activos actuales de esta franja transversal
+    const registrosActuales = await prisma.horarioConfig.findMany({
+      where: { activo: true }
+    });
+    
+    const afectados = registrosActuales.filter(h => 
+      formatTime(h.hora_inicio) === baseInicioStr && formatTime(h.hora_fin) === baseFinStr
+    );
 
     const idsProcesados = [];
 
-    // Iterar sobre los días que el usuario seleccionó en el frontend
-    for (const diaNum of dias) {
-      const diaParsed = parseInt(diaNum);
-
-      // Ver si ya teníamos un registro para este día exacto entre los actuales
-      const existente = registrosActuales.find(r => r.dia_semana === diaParsed);
+    // Iterar sobre la configuración de los días que el usuario seleccionó
+    for (const config of diasConfig) {
+      const diaParsed = parseInt(config.dia_semana);
+      const catIdParsed = config.categoriaId ? parseInt(config.categoriaId) : null;
+      const profIdParsed = config.profesionalId !== undefined ? (config.profesionalId ? parseInt(config.profesionalId) : null) : null;
+      
+      const existente = afectados.find(r => r.dia_semana === diaParsed);
 
       if (existente) {
-        // Actualizar el registro existente (conserva el ID, evitando duplicados)
-        await prisma.horarioConfig.update({
-          where: { id: existente.id },
-          data: {
-            activo: true,
-            hora_inicio: horaInicioDate,
-            hora_fin: horaFinDate,
-            categoriaId: catIdParsed,
-            profesionalId: baseProfId
-          }
-        });
         idsProcesados.push(existente.id);
+        
+        // Ver si cambió la disciplina o la hora
+        const cambioCategoria = existente.categoriaId !== catIdParsed;
+        const cambioHora = formatTime(existente.hora_inicio) !== formatTime(horaInicioDate) || 
+                           formatTime(existente.hora_fin) !== formatTime(horaFinDate);
+
+        if (cambioCategoria || cambioHora) {
+          // Hard-rule: Soft-delete del viejo y crear uno nuevo para no alterar el historial de turnos
+          await prisma.horarioConfig.update({
+            where: { id: existente.id },
+            data: { activo: false }
+          });
+          
+          await prisma.horarioConfig.create({
+            data: {
+              dia_semana: diaParsed,
+              hora_inicio: horaInicioDate,
+              hora_fin: horaFinDate,
+              activo: true,
+              categoriaId: catIdParsed,
+              profesionalId: profIdParsed
+            }
+          });
+        } else {
+          // Solo cambió el profesional (o nada), podemos actualizar in-place
+          await prisma.horarioConfig.update({
+            where: { id: existente.id },
+            data: {
+              profesionalId: profIdParsed
+            }
+          });
+        }
       } else {
-        // Es un día nuevo que se acaba de tildar, lo creamos
-        const nuevo = await prisma.horarioConfig.create({
+        // Es un día nuevo que se acaba de configurar
+        await prisma.horarioConfig.create({
           data: {
             dia_semana: diaParsed,
             hora_inicio: horaInicioDate,
             hora_fin: horaFinDate,
             activo: true,
             categoriaId: catIdParsed,
-            profesionalId: baseProfId
+            profesionalId: profIdParsed
           }
         });
-        idsProcesados.push(nuevo.id);
       }
     }
 
-    // Los registros actuales que NO fueron procesados (porque el usuario los destildó) se desactivan
-    for (const reg of registrosActuales) {
+    // Los registros actuales de esta franja que NO vinieron en diasConfig se desactivan
+    for (const reg of afectados) {
       if (!idsProcesados.includes(reg.id)) {
         await prisma.horarioConfig.update({
           where: { id: reg.id },
@@ -430,7 +445,7 @@ const updateHorario = async (req, res) => {
       }
     }
 
-    res.json({ success: true, message: "Horarios actualizados con precisión absoluta" });
+    res.json({ success: true, message: "Horarios actualizados de forma inteligente" });
 
   } catch (error) {
     console.error("Error en updateHorario:", error);

@@ -113,7 +113,7 @@ const Turnos = () => {
   ];
 
   const [configGlobal, setConfigGlobal] = useState({});
-  const [nuevoHorario, setNuevoHorario] = useState({ inicio: '', fin: '', dias: [], categoriaId: '', profesionalId: '' });
+  const [nuevoHorario, setNuevoHorario] = useState({ inicio: '', fin: '', dias: [], globalCategoriaId: '', globalProfesionalId: '', diasConfig: {} });
 
   // Búsqueda local en modales
   const [clienteSearch, setClienteSearch] = useState('');
@@ -130,8 +130,9 @@ const Turnos = () => {
   const [editHorarioValues, setEditHorarioValues] = useState({
     hora_inicio: '',
     hora_fin: '',
-    categoriaId: '',
-    profesionalId: ''
+    globalCategoriaId: '',
+    globalProfesionalId: '',
+    diasConfig: {}
   });
 
   // Hook useForm para el modal "Anotar Cliente"
@@ -246,9 +247,18 @@ const Turnos = () => {
     setNuevoHorario(prev => {
       const numDias = prev.dias.map(Number);
       if (numDias.includes(numId)) {
-        return { ...prev, dias: numDias.filter(d => d !== numId) };
+        const newDiasConfig = { ...prev.diasConfig };
+        delete newDiasConfig[numId];
+        return { ...prev, dias: numDias.filter(d => d !== numId), diasConfig: newDiasConfig };
       } else {
-        return { ...prev, dias: [...numDias, numId] };
+        return { 
+          ...prev, 
+          dias: [...numDias, numId],
+          diasConfig: { 
+            ...prev.diasConfig, 
+            [numId]: { categoriaId: prev.globalCategoriaId, profesionalId: prev.globalProfesionalId } 
+          }
+        };
       }
     });
   };
@@ -281,24 +291,35 @@ const Turnos = () => {
     e.preventDefault();
     setErrorValidacion("");
 
-    if (!nuevoHorario.inicio || !nuevoHorario.fin || nuevoHorario.dias.length === 0 || nuevoHorario.categoriaId === '') {
-      return setErrorValidacion("Por favor, completa los días, horarios y disciplina.");
+    if (!nuevoHorario.inicio || !nuevoHorario.fin || nuevoHorario.dias.length === 0) {
+      return setErrorValidacion("Por favor, completa los días y horarios.");
     }
-
-    if (configGlobal?.profesoresPorTurno && !nuevoHorario.profesionalId) {
-      return setErrorValidacion("Gestión Avanzada: Por favor, selecciona un profesional para este horario.");
+    
+    for (const d of nuevoHorario.dias) {
+      if (!nuevoHorario.diasConfig[d]?.categoriaId) {
+        const dName = TODOS_LOS_DIAS.find(x => x.id === Number(d))?.label;
+        return setErrorValidacion(`Por favor selecciona la disciplina para el día ${dName}.`);
+      }
+      if (configGlobal?.profesoresPorTurno && !nuevoHorario.diasConfig[d]?.profesionalId) {
+        const dName = TODOS_LOS_DIAS.find(x => x.id === Number(d))?.label;
+        return setErrorValidacion(`Gestión Avanzada: Por favor selecciona un profesional para el día ${dName}.`);
+      }
     }
 
     try {
+      const diasConfigPayload = nuevoHorario.dias.map(d => ({
+        dia_semana: parseInt(d),
+        categoriaId: parseInt(nuevoHorario.diasConfig[d].categoriaId),
+        profesionalId: nuevoHorario.diasConfig[d].profesionalId ? parseInt(nuevoHorario.diasConfig[d].profesionalId) : null
+      }));
+
       await crearHorario({
-        dias: nuevoHorario.dias.map(d => parseInt(d)),
         hora_inicio: nuevoHorario.inicio,
         hora_fin: nuevoHorario.fin,
-        categoriaId: parseInt(nuevoHorario.categoriaId),
-        profesionalId: nuevoHorario.profesionalId ? parseInt(nuevoHorario.profesionalId) : null
+        diasConfig: diasConfigPayload
       });
       setIsConfigModalOpen(false);
-      setNuevoHorario({ inicio: '', fin: '', dias: [], categoriaId: '', profesionalId: '' });
+      setNuevoHorario({ inicio: '', fin: '', dias: [], globalCategoriaId: '', globalProfesionalId: '', diasConfig: {} });
       alert("¡Nueva(s) franja(s) horaria(s) agregada(s) con éxito!");
     } catch (err) {
       alert("Error al configurar horario: " + err.message);
@@ -369,12 +390,11 @@ const Turnos = () => {
   };
 
   // Apertura y manejo de edición de horarios
-  const handleOpenEditHorario = (range, categoriaId) => {
+  const handleOpenEditHorario = (range) => {
     setErrorValidacion("");
     const matching = horarios.filter(h => {
       const hRange = `${formatTime(h.hora_inicio)} - ${formatTime(h.hora_fin)}`;
-      // Comparación estricta de string para rango y coincidencia de categoría (incluso si es null)
-      return hRange === range && h.categoriaId === categoriaId;
+      return hRange === range;
     });
 
     if (matching.length === 0) return;
@@ -387,11 +407,22 @@ const Turnos = () => {
 
     const first = matching[0];
     setSelectedHorarioId(first.id); // Guardamos la id del base para enviar al endpoint
+    
+    const initialDiasConfig = {};
+    matching.forEach(h => {
+      initialDiasConfig[h.dia_semana] = {
+        categoriaId: h.categoriaId || '',
+        profesionalId: h.profesionalId || '',
+        id: h.id
+      };
+    });
+
     setEditHorarioValues({
       hora_inicio: formatTime(first.hora_inicio),
       hora_fin: formatTime(first.hora_fin),
-      categoriaId: first.categoriaId || '',
-      profesionalId: first.profesionalId || ''
+      globalCategoriaId: '',
+      globalProfesionalId: '',
+      diasConfig: initialDiasConfig
     });
     setIsEditHorarioModalOpen(true);
   };
@@ -406,11 +437,23 @@ const Turnos = () => {
 
   const toggleEditDia = (diaVal) => {
     const diaNum = parseInt(diaVal);
-    setEditHorarioDias(prev => 
-      prev.includes(diaNum)
-        ? prev.filter(d => d !== diaNum)
-        : [...prev, diaNum]
-    );
+    setEditHorarioDias(prev => {
+      if (prev.includes(diaNum)) {
+        const newDiasConfig = { ...editHorarioValues.diasConfig };
+        delete newDiasConfig[diaNum];
+        setEditHorarioValues(v => ({ ...v, diasConfig: newDiasConfig }));
+        return prev.filter(d => d !== diaNum);
+      } else {
+        setEditHorarioValues(v => ({ 
+          ...v, 
+          diasConfig: { 
+            ...v.diasConfig, 
+            [diaNum]: { categoriaId: v.globalCategoriaId, profesionalId: v.globalProfesionalId } 
+          }
+        }));
+        return [...prev, diaNum];
+      }
+    });
   };
 
   const handleEditHorarioSubmit = async (e) => {
@@ -418,22 +461,33 @@ const Turnos = () => {
     if (!selectedHorarioId) return;
     setErrorValidacion("");
 
-    if (editHorarioDias.length === 0 || !editHorarioValues.hora_inicio || !editHorarioValues.hora_fin || editHorarioValues.categoriaId === '') {
-      return setErrorValidacion("Por favor, completa los días, horarios y disciplina. Si deseas quitar la franja, haz clic en 'Dar de Baja'.");
+    if (editHorarioDias.length === 0 || !editHorarioValues.hora_inicio || !editHorarioValues.hora_fin) {
+      return setErrorValidacion("Por favor, completa los días y horarios. Si deseas quitar la franja, haz clic en 'Dar de Baja'.");
     }
 
-    if (configGlobal?.profesoresPorTurno && !editHorarioValues.profesionalId) {
-      return setErrorValidacion("Gestión Avanzada: Por favor, selecciona un profesional para este horario.");
+    for (const d of editHorarioDias) {
+      if (!editHorarioValues.diasConfig[d]?.categoriaId) {
+        const dName = TODOS_LOS_DIAS.find(x => x.id === Number(d))?.label;
+        return setErrorValidacion(`Por favor selecciona la disciplina para el día ${dName}.`);
+      }
+      if (configGlobal?.profesoresPorTurno && !editHorarioValues.diasConfig[d]?.profesionalId) {
+        const dName = TODOS_LOS_DIAS.find(x => x.id === Number(d))?.label;
+        return setErrorValidacion(`Gestión Avanzada: Por favor selecciona un profesional para el día ${dName}.`);
+      }
     }
 
     try {
+      const diasConfigPayload = editHorarioDias.map(d => ({
+        dia_semana: parseInt(d),
+        categoriaId: parseInt(editHorarioValues.diasConfig[d].categoriaId),
+        profesionalId: editHorarioValues.diasConfig[d].profesionalId ? parseInt(editHorarioValues.diasConfig[d].profesionalId) : null,
+        id: editHorarioValues.diasConfig[d].id || null
+      }));
+
       await editarHorario(selectedHorarioId, {
-        dias: editHorarioDias,
         hora_inicio: editHorarioValues.hora_inicio,
         hora_fin: editHorarioValues.hora_fin,
-        categoriaId: editHorarioValues.categoriaId ? parseInt(editHorarioValues.categoriaId) : null,
-        profesionalId: editHorarioValues.profesionalId ? parseInt(editHorarioValues.profesionalId) : null,
-        ids: selectedRangeSchedules.map(h => h.id)
+        diasConfig: diasConfigPayload
       });
       setIsEditHorarioModalOpen(false);
       alert("¡Franja horaria actualizada con éxito!");
@@ -561,10 +615,9 @@ const Turnos = () => {
                         <span>{range}</span>
                         <button 
                           onClick={() => {
-                            // Buscar el primer horario de esta fila para editarlo
                             const firstInRow = horarios.find(h => `${formatTime(h.hora_inicio)} - ${formatTime(h.hora_fin)}` === range);
                             if (firstInRow) {
-                              handleOpenEditHorario(range, firstInRow.categoriaId);
+                              handleOpenEditHorario(range);
                             }
                           }}
                           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: '0', display: 'flex' }}
@@ -718,36 +771,101 @@ const Turnos = () => {
               </div>
             </div>
 
-            <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
-              <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Etiqueta (Disciplina)</label>
+            {/* Configuración Global (Opcional para relleno rápido) */}
+            <div className="grupo-entrada" style={{ marginBottom: '15px', backgroundColor: '#f0f9ff', padding: '10px', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+              <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block', color: '#0369a1' }}>Aplicar a todos los días seleccionados:</label>
               <select 
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
-                name="categoriaId"
-                value={nuevoHorario.categoriaId} 
-                onChange={(e) => setNuevoHorario({...nuevoHorario, categoriaId: e.target.value})}
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', marginBottom: '10px' }}
+                value={nuevoHorario.globalCategoriaId} 
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setNuevoHorario(prev => {
+                    const newConfigs = { ...prev.diasConfig };
+                    prev.dias.forEach(d => {
+                      if (!newConfigs[d]) newConfigs[d] = {};
+                      newConfigs[d].categoriaId = val;
+                    });
+                    return { ...prev, globalCategoriaId: val, diasConfig: newConfigs };
+                  });
+                }}
               >
-                <option value="">Selecciona una disciplina...</option>
-                {categorias.length === 0 && <option value="" disabled>⚠️ No hay disciplinas en la Base de Datos</option>}
+                <option value="">Selecciona una disciplina global...</option>
                 {categorias.map(cat => (
                   <option key={cat.id} value={cat.id}>{cat.nombre}</option>
                 ))}
               </select>
-            </div>
 
-            {configGlobal.profesoresPorTurno && (
-              <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
-                <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Asignar Profesional (Opcional)</label>
+              {configGlobal.profesoresPorTurno && (
                 <select 
                   style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
-                  name="profesionalId"
-                  value={nuevoHorario.profesionalId} 
-                  onChange={(e) => setNuevoHorario({...nuevoHorario, profesionalId: e.target.value})}
+                  value={nuevoHorario.globalProfesionalId} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setNuevoHorario(prev => {
+                      const newConfigs = { ...prev.diasConfig };
+                      prev.dias.forEach(d => {
+                        if (!newConfigs[d]) newConfigs[d] = {};
+                        newConfigs[d].profesionalId = val;
+                      });
+                      return { ...prev, globalProfesionalId: val, diasConfig: newConfigs };
+                    });
+                  }}
                 >
-                  <option value="">-- Sin Asignar --</option>
+                  <option value="">-- Sin Asignar Global --</option>
                   {profesionalesList.map(p => (
-                    <option key={p.id} value={p.id}>{p.nombre} {p.apellido} ({p.especialidad || 'General'})</option>
+                    <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>
                   ))}
                 </select>
+              )}
+            </div>
+
+            {/* Configuración Individual por Día */}
+            {nuevoHorario.dias.length > 0 && (
+              <div style={{ marginBottom: '20px' }}>
+                <h4 style={{ fontSize: '0.95rem', color: '#4b5563', marginBottom: '10px' }}>Configuración Individual</h4>
+                {nuevoHorario.dias.map(d => {
+                  const diaLabel = TODOS_LOS_DIAS.find(x => x.id === Number(d))?.label;
+                  return (
+                    <div key={d} style={{ display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'center', background: '#f9fafb', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+                      <span style={{ width: '80px', fontWeight: '500', fontSize: '0.9rem' }}>{diaLabel}</span>
+                      <select 
+                        style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '0.85rem' }}
+                        value={nuevoHorario.diasConfig[d]?.categoriaId || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setNuevoHorario(prev => ({
+                            ...prev,
+                            diasConfig: { ...prev.diasConfig, [d]: { ...prev.diasConfig[d], categoriaId: val } }
+                          }));
+                        }}
+                      >
+                        <option value="">Disciplina...</option>
+                        {categorias.map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                        ))}
+                      </select>
+                      
+                      {configGlobal.profesoresPorTurno && (
+                        <select 
+                          style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '0.85rem' }}
+                          value={nuevoHorario.diasConfig[d]?.profesionalId || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setNuevoHorario(prev => ({
+                              ...prev,
+                              diasConfig: { ...prev.diasConfig, [d]: { ...prev.diasConfig[d], profesionalId: val } }
+                            }));
+                          }}
+                        >
+                          <option value="">Profesor...</option>
+                          {profesionalesList.map(p => (
+                            <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -942,7 +1060,7 @@ const Turnos = () => {
                       type="checkbox" 
                       value={d.id}
                       checked={editHorarioDias.map(Number).includes(Number(d.id))}
-                      onChange={() => handleCheckboxEditHorario(d.id)}
+                      onChange={() => toggleEditDia(d.id)}
                     />
                     <span>{d.label}</span>
                   </label>
@@ -950,35 +1068,101 @@ const Turnos = () => {
               </div>
             </div>
 
-            <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
-              <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Etiqueta (Disciplina)</label>
+            {/* Configuración Global (Opcional para edición masiva) */}
+            <div className="grupo-entrada" style={{ marginBottom: '15px', backgroundColor: '#f0f9ff', padding: '10px', borderRadius: '6px', border: '1px solid #bae6fd' }}>
+              <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block', color: '#0369a1' }}>Aplicar a todos los días marcados:</label>
               <select 
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
-                name="categoriaId"
-                value={editHorarioValues.categoriaId}
-                onChange={handleEditHorarioChange}
+                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', marginBottom: '10px' }}
+                value={editHorarioValues.globalCategoriaId} 
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setEditHorarioValues(prev => {
+                    const newConfigs = { ...prev.diasConfig };
+                    editHorarioDias.forEach(d => {
+                      if (!newConfigs[d]) newConfigs[d] = {};
+                      newConfigs[d].categoriaId = val;
+                    });
+                    return { ...prev, globalCategoriaId: val, diasConfig: newConfigs };
+                  });
+                }}
               >
-                <option value="">Selecciona una disciplina...</option>
+                <option value="">Selecciona una disciplina global...</option>
                 {categorias.map(cat => (
                   <option key={cat.id} value={cat.id}>{cat.nombre}</option>
                 ))}
               </select>
-            </div>
 
-            {configGlobal.profesoresPorTurno && (
-              <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
-                <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Asignar Profesional (Opcional)</label>
+              {configGlobal.profesoresPorTurno && (
                 <select 
                   style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
-                  name="profesionalId"
-                  value={editHorarioValues.profesionalId}
-                  onChange={handleEditHorarioChange}
+                  value={editHorarioValues.globalProfesionalId} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setEditHorarioValues(prev => {
+                      const newConfigs = { ...prev.diasConfig };
+                      editHorarioDias.forEach(d => {
+                        if (!newConfigs[d]) newConfigs[d] = {};
+                        newConfigs[d].profesionalId = val;
+                      });
+                      return { ...prev, globalProfesionalId: val, diasConfig: newConfigs };
+                    });
+                  }}
                 >
-                  <option value="">-- Sin Asignar --</option>
+                  <option value="">-- Sin Asignar Global --</option>
                   {profesionalesList.map(p => (
-                    <option key={p.id} value={p.id}>{p.nombre} {p.apellido} ({p.especialidad || 'General'})</option>
+                    <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>
                   ))}
                 </select>
+              )}
+            </div>
+
+            {/* Configuración Individual por Día */}
+            {editHorarioDias.length > 0 && (
+              <div style={{ marginBottom: '20px' }}>
+                <h4 style={{ fontSize: '0.95rem', color: '#4b5563', marginBottom: '10px' }}>Configuración Individual</h4>
+                {editHorarioDias.map(d => {
+                  const diaLabel = TODOS_LOS_DIAS.find(x => x.id === Number(d))?.label;
+                  return (
+                    <div key={d} style={{ display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'center', background: '#f9fafb', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+                      <span style={{ width: '80px', fontWeight: '500', fontSize: '0.9rem' }}>{diaLabel}</span>
+                      <select 
+                        style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '0.85rem' }}
+                        value={editHorarioValues.diasConfig[d]?.categoriaId || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setEditHorarioValues(prev => ({
+                            ...prev,
+                            diasConfig: { ...prev.diasConfig, [d]: { ...prev.diasConfig[d], categoriaId: val } }
+                          }));
+                        }}
+                      >
+                        <option value="">Disciplina...</option>
+                        {categorias.map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                        ))}
+                      </select>
+                      
+                      {configGlobal.profesoresPorTurno && (
+                        <select 
+                          style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '0.85rem' }}
+                          value={editHorarioValues.diasConfig[d]?.profesionalId || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEditHorarioValues(prev => ({
+                              ...prev,
+                              diasConfig: { ...prev.diasConfig, [d]: { ...prev.diasConfig[d], profesionalId: val } }
+                            }));
+                          }}
+                        >
+                          <option value="">Profesor...</option>
+                          {profesionalesList.map(p => (
+                            <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
