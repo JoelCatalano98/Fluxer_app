@@ -987,7 +987,7 @@ const Turnos = () => {
             <label style={{ fontWeight: '600' }}>Seleccionar Día(s)</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '8px' }}>
               {TODOS_LOS_DIAS.filter(dia => diasPermitidos.includes(dia.id)).map(d => (
-                <label key={d.val} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
+                <label key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
                   <input 
                     type="checkbox"
                     value={d.id}
