@@ -3,7 +3,11 @@ const prisma = new PrismaClient();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_fluxer_key_123';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    throw new Error("CRITICAL: JWT_SECRET no está configurado en las variables de entorno.");
+}
 
 const login = async (req, res) => {
     try {

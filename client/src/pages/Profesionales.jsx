@@ -11,6 +11,7 @@ import '../styles/clientes/profesionales.css';
 
 const Profesionales = () => {
   const [profesionales, setProfesionales] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -23,23 +24,34 @@ const Profesionales = () => {
     apellido: '',
     dni: '',
     especialidad: '',
+    tarifaPorClase: '',
     matricula: '',
     email: '',
     telefono: ''
   });
 
-  const fetchProfesionales = useCallback(async () => {
+  const fetchProfesionalesYCategorias = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await api.get('/api/profesionales');
-      if (res.data.success) {
-        setProfesionales(res.data.data);
+      const [resProf, resCat] = await Promise.all([
+        api.get('/api/profesionales'),
+        api.get('/api/categorias')
+      ]);
+
+      if (resProf.data.success) {
+        setProfesionales(resProf.data.data);
       } else {
-        throw new Error(res.data.message || 'Error al obtener profesionales');
+        throw new Error(resProf.data.message || 'Error al obtener profesionales');
+      }
+
+      // Si la API de categorías responde distinto, ajustarlo. Usualmente es res.data.data
+      const catData = resCat.data.data || resCat.data;
+      if (Array.isArray(catData)) {
+          setCategorias(catData.filter(c => c.activo)); // solo categorías activas
       }
     } catch (err) {
-      console.error('Error fetchProfesionales:', err);
+      console.error('Error fetchProfesionalesYCategorias:', err);
       setError('Error al cargar la lista de profesionales.');
     } finally {
       setLoading(false);
@@ -47,8 +59,8 @@ const Profesionales = () => {
   }, []);
 
   useEffect(() => {
-    fetchProfesionales();
-  }, [fetchProfesionales]);
+    fetchProfesionalesYCategorias();
+  }, [fetchProfesionalesYCategorias]);
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
@@ -65,6 +77,7 @@ const Profesionales = () => {
       apellido: '',
       dni: '',
       especialidad: '',
+      tarifaPorClase: '',
       matricula: '',
       email: '',
       telefono: ''
@@ -79,6 +92,7 @@ const Profesionales = () => {
       apellido: prof.apellido || '',
       dni: prof.dni,
       especialidad: prof.especialidad || '',
+      tarifaPorClase: prof.tarifaPorClase !== undefined && prof.tarifaPorClase !== null ? prof.tarifaPorClase.toString() : '',
       matricula: prof.matricula || '',
       email: prof.email || '',
       telefono: prof.telefono || ''
@@ -94,14 +108,21 @@ const Profesionales = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = { ...nuevoProfesional };
+      if (payload.tarifaPorClase !== '') {
+          payload.tarifaPorClase = parseFloat(payload.tarifaPorClase);
+      } else {
+          payload.tarifaPorClase = 0;
+      }
+
       if (editingProfesional) {
-        const res = await api.put(`/api/profesionales/${editingProfesional.id}`, nuevoProfesional);
+        const res = await api.put(`/api/profesionales/${editingProfesional.id}`, payload);
         if (res.data.success) {
           setProfesionales(profesionales.map(p => p.id === editingProfesional.id ? res.data.data : p));
           alert("¡Profesional actualizado con éxito!");
         }
       } else {
-        const res = await api.post('/api/profesionales', nuevoProfesional);
+        const res = await api.post('/api/profesionales', payload);
         if (res.data.success) {
           setProfesionales([res.data.data, ...profesionales]);
           alert("¡Profesional registrado con éxito!");
@@ -231,8 +252,17 @@ const Profesionales = () => {
                 <input type="text" id="dni" placeholder="Sin puntos" value={nuevoProfesional.dni} onChange={handleInputChange} required />
               </div>
               <div className="grupo-entrada">
-                <label htmlFor="especialidad">Especialidad</label>
-                <input type="text" id="especialidad" placeholder="Ej: Traumatología" value={nuevoProfesional.especialidad} onChange={handleInputChange} />
+                <label htmlFor="especialidad">Especialidad / Disciplina</label>
+                <select id="especialidad" name="especialidad" value={nuevoProfesional.especialidad} onChange={handleInputChange}>
+                  <option value="">-- Seleccionar Disciplina --</option>
+                  {categorias.map(cat => (
+                    <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="grupo-entrada">
+                <label htmlFor="tarifaPorClase">Tarifa por Clase (ARS)</label>
+                <input type="number" id="tarifaPorClase" placeholder="Ej: 1500.50" value={nuevoProfesional.tarifaPorClase} onChange={handleInputChange} step="0.01" min="0" />
               </div>
               <div className="grupo-entrada">
                 <label htmlFor="matricula">Nro Matrícula</label>

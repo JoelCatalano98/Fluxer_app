@@ -1,109 +1,157 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
+import { RefreshCw, Loader2, AlertTriangle, AlertCircle } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
 import '../styles/style.css';
+import '../styles/clientes/listados_gestion.css';
+
+const formatARS = (amount) => {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
+};
 
 const Sueldos = () => {
-    const [liquidacion, setLiquidacion] = useState([]);
+    const [sueldos, setSueldos] = useState([]);
+    const [categoriasAmbiguas, setCategoriasAmbiguas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const fetchLiquidacion = async () => {
+    const fetchSueldos = useCallback(async (showRefreshIndicator = false) => {
         try {
-            setLoading(true);
-            const res = await api.get('/api/sueldos/liquidacion');
-            if (res.data.success) {
-                setLiquidacion(res.data.data);
+            if (showRefreshIndicator) {
+                setIsRefreshing(true);
             } else {
-                setError('Error al obtener liquidación');
+                setLoading(true);
+            }
+            setError(null);
+            
+            const res = await api.get('/api/sueldos');
+            const responseData = res.data;
+            
+            if (responseData.sueldos) {
+                setSueldos(responseData.sueldos);
+                setCategoriasAmbiguas(responseData.categoriasAmbiguas || []);
+            } else {
+                throw new Error('Formato de respuesta inesperado');
             }
         } catch (err) {
-            setError('Error de servidor al cargar liquidación');
-            console.error(err);
+            console.error('Error al cargar sueldos:', err);
+            setError(err.response?.data?.message || err.message || 'Error de servidor al cargar liquidación');
         } finally {
             setLoading(false);
+            setIsRefreshing(false);
         }
-    };
-
-    useEffect(() => {
-        fetchLiquidacion();
     }, []);
 
-    const handleTarifaChange = async (id, nuevaTarifa) => {
-        const val = parseFloat(nuevaTarifa);
-        if (isNaN(val)) return;
-
-        try {
-            await api.put(`/api/profesionales/${id}/tarifa`, { tarifaPorClase: val });
-            // Recalcular fila entera o refetch
-            fetchLiquidacion();
-        } catch (err) {
-            console.error('Error al actualizar tarifa', err);
-            alert('Error al actualizar tarifa');
-        }
-    };
-
-    if (loading) return <div style={{ padding: '20px' }}>Cargando liquidación...</div>;
-    if (error) return <div style={{ padding: '20px', color: 'red' }}>{error}</div>;
+    useEffect(() => {
+        fetchSueldos();
+    }, [fetchSueldos]);
 
     return (
-        <div style={{ padding: '20px', backgroundColor: '#fff', minHeight: '100%', boxSizing: 'border-box' }}>
-            <h2 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: 'bold' }}>Liquidación de Sueldos</h2>
-            
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse border border-gray-400" style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #9ca3af' }}>
-                    <thead style={{ backgroundColor: '#f3f4f6' }}>
-                        <tr>
-                            <th className="p-2 border border-gray-300" style={{ padding: '8px', border: '1px solid #d1d5db', textAlign: 'left' }}>Profesional</th>
-                            <th className="p-2 border border-gray-300" style={{ padding: '8px', border: '1px solid #d1d5db', textAlign: 'left' }}>DNI</th>
-                            <th className="p-2 border border-gray-300" style={{ padding: '8px', border: '1px solid #d1d5db', textAlign: 'right' }}>Tarifa ($)</th>
-                            <th className="p-2 border border-gray-300" style={{ padding: '8px', border: '1px solid #d1d5db', textAlign: 'right' }}>Clases Sem.</th>
-                            <th className="p-2 border border-gray-300" style={{ padding: '8px', border: '1px solid #d1d5db', textAlign: 'right' }}>Proyección Mensual</th>
-                            <th className="p-2 border border-gray-300" style={{ padding: '8px', border: '1px solid #d1d5db', textAlign: 'right' }}>Total a Pagar</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {liquidacion.map((item, index) => (
-                            <tr key={item.id} className="even:bg-gray-50" style={{ backgroundColor: index % 2 === 0 ? '#ffffff' : '#f9fafb' }}>
-                                <td className="p-2 border border-gray-300" style={{ padding: '8px', border: '1px solid #d1d5db' }}>
-                                    {item.nombre} {item.apellido}
-                                </td>
-                                <td className="p-2 border border-gray-300" style={{ padding: '8px', border: '1px solid #d1d5db' }}>
-                                    {item.dni}
-                                </td>
-                                <td className="p-2 border border-gray-300 font-mono text-right" style={{ padding: '8px', border: '1px solid #d1d5db', fontFamily: 'monospace', textAlign: 'right' }}>
-                                    <input 
-                                        type="number" 
-                                        defaultValue={item.tarifaPorClase} 
-                                        onBlur={(e) => handleTarifaChange(item.id, e.target.value)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                e.target.blur();
-                                            }
-                                        }}
-                                        className="border-none bg-transparent w-full text-right focus:ring-1 focus:ring-blue-500"
-                                        style={{ border: 'none', backgroundColor: 'transparent', width: '100%', textAlign: 'right', outline: 'none' }}
-                                    />
-                                </td>
-                                <td className="p-2 border border-gray-300 font-mono text-right" style={{ padding: '8px', border: '1px solid #d1d5db', fontFamily: 'monospace', textAlign: 'right' }}>
-                                    {item.cantidadHorarios}
-                                </td>
-                                <td className="p-2 border border-gray-300 font-mono text-right" style={{ padding: '8px', border: '1px solid #d1d5db', fontFamily: 'monospace', textAlign: 'right' }}>
-                                    {item.clasesMensuales}
-                                </td>
-                                <td className="p-2 border border-gray-300 font-mono text-right font-bold" style={{ padding: '8px', border: '1px solid #d1d5db', fontFamily: 'monospace', textAlign: 'right', fontWeight: 'bold' }}>
-                                    ${item.totalAPagar.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
-                                </td>
-                            </tr>
-                        ))}
-                        {liquidacion.length === 0 && (
+        <div className="main-content">
+            <PageHeader
+                title="Liquidación de Sueldos"
+                subtitle="Cálculo automático de honorarios de profesionales"
+                image="/img/welcome-background.png"
+            />
+
+            <div style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                    <div>
+                        <h1 style={{ color: '#333', margin: 0, fontSize: '2rem' }}>Sueldos Estimados</h1>
+                        <p style={{ color: '#666', margin: '5px 0 0 0' }}>Proyección en tiempo real basada en clases y tarifas.</p>
+                    </div>
+                    <button 
+                        className="btn-primary" 
+                        onClick={() => fetchSueldos(true)}
+                        disabled={loading || isRefreshing}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: 'var(--accent-blue)', color: 'white', border: 'none', borderRadius: '8px', cursor: (loading || isRefreshing) ? 'not-allowed' : 'pointer', opacity: (loading || isRefreshing) ? 0.7 : 1 }}
+                    >
+                        <RefreshCw size={20} className={isRefreshing ? "animate-spin" : ""} /> Recalcular
+                    </button>
+                </div>
+
+                {error && (
+                    <div style={{ backgroundColor: '#fff1f1', color: '#e03131', padding: '15px', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <AlertTriangle size={20} />
+                        <span>{error}</span>
+                    </div>
+                )}
+
+                {categoriasAmbiguas.length > 0 && (
+                    <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fef3c7', color: '#b45309', padding: '15px', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                        <AlertCircle size={24} style={{ flexShrink: 0, marginTop: '2px' }} />
+                        <div>
+                            <h4 style={{ margin: '0 0 5px 0', fontWeight: 'bold' }}>Categorías Ambiguas Detectadas</h4>
+                            <p style={{ margin: 0, fontSize: '0.9rem' }}>Las siguientes categorías matchean con más de un profesional activo y sus clases no han sido asignadas a nadie en este cálculo:</p>
+                            <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px', fontSize: '0.9rem', fontWeight: '500' }}>
+                                {categoriasAmbiguas.map((cat, idx) => (
+                                    <li key={idx}>{cat}</li>
+                                ))}
+                            </ul>
+                            <p style={{ margin: '5px 0 0 0', fontSize: '0.85rem', opacity: 0.8 }}>Por favor, renombrá la categoría o unificá los nombres de los profesionales para que el sistema pueda asignarlas correctamente.</p>
+                        </div>
+                    </div>
+                )}
+
+                <div className="contenedor-scroll">
+                    <table className="data-table">
+                        <thead>
                             <tr>
-                                <td colSpan="6" className="p-2 border border-gray-300 text-center" style={{ padding: '8px', border: '1px solid #d1d5db', textAlign: 'center' }}>
-                                    No hay profesionales activos
-                                </td>
+                                <th className="columna-fija" style={{ textAlign: 'left' }}>Profesional</th>
+                                <th style={{ textAlign: 'left' }}>Especialidad / Disciplina</th>
+                                <th style={{ textAlign: 'center' }}>Clases Semanales</th>
+                                <th style={{ textAlign: 'right' }}>Tarifa por Clase</th>
+                                <th style={{ textAlign: 'right' }}>Sueldo Mensual Estimado</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {loading && !isRefreshing ? (
+                                <tr>
+                                    <td colSpan="5" style={{ textAlign: 'center', padding: '40px' }}>
+                                        <Loader2 className="animate-spin" style={{ margin: '0 auto', color: 'var(--accent-blue)', width: '32px', height: '32px' }} />
+                                        <p style={{ marginTop: '10px', color: '#666' }}>Calculando sueldos...</p>
+                                    </td>
+                                </tr>
+                            ) : sueldos.length > 0 ? (
+                                sueldos.map(prof => (
+                                    <tr key={prof.id}>
+                                        <td className="columna-fija">
+                                            <strong>{prof.nombre} {prof.apellido}</strong>
+                                        </td>
+                                        <td style={{ color: '#6b7280' }}>
+                                            {prof.especialidades?.length > 0 ? prof.especialidades.join(", ") : '-'}
+                                        </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            <span style={{ 
+                                                backgroundColor: prof.clasesSemanales > 0 ? '#e1f0ff' : '#f3f4f6', 
+                                                color: prof.clasesSemanales > 0 ? 'var(--accent-blue)' : '#6b7280', 
+                                                padding: '4px 12px', 
+                                                borderRadius: '12px', 
+                                                fontWeight: 'bold',
+                                                fontSize: '0.95rem' 
+                                            }}>
+                                                {prof.clasesSemanales}
+                                            </span>
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: '1.05rem', color: '#4b5563' }}>
+                                            {formatARS(prof.tarifaPorClase)}
+                                        </td>
+                                        <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: '1.1rem', fontWeight: 'bold', color: prof.sueldoMensual > 0 ? '#10b981' : '#6b7280' }}>
+                                            {formatARS(prof.sueldoMensual)}
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: '#6b7280' }}>
+                                        No hay profesionales activos para liquidar.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );

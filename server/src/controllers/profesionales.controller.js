@@ -35,7 +35,8 @@ const createProfesional = async (req, res) => {
             especialidad,
             matricula,
             email,
-            telefono
+            telefono,
+            tarifaPorClase
         } = req.body;
 
         // Validar campos obligatorios
@@ -56,6 +57,7 @@ const createProfesional = async (req, res) => {
                 matricula: matricula || null,
                 email: email || null,
                 telefono: telefono || null,
+                tarifaPorClase: parseFloat(tarifaPorClase) || 0,
                 activo: true
             }
         });
@@ -105,6 +107,7 @@ const updateProfesional = async (req, res) => {
             matricula,
             email,
             telefono,
+            tarifaPorClase,
             activo
         } = req.body;
 
@@ -125,6 +128,7 @@ const updateProfesional = async (req, res) => {
         if (matricula !== undefined) updateData.matricula = matricula || null;
         if (email !== undefined) updateData.email = email || null;
         if (telefono !== undefined) updateData.telefono = telefono || null;
+        if (tarifaPorClase !== undefined) updateData.tarifaPorClase = parseFloat(tarifaPorClase) || 0;
         if (activo !== undefined) updateData.activo = activo;
 
         const profesionalActualizado = await prisma.profesional.update({

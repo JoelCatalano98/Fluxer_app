@@ -2,7 +2,11 @@ const prisma = require('../config/prisma');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecret_fluxer_key_123';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    throw new Error("CRITICAL: JWT_SECRET no está configurado en las variables de entorno.");
+}
 
 /**
  * Registra o activa la cuenta de un socio (cliente) en el sistema.
