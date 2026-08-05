@@ -57,22 +57,32 @@ const getSueldos = async (req, res) => {
                 let matchData = categoryMatchMemo.get(catName);
                 
                 if (!matchData) {
-                    const catNameNorm = normalizeText(catName);
-                    const matchedProfs = profesionales.filter(p => {
-                        const nombreNorm = normalizeText(p.nombre);
-                        const apellidoNorm = normalizeText(p.apellido);
-                        return catNameNorm.includes(nombreNorm) || catNameNorm.includes(apellidoNorm);
-                    });
-
-                    if (matchedProfs.length === 1) {
-                        matchData = { matchedProfId: matchedProfs[0].id, isAmbiguous: false };
-                    } else if (matchedProfs.length > 1) {
-                        matchData = { matchedProfId: null, isAmbiguous: true };
-                        if (!categoriasAmbiguas.includes(catName)) {
-                            categoriasAmbiguas.push(catName);
-                        }
-                    } else {
+                    const lastDash = catName.lastIndexOf('-');
+                    if (lastDash === -1) {
+                        // Sin guión: no se puede extraer profesional, ignorar
                         matchData = { matchedProfId: null, isAmbiguous: false };
+                    } else {
+                        const profPartNorm = normalizeText(catName.substring(lastDash + 1));
+
+                        const matchedProfs = profesionales.filter(p => {
+                            const nombreNorm = normalizeText(p.nombre);
+                            const apellidoNorm = normalizeText(p.apellido);
+                            // Excluir profesionales sin nombre ni apellido válidos
+                            if (!nombreNorm && !apellidoNorm) return false;
+                            return (nombreNorm && nombreNorm.includes(profPartNorm)) ||
+                                   (apellidoNorm && apellidoNorm.includes(profPartNorm));
+                        });
+
+                        if (matchedProfs.length === 1) {
+                            matchData = { matchedProfId: matchedProfs[0].id, isAmbiguous: false };
+                        } else if (matchedProfs.length > 1) {
+                            matchData = { matchedProfId: null, isAmbiguous: true };
+                            if (!categoriasAmbiguas.includes(catName)) {
+                                categoriasAmbiguas.push(catName);
+                            }
+                        } else {
+                            matchData = { matchedProfId: null, isAmbiguous: false };
+                        }
                     }
                     categoryMatchMemo.set(catName, matchData);
                 }
@@ -92,17 +102,6 @@ const getSueldos = async (req, res) => {
             return s;
         });
 
-        if (config && config.adminNombre && config.adminApellido) {
-            dataSueldos.push({
-                id: 'sadmin-1',
-                nombre: config.adminNombre,
-                apellido: config.adminApellido + " (SAdmin)",
-                clasesSemanales: 0, 
-                tarifaPorClase: 0,
-                sueldoMensual: 500000, 
-                especialidades: ['Administración General']
-            });
-        }
 
         return res.status(200).json({
             sueldos: dataSueldos,
