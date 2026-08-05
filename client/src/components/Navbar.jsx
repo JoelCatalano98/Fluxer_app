@@ -22,12 +22,20 @@ const Navbar = ({ isOpen }) => {
     nombreGimnasio: 'FLUXER',
     logoBase64: null
   });
+  const [sueldosHabilitado, setSueldosHabilitado] = useState(true);
 
   const loadConfig = async () => {
     try {
-      const res = await api.get('/api/configuracion');
-      if (res.data.success) {
-        setConfig(res.data.data);
+      const [resConfig, resParams] = await Promise.all([
+        api.get('/api/configuracion'),
+        api.get('/api/parametros').catch(() => ({ data: { success: false } }))
+      ]);
+      if (resConfig.data.success) {
+        setConfig(resConfig.data.data);
+      }
+      if (resParams.data.success && Array.isArray(resParams.data.data)) {
+        const paramSueldos = resParams.data.data.find(p => p.clave === 'sueldosHabilitado');
+        setSueldosHabilitado(paramSueldos ? paramSueldos.valor === 'true' : true);
       }
     } catch (err) {
       console.error('Error al cargar config en Navbar:', err);
@@ -138,11 +146,13 @@ const Navbar = ({ isOpen }) => {
                       Medios de Pago
                     </NavLink>
                   </li>
-                  <li>
-                    <NavLink to="/sueldos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                      Liquidación de Sueldos
-                    </NavLink>
-                  </li>
+                  {sueldosHabilitado && (
+                    <li>
+                      <NavLink to="/sueldos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        Liquidación de Sueldos
+                      </NavLink>
+                    </li>
+                  )}
                 </>
               )}
               <li>

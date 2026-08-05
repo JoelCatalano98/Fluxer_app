@@ -35,8 +35,10 @@ const claseRoutes = require('./routes/clase.routes');
 const rankingRoutes = require('./routes/ranking.routes');
 const pagosRoutes = require('./routes/pagos.routes');
 const sueldosRoutes = require('./routes/sueldos.routes');
+const parametrosRoutes = require('./routes/parametros.routes');
 const feriadosRoutes = require('./routes/feriados.routes');
 const { verifyToken, requirePermiso } = require('./middlewares/auth.middleware');
+const { requireParametro } = require('./middlewares/parametros.middleware');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/socio/auth', authSocioRoutes);
@@ -59,6 +61,7 @@ app.use('/api/actividades', verifyToken, actividadRoutes);
 app.use('/api/clases', verifyToken, claseRoutes);
 app.use('/api/ranking', rankingRoutes);
 app.use('/api/pagos', pagosRoutes);
-app.use('/api/sueldos', verifyToken, requirePermiso('permisoFinanzas'), sueldosRoutes);
+app.use('/api/sueldos', verifyToken, requirePermiso('permisoFinanzas'), requireParametro('sueldosHabilitado'), sueldosRoutes);
+app.use('/api/parametros', verifyToken, parametrosRoutes);
 
 module.exports = app;

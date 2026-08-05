@@ -270,3 +270,13 @@ model MovimientoCuenta {
   pagoId Int?
   pago   Pago? @relation(fields: [pagoId], references: [id], onDelete: SetNull)
 }
+
+model ParametroSistema {
+  id          Int    @id @default(autoincrement())
+  clave       String @unique
+  descripcion String
+  tipo        String @default("boolean")
+  valor       String @default("false")
+
+  @@map("parametros_sistema")
+}

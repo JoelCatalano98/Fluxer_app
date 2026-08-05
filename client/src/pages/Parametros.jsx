@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, CircleCheck, Loader2, Server, AlertTriangle } from 'lucide-react';
+import { Settings, CircleCheck, Loader2, Server, AlertTriangle, ChevronDown } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -17,6 +17,7 @@ const Parametros = () => {
     profesoresPorTurno: false,
     maxReservasSemana: 0
   });
+  const [parametros, setParametros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
@@ -29,39 +30,40 @@ const Parametros = () => {
   useEffect(() => {
     if (!isSadmin) return; // No cargar nada si no tiene permiso
 
-    const fetchConfig = async () => {
+    const fetchAll = async () => {
       try {
         setLoading(true);
-        const res = await api.get('/api/configuracion');
-        if (res.data.success) {
-          const configData = Array.isArray(res.data) ? res.data[0] : (res.data?.data || res.data);
+        const [resConfig, resParams, resClientes] = await Promise.all([
+          api.get('/api/configuracion'),
+          api.get('/api/parametros').catch(() => ({ data: { success: false } })),
+          api.get('/api/clientes?limit=9999')
+        ]);
+
+        if (resConfig.data.success) {
+          const configData = Array.isArray(resConfig.data) ? resConfig.data[0] : (resConfig.data?.data || resConfig.data);
           setConfig(prev => ({
             ...prev,
             profesoresPorTurno: configData.profesoresPorTurno || false,
             maxReservasSemana: configData.maxReservasSemana || 0
           }));
         }
+
+        if (resParams.data.success && Array.isArray(resParams.data.data)) {
+          setParametros(resParams.data.data);
+        }
+
+        if (resClientes.data.success) {
+          setClientes(resClientes.data.data.clientes || []);
+        }
       } catch (err) {
-        console.error('Error al cargar configuración:', err);
+        console.error('Error al cargar datos:', err);
         setMessage({ text: 'Error al cargar los parámetros.', type: 'error' });
       } finally {
         setLoading(false);
       }
     };
 
-    const fetchClientes = async () => {
-      try {
-        const res = await api.get('/api/clientes?limit=9999');
-        if (res.data.success) {
-          setClientes(res.data.data.clientes || []);
-        }
-      } catch (err) {
-        console.error('Error al cargar clientes para reset:', err);
-      }
-    };
-
-    fetchConfig();
-    fetchClientes();
+    fetchAll();
   }, [isSadmin]);
 
   if (!isSadmin) {
@@ -76,7 +78,8 @@ const Parametros = () => {
     );
   }
 
-  const handleInputChange = (e) => {
+  // --- Handlers de Configuracion (profesoresPorTurno, maxReservasSemana) ---
+  const handleConfigChange = (e) => {
     const { id, type, checked, value } = e.target;
     setConfig(prev => ({
       ...prev,
@@ -84,6 +87,24 @@ const Parametros = () => {
     }));
   };
 
+  // --- Handler de ParametroSistema (toggle booleano) ---
+  const handleParametroToggle = async (clave, valorActual) => {
+    const nuevoValor = valorActual === 'true' ? 'false' : 'true';
+    try {
+      const res = await api.put(`/api/parametros/${clave}`, { valor: nuevoValor });
+      if (res.data.success) {
+        setParametros(prev => prev.map(p => p.clave === clave ? { ...p, valor: nuevoValor } : p));
+        setMessage({ text: `Parámetro "${clave}" actualizado.`, type: 'success' });
+        // Notificar al Navbar para que re-evalúe visibilidad
+        window.dispatchEvent(new Event('configUpdated'));
+      }
+    } catch (err) {
+      console.error('Error al actualizar parámetro:', err);
+      setMessage({ text: 'Error al actualizar el parámetro.', type: 'error' });
+    }
+  };
+
+  // --- Guardar config (profesoresPorTurno + maxReservasSemana) ---
   const handleSave = async (e) => {
     e.preventDefault();
     try {
@@ -105,6 +126,7 @@ const Parametros = () => {
 
       if (res.data.success) {
         setMessage({ text: '¡Parámetros guardados con éxito!', type: 'success' });
+        window.dispatchEvent(new Event('configUpdated'));
       }
     } catch (err) {
       console.error('Error al guardar parámetros:', err);
@@ -114,6 +136,7 @@ const Parametros = () => {
     }
   };
 
+  // --- Reset financiero (sin cambios funcionales) ---
   const handleResetFinanzas = async () => {
     if (!clienteResetId) {
       alert('Selecciona un cliente primero.');
@@ -171,67 +194,119 @@ const Parametros = () => {
         <div style={{
           backgroundColor: message.type === 'success' ? '#ebfbee' : '#fff1f1',
           color: message.type === 'success' ? '#2f9e44' : '#e03131',
-          padding: '15px',
+          padding: '12px 20px',
           borderRadius: '8px',
-          margin: '20px 30px 0 30px',
+          margin: '16px 30px 0 30px',
           fontWeight: '500',
+          fontSize: '0.9rem',
           border: `1px solid ${message.type === 'success' ? '#b2f2bb' : '#ffc9c9'}`
         }}>
           {message.text}
         </div>
       )}
 
-      <form className="contenedor-configuracion" onSubmit={handleSave}>
-        <div className="grid-configuracion">
-          <section className="seccion-configuracion">
-            <div className="cabecera-seccion">
-              <Settings size={24} className="icon-blue" />
-              <h2>Funcionalidades Premium (Feature Flags)</h2>
-            </div>
-            
-            <div className="cuerpo-seccion">
-              <div className="grupo-conmutador" style={{ marginTop: '10px', backgroundColor: '#fff3cd', border: '1px solid #ffeeba' }}>
-                <div className="info-conmutador">
-                  <h4 style={{ color: '#856404' }}>⭐ Gestión Avanzada: Profesores por Turno</h4>
-                  <p style={{ color: '#856404' }}>Permitir asignar un profesional específico a cada bloque de horario en el calendario de turnos. Activar solo para planes premium.</p>
-                </div>
-                <label className="interruptor">
+      {/* ═══════════════════════════════════════════════════════════════
+          TABLA DE PARÁMETROS — Estilo plano tipo Excel
+      ═══════════════════════════════════════════════════════════════ */}
+      <form onSubmit={handleSave} style={{ margin: '24px 30px 0 30px' }}>
+        <table style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          fontSize: '0.9rem',
+          backgroundColor: '#fff',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+        }}>
+          <thead>
+            <tr style={{ backgroundColor: '#f8f9fa', borderBottom: '2px solid #dee2e6' }}>
+              <th style={{ textAlign: 'left', padding: '12px 16px', fontWeight: '600', color: '#495057' }}>Parámetro</th>
+              <th style={{ textAlign: 'left', padding: '12px 16px', fontWeight: '600', color: '#495057' }}>Descripción</th>
+              <th style={{ textAlign: 'center', padding: '12px 16px', fontWeight: '600', color: '#495057', width: '140px' }}>Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {/* --- Fila 1: profesoresPorTurno (desde Configuracion, checkbox) --- */}
+            <tr style={{ borderBottom: '1px solid #e9ecef' }}>
+              <td style={{ padding: '12px 16px', fontWeight: '500', color: '#212529' }}>Profesores por Turno</td>
+              <td style={{ padding: '12px 16px', color: '#6c757d' }}>Asignar un profesional específico a cada bloque de horario en el calendario de turnos.</td>
+              <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                <label className="interruptor" style={{ margin: '0 auto' }}>
                   <input
                     type="checkbox"
                     id="profesoresPorTurno"
                     checked={config.profesoresPorTurno}
-                    onChange={handleInputChange}
+                    onChange={handleConfigChange}
                   />
                   <span className="deslizador">
                     <span className="perilla"></span>
                   </span>
                 </label>
-              </div>
+              </td>
+            </tr>
 
-              <div className="grupo-input" style={{ marginTop: '20px' }}>
-                <label htmlFor="maxReservasSemana">Límite de Reservas por Semana (0 = Sin límite)</label>
+            {/* --- Fila 2: maxReservasSemana (desde Configuracion, input numérico) --- */}
+            <tr style={{ borderBottom: '1px solid #e9ecef', backgroundColor: '#f8f9fa' }}>
+              <td style={{ padding: '12px 16px', fontWeight: '500', color: '#212529' }}>Máx. Reservas por Semana</td>
+              <td style={{ padding: '12px 16px', color: '#6c757d' }}>Límite de reservas semanales por cliente. 0 = sin límite.</td>
+              <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                 <input
                   type="number"
                   id="maxReservasSemana"
                   value={config.maxReservasSemana}
-                  onChange={handleInputChange}
+                  onChange={handleConfigChange}
                   min="0"
-                  className="input-base"
+                  style={{
+                    width: '80px',
+                    padding: '6px 10px',
+                    border: '1px solid #ced4da',
+                    borderRadius: '6px',
+                    fontSize: '0.9rem',
+                    textAlign: 'center'
+                  }}
                 />
-              </div>
-            </div>
-          </section>
-        </div>
+              </td>
+            </tr>
 
-        <div className="acciones-finales-config">
-          <button type="submit" className="btn-save-config" disabled={saving}>
+            {/* --- Filas dinámicas desde ParametroSistema --- */}
+            {parametros.map((param, idx) => (
+              <tr key={param.id} style={{
+                borderBottom: '1px solid #e9ecef',
+                backgroundColor: (idx % 2 === 0) ? '#fff' : '#f8f9fa'
+              }}>
+                <td style={{ padding: '12px 16px', fontWeight: '500', color: '#212529' }}>{param.clave}</td>
+                <td style={{ padding: '12px 16px', color: '#6c757d' }}>{param.descripcion}</td>
+                <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                  {param.tipo === 'boolean' ? (
+                    <label className="interruptor" style={{ margin: '0 auto' }}>
+                      <input
+                        type="checkbox"
+                        checked={param.valor === 'true'}
+                        onChange={() => handleParametroToggle(param.clave, param.valor)}
+                      />
+                      <span className="deslizador">
+                        <span className="perilla"></span>
+                      </span>
+                    </label>
+                  ) : (
+                    <span style={{ color: '#868e96', fontStyle: 'italic' }}>{param.valor}</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Botón guardar (solo para los campos de Configuracion) */}
+        <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+          <button type="submit" className="btn-save-config" disabled={saving} style={{ fontSize: '0.9rem' }}>
             {saving ? (
               <>
-                <Loader2 className="animate-spin" size={20} /> Guardando...
+                <Loader2 className="animate-spin" size={18} /> Guardando...
               </>
             ) : (
               <>
-                <CircleCheck size={20} /> Guardar Cambios
+                <CircleCheck size={18} /> Guardar Cambios de Configuración
               </>
             )}
           </button>
@@ -239,51 +314,48 @@ const Parametros = () => {
       </form>
 
       {/* ═══════════════════════════════════════════════════════════════
-          ZONA PELIGROSA — Herramientas de Desarrollador
+          ZONA PELIGROSA — Acordeón compacto, cerrado por defecto
       ═══════════════════════════════════════════════════════════════ */}
-      <div style={{
-        margin: '40px 30px 30px 30px',
-        border: '2px solid #e03131',
-        borderRadius: '12px',
+      <details style={{
+        margin: '30px 30px 30px 30px',
+        border: '1px solid #e03131',
+        borderRadius: '8px',
         overflow: 'hidden'
       }}>
-        <div style={{
+        <summary style={{
           backgroundColor: '#fff1f1',
-          padding: '16px 20px',
+          padding: '12px 16px',
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          borderBottom: '1px solid #ffc9c9'
+          gap: '8px',
+          cursor: 'pointer',
+          listStyle: 'none',
+          fontSize: '0.9rem',
+          fontWeight: '600',
+          color: '#c92a2a',
+          userSelect: 'none'
         }}>
-          <AlertTriangle size={24} style={{ color: '#e03131', flexShrink: 0 }} />
-          <div>
-            <h3 style={{ color: '#c92a2a', margin: 0, fontSize: '1.1rem' }}>Zona Peligrosa / Herramientas de Desarrollador</h3>
-            <p style={{ color: '#e03131', margin: '4px 0 0 0', fontSize: '0.85rem', opacity: 0.85 }}>
-              Las acciones en esta sección son destructivas e irreversibles. Usar solo para limpieza de datos de testing.
-            </p>
-          </div>
-        </div>
+          <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+          <span style={{ flex: 1 }}>⚠ Zona de Riesgo — Herramientas Destructivas</span>
+          <ChevronDown size={16} style={{ opacity: 0.6 }} />
+        </summary>
 
-        <div style={{ padding: '20px', backgroundColor: '#fff8f8' }}>
-          <h4 style={{ color: '#c92a2a', marginBottom: '12px', fontSize: '0.95rem' }}>
-            🔄 Hard Reset Financiero de Cliente
-          </h4>
-          <p style={{ color: '#666', fontSize: '0.85rem', marginBottom: '16px' }}>
-            Elimina <strong>todos los pagos</strong> y <strong>movimientos de cuenta</strong> del cliente seleccionado y devuelve su saldo a $0.
+        <div style={{ padding: '16px', backgroundColor: '#fff8f8' }}>
+          <p style={{ color: '#666', fontSize: '0.82rem', marginBottom: '12px' }}>
+            Elimina <strong>todos los pagos</strong> y <strong>movimientos de cuenta</strong> del cliente seleccionado y devuelve su saldo a $0. Acción irreversible.
           </p>
 
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
             <select
               value={clienteResetId}
               onChange={(e) => setClienteResetId(e.target.value)}
-              className="input-base"
               style={{
-                flex: '1 1 300px',
-                padding: '10px 14px',
-                borderRadius: '8px',
+                flex: '1 1 250px',
+                padding: '8px 12px',
+                borderRadius: '6px',
                 border: '1px solid #ddd',
-                fontSize: '0.9rem',
-                minWidth: '250px'
+                fontSize: '0.85rem',
+                minWidth: '200px'
               }}
             >
               <option value="">-- Seleccionar cliente --</option>
@@ -302,14 +374,14 @@ const Parametros = () => {
                 backgroundColor: !clienteResetId || resetting ? '#ccc' : '#e03131',
                 color: '#fff',
                 border: 'none',
-                padding: '10px 20px',
-                borderRadius: '8px',
+                padding: '8px 16px',
+                borderRadius: '6px',
                 fontWeight: '600',
-                fontSize: '0.9rem',
+                fontSize: '0.85rem',
                 cursor: !clienteResetId || resetting ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: '6px',
                 transition: 'background-color 0.2s ease',
                 whiteSpace: 'nowrap'
               }}
@@ -322,15 +394,15 @@ const Parametros = () => {
             >
               {resetting ? (
                 <>
-                  <Loader2 className="animate-spin" size={18} /> Reseteando...
+                  <Loader2 className="animate-spin" size={16} /> Reseteando...
                 </>
               ) : (
-                '⚠️ Resetear Finanzas del Cliente'
+                '⚠️ Resetear Finanzas'
               )}
             </button>
           </div>
         </div>
-      </div>
+      </details>
     </div>
   );
 };
