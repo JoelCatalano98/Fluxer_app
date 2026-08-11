@@ -55,7 +55,7 @@ const Sueldos = () => {
                 image="/img/welcome-background.png"
             />
 
-            <div style={{ padding: '20px' }}>
+            <div style={{ padding: '5px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
                     <div>
                         <h1 style={{ color: '#333', margin: 0, fontSize: '2rem' }}>Sueldos Estimados</h1>
