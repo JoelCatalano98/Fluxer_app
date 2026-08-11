@@ -7,7 +7,8 @@ import {
   Briefcase,
   Calendar,
   Trophy,
-  Dumbbell
+  Dumbbell,
+  QrCode
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -144,6 +145,11 @@ const Navbar = ({ isOpen }) => {
                   <li>
                     <NavLink to="/pagos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
                       Medios de Pago
+                    </NavLink>
+                  </li>
+                  <li>
+                    <NavLink to="/demo-qr" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      QR (Demo)
                     </NavLink>
                   </li>
                   {sueldosHabilitado && (

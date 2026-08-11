@@ -23,6 +23,7 @@ import Login from './pages/Login';
 import Calendario from './pages/Calendario';
 import Usuarios from './pages/Usuarios';
 import Parametros from './pages/Parametros';
+import GeneradorQR from './pages/GeneradorQR';
 import api from './services/api';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -176,6 +177,7 @@ function AppContent() {
             <Route path="/calendario" element={<Calendario />} />
             <Route path="/usuarios" element={<Usuarios />} />
             <Route path="/parametros" element={<Parametros />} />
+            <Route path="/demo-qr" element={<GeneradorQR />} />
           </Routes>
         </main>
         
