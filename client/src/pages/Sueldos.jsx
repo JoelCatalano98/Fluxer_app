@@ -9,12 +9,20 @@ const formatARS = (amount) => {
     return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(amount);
 };
 
-const Sueldos = () => {
+const Sueldos = ({ isTab = false }) => {
     const [sueldos, setSueldos] = useState([]);
     const [categoriasAmbiguas, setCategoriasAmbiguas] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    
+    // Modal Pagar
+    const [pagarModal, setPagarModal] = useState({ open: false, prof: null, metodo: 'EFECTIVO', notas: '' });
+    const [pagando, setPagando] = useState(false);
+    const [pagoError, setPagoError] = useState('');
+    const [pagoSuccess, setPagoSuccess] = useState('');
+    const [pagadosIds, setPagadosIds] = useState(new Set()); // Para ocultar el botón en la sesión actual
+
 
     const fetchSueldos = useCallback(async (showRefreshIndicator = false) => {
         try {
@@ -47,15 +55,35 @@ const Sueldos = () => {
         fetchSueldos();
     }, [fetchSueldos]);
 
-    return (
-        <div className="main-content">
-            <PageHeader
-                title="Liquidación de Sueldos"
-                subtitle="Cálculo automático de honorarios de profesionales"
-                image="/img/welcome-background.png"
-            />
+    const handlePagar = async () => {
+        if (!pagarModal.prof) return;
+        setPagando(true);
+        setPagoError('');
+        setPagoSuccess('');
+        try {
+            const now = new Date();
+            const periodo = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const payload = {
+                profesionalId: pagarModal.prof.id,
+                periodo,
+                clasesSemanales: pagarModal.prof.clasesSemanales,
+                montoTotal: pagarModal.prof.sueldoMensual,
+                metodoPago: pagarModal.metodo,
+                notas: pagarModal.notas
+            };
+            await api.post('/api/liquidaciones', payload);
+            setPagoSuccess(`Sueldo pagado con éxito a ${pagarModal.prof.nombre}`);
+            setPagadosIds(prev => new Set(prev).add(pagarModal.prof.id));
+            setTimeout(() => setPagarModal({ open: false, prof: null, metodo: 'EFECTIVO', notas: '' }), 1500);
+        } catch (err) {
+            setPagoError(err.response?.data?.message || 'Error al procesar el pago');
+        } finally {
+            setPagando(false);
+        }
+    };
 
-            <div style={{ padding: '5px' }}>
+    const content = (
+        <div style={{ padding: '5px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
                     <div>
                         <h1 style={{ color: '#333', margin: 0, fontSize: '2rem' }}>Sueldos Estimados</h1>
@@ -103,12 +131,13 @@ const Sueldos = () => {
                                 <th style={{ textAlign: 'center' }}>Clases Semanales</th>
                                 <th style={{ textAlign: 'right' }}>Tarifa por Clase</th>
                                 <th style={{ textAlign: 'right' }}>Sueldo Mensual Estimado</th>
+                                <th style={{ textAlign: 'center' }}>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading && !isRefreshing ? (
                                 <tr>
-                                    <td colSpan="5" style={{ textAlign: 'center', padding: '40px' }}>
+                                    <td colSpan="6" style={{ textAlign: 'center', padding: '40px' }}>
                                         <Loader2 className="animate-spin" style={{ margin: '0 auto', color: 'var(--accent-blue)', width: '32px', height: '32px' }} />
                                         <p style={{ marginTop: '10px', color: '#666' }}>Calculando sueldos...</p>
                                     </td>
@@ -140,11 +169,27 @@ const Sueldos = () => {
                                         <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: '1.1rem', fontWeight: 'bold', color: prof.sueldoMensual > 0 ? '#10b981' : '#6b7280' }}>
                                             {formatARS(prof.sueldoMensual)}
                                         </td>
+                                        <td style={{ textAlign: 'center' }}>
+                                            {!pagadosIds.has(prof.id) && prof.sueldoMensual > 0 && (
+                                                <button
+                                                    onClick={() => setPagarModal({ open: true, prof, metodo: 'EFECTIVO', notas: '' })}
+                                                    style={{
+                                                        backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px',
+                                                        padding: '6px 12px', cursor: 'pointer', fontWeight: 'bold'
+                                                    }}
+                                                >
+                                                    Pagar
+                                                </button>
+                                            )}
+                                            {pagadosIds.has(prof.id) && (
+                                                <span style={{ color: '#10b981', fontWeight: 'bold', fontSize: '0.9rem' }}>✓ Pagado</span>
+                                            )}
+                                        </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="5" style={{ textAlign: 'center', padding: '30px', color: '#6b7280' }}>
+                                    <td colSpan="6" style={{ textAlign: 'center', padding: '30px', color: '#6b7280' }}>
                                         No hay profesionales activos para liquidar.
                                     </td>
                                 </tr>
@@ -152,7 +197,66 @@ const Sueldos = () => {
                         </tbody>
                     </table>
                 </div>
+
+                {pagarModal.open && pagarModal.prof && (
+                    <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                        <div style={{ backgroundColor: 'white', padding: '25px', borderRadius: '8px', width: '400px', maxWidth: '90%' }}>
+                            <h2 style={{ margin: '0 0 15px 0' }}>Liquidar Sueldo</h2>
+                            <p style={{ margin: '0 0 10px 0' }}><strong>Profesional:</strong> {pagarModal.prof.nombre} {pagarModal.prof.apellido}</p>
+                            <p style={{ margin: '0 0 10px 0' }}><strong>Período:</strong> {(() => {
+                                const now = new Date();
+                                return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                            })()}</p>
+                            <p style={{ margin: '0 0 10px 0' }}><strong>Clases Semanales:</strong> {pagarModal.prof.clasesSemanales}</p>
+                            <p style={{ margin: '0 0 15px 0', fontSize: '1.1rem' }}><strong>Total a Pagar:</strong> {formatARS(pagarModal.prof.sueldoMensual)}</p>
+                            
+                            <div style={{ marginBottom: '15px' }}>
+                                <label style={{ display: 'block', marginBottom: '5px' }}>Método de Pago</label>
+                                <select 
+                                    value={pagarModal.metodo} 
+                                    onChange={(e) => setPagarModal({...pagarModal, metodo: e.target.value})}
+                                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                                >
+                                    <option value="EFECTIVO">Efectivo</option>
+                                    <option value="TRANSFERENCIA">Transferencia</option>
+                                </select>
+                            </div>
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', marginBottom: '5px' }}>Notas (opcional)</label>
+                                <textarea 
+                                    value={pagarModal.notas} 
+                                    onChange={(e) => setPagarModal({...pagarModal, notas: e.target.value})}
+                                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                                />
+                            </div>
+
+                            {pagoError && <div style={{ color: '#e03131', marginBottom: '15px' }}>{pagoError}</div>}
+                            {pagoSuccess && <div style={{ color: '#10b981', marginBottom: '15px' }}>{pagoSuccess}</div>}
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                                <button onClick={() => setPagarModal({ open: false, prof: null, metodo: 'EFECTIVO', notas: '' })} style={{ padding: '8px 15px', borderRadius: '4px', border: '1px solid #ccc', background: 'white', cursor: 'pointer' }} disabled={pagando}>Cancelar</button>
+                                <button onClick={handlePagar} style={{ padding: '8px 15px', borderRadius: '4px', border: 'none', background: '#10b981', color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }} disabled={pagando}>
+                                    {pagando ? <Loader2 size={16} className="animate-spin"/> : null} Confirmar Pago
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
+    );
+
+    if (isTab) {
+        return content;
+    }
+
+    return (
+        <div className="main-content">
+            <PageHeader
+                title="Liquidación de Sueldos"
+                subtitle="Cálculo automático de honorarios de profesionales"
+                image="/img/welcome-background.png"
+            />
+            {content}
         </div>
     );
 };

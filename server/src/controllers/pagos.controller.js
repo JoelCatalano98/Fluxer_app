@@ -90,6 +90,14 @@ const registrarPago = async (req, res) => {
                                     : 'Registro de Pago / Cuota',
                                 clienteId: clienteIdInt
                             }
+                        },
+                        movimientosGenerales: {
+                            create: {
+                                tipo: 'INGRESO',
+                                monto: montoTotalPago,
+                                descripcion: `Cuota ${cliente.nombre} ${cliente.apellido} - ${concepto}`,
+                                origen: 'PAGO_CLIENTE'
+                            }
                         }
                     }
                 }),

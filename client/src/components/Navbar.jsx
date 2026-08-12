@@ -24,6 +24,7 @@ const Navbar = ({ isOpen }) => {
     logoBase64: null
   });
   const [sueldosHabilitado, setSueldosHabilitado] = useState(true);
+  const [libroDiarioHabilitado, setLibroDiarioHabilitado] = useState(true);
 
   const loadConfig = async () => {
     try {
@@ -37,6 +38,9 @@ const Navbar = ({ isOpen }) => {
       if (resParams.data.success && Array.isArray(resParams.data.data)) {
         const paramSueldos = resParams.data.data.find(p => p.clave === 'sueldosHabilitado');
         setSueldosHabilitado(paramSueldos ? paramSueldos.valor === 'true' : true);
+        
+        const paramLibroDiario = resParams.data.data.find(p => p.clave === 'libroDiarioHabilitado');
+        setLibroDiarioHabilitado(paramLibroDiario ? paramLibroDiario.valor === 'true' : true);
       }
     } catch (err) {
       console.error('Error al cargar config en Navbar:', err);
@@ -155,7 +159,14 @@ const Navbar = ({ isOpen }) => {
                   {sueldosHabilitado && (
                     <li>
                       <NavLink to="/sueldos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                        Liquidación de Sueldos
+                        Pagos y Sueldos
+                      </NavLink>
+                    </li>
+                  )}
+                  {libroDiarioHabilitado && (
+                    <li>
+                      <NavLink to="/libro-diario" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        Libro Diario
                       </NavLink>
                     </li>
                   )}

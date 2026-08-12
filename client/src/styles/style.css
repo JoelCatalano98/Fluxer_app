@@ -1307,3 +1307,176 @@ th.columna-fija {
         min-width: 550px;
     }
 }
+
+/* Comprobante Responsive */
+.comprobante-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+.comprobante-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 15px;
+}
+.comprobante-grid-2-preview {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+    background-color: #f9fafb;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+.comprobante-header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid #3b82f6;
+    padding-bottom: 20px;
+    margin-bottom: 30px;
+}
+.comprobante-content {
+    padding: 40px;
+    color: #333;
+}
+.comprobante-title {
+    font-size: 2.5rem;
+}
+.comprobante-subtitle {
+    font-size: 1.8rem;
+}
+.comprobante-fecha {
+    font-size: 1.1rem;
+}
+.comprobante-nombre {
+    font-size: 1.1rem;
+}
+.comprobante-total {
+    font-size: 1.2rem;
+}
+.comprobante-importante {
+    font-size: 1.1rem;
+}
+.comprobante-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 25px;
+}
+.comprobante-actions-preview {
+    /* base styles are inline */
+}
+
+@media (max-width: 600px) {
+    .comprobante-grid-2,
+    .comprobante-grid-3,
+    .comprobante-grid-2-preview {
+        grid-template-columns: 1fr !important;
+        gap: 10px;
+    }
+    .comprobante-header {
+        flex-direction: column !important;
+        text-align: left !important;
+    }
+    .comprobante-header > div:last-child {
+        text-align: left !important;
+        margin-top: 15px;
+    }
+    .comprobante-content {
+        padding: 20px !important;
+    }
+    .comprobante-actions {
+        flex-direction: column !important;
+    }
+    .comprobante-actions button {
+        width: 100% !important;
+    }
+    .comprobante-actions-preview {
+        flex-wrap: wrap;
+    }
+    .comprobante-actions-preview button {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 5px;
+    }
+    .comprobante-title {
+        font-size: 1.6rem !important;
+    }
+    .comprobante-subtitle {
+        font-size: 1.3rem !important;
+    }
+    .comprobante-fecha {
+        font-size: 1rem !important;
+    }
+    .comprobante-nombre {
+        font-size: 1rem !important;
+    }
+    .comprobante-total {
+        font-size: 1rem !important;
+    }
+    .comprobante-importante {
+        font-size: 1rem !important;
+    }
+    
+    /* Libro Diario Mobile */
+    .libro-diario-filtros {
+        flex-direction: column !important;
+    }
+    .libro-diario-acciones {
+        flex-direction: column !important;
+    }
+    .libro-diario-subtotales {
+        flex-direction: column !important;
+        gap: 5px !important;
+        align-items: flex-start !important;
+    }
+    .libro-diario-modal-acciones {
+        flex-direction: column !important;
+    }
+    .libro-diario-modal-acciones button {
+        width: 100%;
+    }
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    .comprobante-imprimir, .comprobante-imprimir *,
+    .libro-diario-imprimir, .libro-diario-imprimir * {
+        visibility: visible;
+    }
+    .comprobante-imprimir, .libro-diario-imprimir {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
+    .no-print {
+        display: none !important;
+    }
+    
+    /* Tamaños de fuente reducidos para impresión (mismo que móvil) */
+    .comprobante-title {
+        font-size: 1.6rem !important;
+    }
+    .comprobante-subtitle {
+        font-size: 1.3rem !important;
+    }
+    .comprobante-fecha {
+        font-size: 1rem !important;
+    }
+    .comprobante-nombre {
+        font-size: 1rem !important;
+    }
+    .comprobante-total {
+        font-size: 1rem !important;
+    }
+    .comprobante-importante {
+        font-size: 1rem !important;
+    }
+}

@@ -2,17 +2,20 @@ import { useState, useEffect } from 'react';
 import { CirclePlus, CheckCircle, XCircle, AlertCircle, FileText, Undo2 } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
+import ComprobanteGenerador from '../components/ComprobanteGenerador';
+import { FileText as FileTextIcon } from 'lucide-react'; // Rename to avoid conflict with FileText used elsewhere if any
 import api from '../services/api';
 import '../styles/style.css';
 import '../styles/utilidades/configuracion_pagos.css';
 import '../styles/utilidades/pagos.css';
 
-const Pagos = () => {
+const Pagos = ({ isTab = false }) => {
   const [pagos, setPagos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [usarSaldo, setUsarSaldo] = useState(false);
+  const [comprobanteModal, setComprobanteModal] = useState({ open: false, tipo: '', datos: null });
 
   const [nuevoPago, setNuevoPago] = useState({
     clienteId: '',
@@ -136,14 +139,8 @@ const Pagos = () => {
     );
   }
 
-  return (
-    <div className="main-content">
-      <PageHeader
-        title="Gestión de Pagos"
-        subtitle="Bandeja de aprobaciones e historial de transacciones"
-        image="/img/welcome-background.png"
-      />
-
+  const content = (
+    <>
       <div className="contenedor-pagos" style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
         
         {/* Sección: Bandeja de Aprobaciones */}
@@ -195,17 +192,17 @@ const Pagos = () => {
             <FileText size={20} color="#3b82f6" /> Historial de Pagos
           </h2>
           
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', minWidth: '600px' }}>
+          <div className="contenedor-scroll">
+            <table className="data-table">
               <thead>
-                <tr style={{ borderBottom: '2px solid #eee', color: '#666' }}>
-                  <th style={{ padding: '12px 10px' }}>Fecha</th>
-                  <th style={{ padding: '12px 10px' }}>Cliente</th>
-                  <th style={{ padding: '12px 10px' }}>Concepto</th>
-                  <th style={{ padding: '12px 10px' }}>Método</th>
-                  <th style={{ padding: '12px 10px' }}>Monto</th>
-                  <th style={{ padding: '12px 10px', textAlign: 'center' }}>Estado</th>
-                  <th style={{ padding: '12px 10px', textAlign: 'center' }}>Acciones</th>
+                <tr>
+                  <th className="columna-fija" style={{ textAlign: 'left' }}>Cliente</th>
+                  <th style={{ textAlign: 'center' }}>Fecha</th>
+                  <th style={{ textAlign: 'left' }}>Concepto</th>
+                  <th style={{ textAlign: 'center' }}>Método</th>
+                  <th style={{ textAlign: 'right' }}>Monto</th>
+                  <th style={{ textAlign: 'center' }}>Estado</th>
+                  <th style={{ textAlign: 'center' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -215,13 +212,23 @@ const Pagos = () => {
                   </tr>
                 ) : (
                   historialPagos.map(pago => (
-                    <tr key={pago.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '12px 10px', color: '#444' }}>{new Date(pago.fecha).toLocaleDateString()}</td>
-                      <td style={{ padding: '12px 10px', fontWeight: '500', color: '#222' }}>{pago.cliente?.nombre} {pago.cliente?.apellido}</td>
-                      <td style={{ padding: '12px 10px', color: '#444' }}>{pago.concepto}</td>
-                      <td style={{ padding: '12px 10px', color: '#444' }}>{pago.metodoPago}</td>
-                      <td style={{ padding: '12px 10px', fontWeight: '600', color: '#10b981' }}>${pago.monto}</td>
-                      <td style={{ padding: '12px 10px', textAlign: 'center' }}>
+                    <tr key={pago.id}>
+                      <td className="columna-fija">
+                        <strong>{pago.cliente?.nombre} {pago.cliente?.apellido}</strong>
+                      </td>
+                      <td style={{ textAlign: 'center', color: '#444' }}>{new Date(pago.fecha).toLocaleDateString()}</td>
+                      <td style={{ textAlign: 'left', color: '#444' }}>{pago.concepto}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <span style={{ 
+                            backgroundColor: pago.metodoPago === 'EFECTIVO' ? '#dcfce7' : '#e0e7ff', 
+                            color: pago.metodoPago === 'EFECTIVO' ? '#166534' : '#3730a3',
+                            padding: '4px 8px', borderRadius: '12px', fontSize: '0.85rem', fontWeight: 'bold'
+                        }}>
+                            {pago.metodoPago}
+                        </span>
+                      </td>
+                      <td style={{ textAlign: 'right', fontFamily: 'monospace', fontSize: '1.1rem', fontWeight: 'bold', color: '#10b981' }}>${pago.monto}</td>
+                      <td style={{ textAlign: 'center' }}>
                         <span style={{ 
                           display: 'inline-block', 
                           padding: '4px 10px', 
@@ -235,7 +242,7 @@ const Pagos = () => {
                           {pago.estado}
                         </span>
                       </td>
-                      <td style={{ padding: '12px 10px', textAlign: 'center' }}>
+                      <td style={{ textAlign: 'center' }}>
                         {pago.estado === 'APROBADO' && (
                           <button
                             onClick={() => handleEstadoPago(pago.id, 'ANULADO')}
@@ -249,6 +256,31 @@ const Pagos = () => {
                             onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#fef3c7'; }}
                           >
                             <Undo2 size={14} /> Anular
+                          </button>
+                        )}
+                        {pago.estado === 'APROBADO' && (
+                          <button
+                            onClick={() => setComprobanteModal({
+                              open: true,
+                              tipo: 'socio',
+                              datos: {
+                                nombre: `${pago.cliente?.nombre || ''} ${pago.cliente?.apellido || ''}`.trim(),
+                                documento: pago.cliente?.dni_cuit || '',
+                                monto: pago.monto,
+                                concepto: pago.concepto,
+                                fecha: pago.fecha,
+                                medioPago: pago.metodoPago
+                              }
+                            })}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '5px',
+                              backgroundColor: '#e0f2fe', color: '#0284c7', border: '1px solid #7dd3fc',
+                              padding: '5px 12px', borderRadius: '6px', cursor: 'pointer',
+                              fontWeight: '600', fontSize: '0.8rem', transition: 'all 0.2s',
+                              marginLeft: '5px'
+                            }}
+                          >
+                            <FileText size={14} /> Comprobante
                           </button>
                         )}
                       </td>
@@ -402,6 +434,27 @@ const Pagos = () => {
         </form>
       </Modal>
 
+      <ComprobanteGenerador
+        isOpen={comprobanteModal.open}
+        onClose={() => setComprobanteModal({ open: false, tipo: '', datos: null })}
+        tipo={comprobanteModal.tipo}
+        datosIniciales={comprobanteModal.datos}
+      />
+    </>
+  );
+
+  if (isTab) {
+    return <div style={{ padding: '10px 5px' }}>{content}</div>;
+  }
+
+  return (
+    <div className="main-content">
+      <PageHeader
+        title="Gestión de Pagos"
+        subtitle="Bandeja de aprobaciones e historial de transacciones"
+        image="/img/welcome-background.png"
+      />
+      {content}
     </div>
   );
 };

@@ -9,17 +9,17 @@ datasource db {
 
 model Usuario {
   id              Int     @id @default(autoincrement())
-  nombre          String  @default("Admin")
-  usuario         String  @unique
   email           String  @unique
   password        String
-  esSuperAdmin    Boolean @default(false)
   esAdmin         Boolean @default(false)
-  permisoFinanzas Boolean @default(false)
-  permisoTurnos   Boolean @default(false)
+  esSuperAdmin    Boolean @default(false)
+  nombre          String  @default("Admin")
   permisoClientes Boolean @default(false)
-  permisoPlanes   Boolean @default(false)
   permisoFeriados Boolean @default(false)
+  permisoFinanzas Boolean @default(false)
+  permisoPlanes   Boolean @default(false)
+  permisoTurnos   Boolean @default(false)
+  usuario         String  @unique
 
   @@map("usuarios")
 }
@@ -43,14 +43,14 @@ model ConfiguracionLocal {
 
 model Plan {
   id              Int         @id @default(autoincrement())
-  codigo          String?     @unique
   nombre          String
   etiqueta        String?
   precio          Decimal     @db.Decimal(10, 2)
   frecuencia      String
   caracteristicas String?     @db.Text
-  observaciones   String?     @db.Text
   activo          Boolean     @default(true)
+  codigo          String?     @unique
+  observaciones   String?     @db.Text
   categorias      Categoria[]
 
   @@map("planes")
@@ -63,22 +63,22 @@ model Cliente {
   apellido         String
   dni_cuit         String             @unique
   email            String?            @unique
-  password         String?
   telefono         String?
   fecha_inicio     DateTime?          @db.Date
   observaciones    String?            @db.Text
   estado_pago      EstadoPago         @default(ALDIA)
   estado_cliente   EstadoCliente      @default(ACTIVO)
-  categoriaId      Int?
   es_socio         Boolean            @default(false)
-  categoria        Categoria?         @relation(fields: [categoriaId], references: [id])
-  turnosCliente    TurnoCliente[]
-  rutinas          Rutina[]
-  records          Record[]
-  pagos            Pago[]
+  categoriaId      Int?
+  password         String?
   vencimientoCuota DateTime?
   saldo            Float              @default(0)
-  movimientos      MovimientoCuenta[]
+  categoria        Categoria?         @relation(fields: [categoriaId], references: [id])
+  movimientocuenta movimientocuenta[]
+  pago             pago[]
+  records          Record[]
+  rutinas          Rutina[]
+  turnosCliente    TurnoCliente[]
 
   @@index([categoriaId], map: "clientes_categoriaId_fkey")
   @@map("clientes")
@@ -95,9 +95,10 @@ model Profesional {
   telefono       String?
   activo         Boolean         @default(true)
   tarifaPorClase Float           @default(0)
-  turnosCliente  TurnoCliente[]
   categorias     Categoria[]
   horarios       HorarioConfig[]
+  liquidaciones  Liquidacion[]
+  turnosCliente  TurnoCliente[]
 
   @@map("profesionales")
 }
@@ -108,13 +109,15 @@ model HorarioConfig {
   hora_inicio   DateTime       @db.Time(0)
   hora_fin      DateTime       @db.Time(0)
   activo        Boolean        @default(true)
-  cupo_maximo   Int?
   categoriaId   Int?
+  cupo_maximo   Int?
   profesionalId Int?
-  profesional   Profesional?   @relation(fields: [profesionalId], references: [id])
   categoria     Categoria?     @relation(fields: [categoriaId], references: [id])
+  profesional   Profesional?   @relation(fields: [profesionalId], references: [id])
   turnos        TurnoCliente[]
 
+  @@index([categoriaId], map: "horarios_config_categoriaId_fkey")
+  @@index([profesionalId], map: "horarios_config_profesionalId_fkey")
   @@map("horarios_config")
 }
 
@@ -138,28 +141,19 @@ model TurnoCliente {
 model Categoria {
   id            Int             @id @default(autoincrement())
   nombre        String
-  activo        Boolean         @default(true)
-  planId        Int?
-  plan          Plan?           @relation(fields: [planId], references: [id])
   rubro_sector  String?
   color         String?
+  activo        Boolean         @default(true)
+  planId        Int?
   profesionalId Int?
+  plan          Plan?           @relation(fields: [planId], references: [id])
   profesional   Profesional?    @relation(fields: [profesionalId], references: [id])
   clientes      Cliente[]
   horarios      HorarioConfig[]
 
   @@index([planId], map: "categorias_planId_fkey")
+  @@index([profesionalId], map: "categorias_profesionalId_fkey")
   @@map("categorias")
-}
-
-enum EstadoPago {
-  ALDIA
-  MOROSO
-}
-
-enum EstadoCliente {
-  ACTIVO
-  INACTIVO
 }
 
 model Configuracion {
@@ -169,12 +163,12 @@ model Configuracion {
   bloqueoCapacidad         Boolean @default(false)
   cupoGlobal               Int     @default(15)
   limiteCancelacionMinutos Int     @default(60)
-  profesoresPorTurno       Boolean @default(false)
-  adminNombre              String?
   adminApellido            String?
   adminDni                 String?
   adminEmail               String?
+  adminNombre              String?
   diasApertura             String? @default("1,2,3,4,5,6")
+  profesoresPorTurno       Boolean @default(false)
   maxReservasSemana        Int     @default(0)
 
   @@map("configuracion")
@@ -185,23 +179,23 @@ model Aviso {
   titulo             String
   mensaje            String?   @db.Text
   tipo               String    @default("INFO")
-  esBloqueo          Boolean   @default(false)
   fechaDesde         DateTime  @db.Date
   fechaHasta         DateTime? @db.Date
   activo             Boolean   @default(true)
   bloquearTodoElDia  Boolean   @default(true)
-  horaInicioBloqueo  String?
+  esBloqueo          Boolean   @default(false)
   horaFinBloqueo     String?
-  horariosBloqueados Json?
+  horaInicioBloqueo  String?
+  horariosBloqueados String?   @db.LongText
 
   @@map("avisos")
 }
 
 model CalendarioNota {
   id         Int     @id @default(autoincrement())
-  fecha      String // Formato YYYY-MM-DD
+  fecha      String
   contenido  String  @db.Text
-  horaAlarma String? // Formato HH:MM (Opcional)
+  horaAlarma String?
   notificado Boolean @default(false)
 
   @@map("calendario_notas")
@@ -211,64 +205,39 @@ model Rutina {
   id         Int               @id @default(autoincrement())
   nombre     String
   clienteId  Int
-  cliente    Cliente           @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  ejercicios RutinaEjercicio[]
   createdAt  DateTime          @default(now())
+  ejercicios RutinaEjercicio[]
+  cliente    Cliente           @relation(fields: [clienteId], references: [id], onDelete: Cascade)
 
+  @@index([clienteId], map: "rutinas_clienteId_fkey")
   @@map("rutinas")
 }
 
 model RutinaEjercicio {
   id              Int     @id @default(autoincrement())
   rutinaId        Int
-  rutina          Rutina  @relation(fields: [rutinaId], references: [id], onDelete: Cascade)
   nombreEjercicio String
-  dia             String?
   series          Int
   repeticiones    String
   pesoSugerido    String?
   pesoReal        String?
+  dia             String?
+  rutina          Rutina  @relation(fields: [rutinaId], references: [id], onDelete: Cascade)
 
+  @@index([rutinaId], map: "rutina_ejercicios_rutinaId_fkey")
   @@map("rutina_ejercicios")
 }
 
 model Record {
   id         Int      @id @default(autoincrement())
   clienteId  Int
-  cliente    Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   ejercicio  String
   pesoMaximo Float
   fecha      DateTime @default(now())
+  cliente    Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
 
   @@unique([clienteId, ejercicio])
   @@map("records")
-}
-
-model Pago {
-  id          Int                @id @default(autoincrement())
-  clienteId   Int
-  cliente     Cliente            @relation(fields: [clienteId], references: [id])
-  monto       Float
-  metodoPago  String // Ej: 'EFECTIVO', 'TRANSFERENCIA', 'MERCADO_PAGO'
-  concepto    String // Ej: 'Cuota Mensual Pase Libre'
-  fecha       DateTime           @default(now())
-  notas       String?
-  estado      String             @default("APROBADO")
-  movimientos MovimientoCuenta[]
-}
-
-model MovimientoCuenta {
-  id          Int      @id @default(autoincrement())
-  monto       Float
-  tipo        String
-  descripcion String
-  fecha       DateTime @default(now())
-
-  clienteId Int
-  cliente   Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-
-  pagoId Int?
-  pago   Pago? @relation(fields: [pagoId], references: [id], onDelete: SetNull)
 }
 
 model ParametroSistema {
@@ -279,4 +248,78 @@ model ParametroSistema {
   valor       String @default("false")
 
   @@map("parametros_sistema")
+}
+
+model Liquidacion {
+  id              Int                 @id @default(autoincrement())
+  profesionalId   Int
+  periodo         String
+  clasesSemanales Int
+  montoTotal      Float
+  fechaPago       DateTime            @default(now())
+  metodoPago      String
+  notas           String?
+  profesional     Profesional         @relation(fields: [profesionalId], references: [id])
+  movimientos     MovimientoGeneral[]
+
+  @@index([profesionalId], map: "liquidaciones_profesionalId_fkey")
+  @@map("liquidaciones")
+}
+
+model MovimientoGeneral {
+  id            Int          @id @default(autoincrement())
+  tipo          String
+  monto         Float
+  descripcion   String
+  fecha         DateTime     @default(now())
+  origen        String
+  pagoId        Int?
+  liquidacionId Int?
+  liquidacion   Liquidacion? @relation(fields: [liquidacionId], references: [id])
+  pago          pago?        @relation(fields: [pagoId], references: [id])
+
+  @@index([liquidacionId], map: "movimientos_generales_liquidacionId_fkey")
+  @@index([pagoId], map: "movimientos_generales_pagoId_fkey")
+  @@map("movimientos_generales")
+}
+
+model movimientocuenta {
+  id          Int      @id @default(autoincrement())
+  monto       Float
+  tipo        String
+  descripcion String
+  fecha       DateTime @default(now())
+  clienteId   Int
+  pagoId      Int?
+  clientes    Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade, map: "MovimientoCuenta_clienteId_fkey")
+  pago        pago?    @relation(fields: [pagoId], references: [id], map: "MovimientoCuenta_pagoId_fkey")
+
+  @@index([clienteId], map: "MovimientoCuenta_clienteId_fkey")
+  @@index([pagoId], map: "MovimientoCuenta_pagoId_fkey")
+}
+
+model pago {
+  id                   Int                 @id @default(autoincrement())
+  clienteId            Int
+  monto                Float
+  metodoPago           String
+  concepto             String
+  fecha                DateTime            @default(now())
+  notas                String?
+  estado               String              @default("APROBADO")
+  movimientocuenta     movimientocuenta[]
+  movimientosGenerales MovimientoGeneral[]
+  clientes             Cliente             @relation(fields: [clienteId], references: [id], map: "Pago_clienteId_fkey")
+
+  @@index([clienteId], map: "Pago_clienteId_fkey")
+}
+
+enum EstadoPago {
+  ALDIA
+  MOROSO
+}
+
+enum EstadoCliente {
+  ACTIVO
+  INACTIVO
 }
