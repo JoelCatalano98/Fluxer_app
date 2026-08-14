@@ -102,7 +102,7 @@ const registrarPago = async (req, res) => {
             // 3. Si se usó saldo, crear movimiento EGRESO adicional
             if (saldoUsadoFloat > 0) {
                 transactionOps.push(
-                    prisma.movimientoCuenta.create({
+                    prisma.movimientocuenta.create({
                         data: {
                             monto: -saldoUsadoFloat,
                             tipo: 'EGRESO',
@@ -209,7 +209,7 @@ const cambiarEstadoPago = async (req, res) => {
                         saldo: { decrement: diferenciaOriginal }
                     }
                 }),
-                prisma.movimientoCuenta.create({
+                prisma.movimientocuenta.create({
                     data: {
                         monto: -montoPagadoOriginal,
                         tipo: 'ANULACION',
@@ -251,7 +251,7 @@ const cambiarEstadoPago = async (req, res) => {
                     where: { id: cliente.id },
                     data: { estado_pago: 'ALDIA' }
                 }),
-                prisma.movimientoCuenta.create({
+                prisma.movimientocuenta.create({
                     data: {
                         monto: montoPagado,
                         tipo: 'INGRESO',

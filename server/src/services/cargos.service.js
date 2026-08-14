@@ -55,7 +55,7 @@ async function asegurarCargosAlDia(clienteId) {
     }
 
     if (nuevosMovimientos.length > 0) {
-        await prisma.movimientoCuenta.createMany({
+        await prisma.movimientocuenta.createMany({
             data: nuevosMovimientos
         });
 
@@ -67,7 +67,7 @@ async function asegurarCargosAlDia(clienteId) {
     }
 
     // Recalcular saldo sumando todos los movimientos
-    const todosLosMovimientos = await prisma.movimientoCuenta.findMany({
+    const todosLosMovimientos = await prisma.movimientocuenta.findMany({
         where: { clienteId: cliente.id }
     });
 

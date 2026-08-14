@@ -561,7 +561,7 @@ const resetFinanzasCliente = async (req, res) => {
 
         // Transacción atómica: eliminar movimientos, pagos y resetear saldo
         await prisma.$transaction([
-            prisma.movimientoCuenta.deleteMany({ where: { clienteId: id } }),
+            prisma.movimientocuenta.deleteMany({ where: { clienteId: id } }),
             prisma.pago.deleteMany({ where: { clienteId: id } }),
             prisma.cliente.update({
                 where: { id },

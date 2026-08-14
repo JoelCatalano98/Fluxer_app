@@ -291,7 +291,7 @@ model movimientocuenta {
   fecha       DateTime @default(now())
   clienteId   Int
   pagoId      Int?
-  clientes    Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade, map: "MovimientoCuenta_clienteId_fkey")
+  cliente Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade, map: "MovimientoCuenta_clienteId_fkey")
   pago        pago?    @relation(fields: [pagoId], references: [id], map: "MovimientoCuenta_pagoId_fkey")
 
   @@index([clienteId], map: "MovimientoCuenta_clienteId_fkey")
@@ -309,7 +309,7 @@ model pago {
   estado               String              @default("APROBADO")
   movimientocuenta     movimientocuenta[]
   movimientosGenerales MovimientoGeneral[]
-  clientes             Cliente             @relation(fields: [clienteId], references: [id], map: "Pago_clienteId_fkey")
+  cliente Cliente @relation(fields: [clienteId], references: [id], map: "Pago_clienteId_fkey")
 
   @@index([clienteId], map: "Pago_clienteId_fkey")
 }
