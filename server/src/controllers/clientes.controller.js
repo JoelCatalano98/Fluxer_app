@@ -25,7 +25,19 @@ const getClientes = async (req, res) => {
             where.es_socio = true;
             where.estado_cliente = 'ACTIVO';
         } else if (filtro === 'morosos') {
-            where.estado_pago = 'MOROSO';
+            const { asegurarCargosAlDia } = require('../services/cargos.service');
+            const hoy = new Date();
+            const clientesAtrasados = await prisma.cliente.findMany({
+                where: { 
+                    estado_cliente: 'ACTIVO',
+                    vencimientoCuota: { lt: hoy } 
+                },
+                select: { id: true }
+            });
+            for (const c of clientesAtrasados) {
+                await asegurarCargosAlDia(c.id);
+            }
+            where.saldo = { lt: 0 };
         }
 
         // Obtener cantidad total y registros paginados con su plan
@@ -120,6 +132,14 @@ const createCliente = async (req, res) => {
             });
         }
 
+        // Calcular vencimientoCuota inicial (fecha base + 30 días)
+        let initialVencimiento = null;
+        if (isSocio) {
+            const baseDate = fecha_inicio ? new Date(fecha_inicio) : new Date();
+            initialVencimiento = new Date(baseDate);
+            initialVencimiento.setDate(initialVencimiento.getDate() + 30);
+        }
+
         // Crear registro en la base de datos
         const nuevoCliente = await prisma.cliente.create({
             data: {
@@ -134,7 +154,8 @@ const createCliente = async (req, res) => {
                 estado_pago: estado_pago || 'ALDIA',
                 estado_cliente: estado_cliente || 'ACTIVO',
                 es_socio: isSocio,
-                categoriaId: categoriaId ? parseInt(categoriaId) : null
+                categoriaId: categoriaId ? parseInt(categoriaId) : null,
+                vencimientoCuota: initialVencimiento
             },
             include: {
                 categoria: {
@@ -472,6 +493,9 @@ const getMovimientosCliente = async (req, res) => {
             });
         }
 
+        const { asegurarCargosAlDia } = require('../services/cargos.service');
+        const resultCargos = await asegurarCargosAlDia(id);
+
         const cliente = await prisma.cliente.findUnique({
             where: { id },
             select: {
@@ -497,7 +521,8 @@ const getMovimientosCliente = async (req, res) => {
         return res.status(200).json({
             success: true,
             data: cliente,
-            message: 'Movimientos obtenidos con éxito'
+            message: 'Movimientos obtenidos con éxito',
+            ...(resultCargos?.limiteAlcanzado && { limiteAlcanzado: true })
         });
     } catch (error) {
         console.error('Error al obtener movimientos del cliente:', error);

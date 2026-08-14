@@ -147,18 +147,26 @@ const loginSocio = async (req, res) => {
             });
         }
 
+        // Asegurar cargos al día antes de devolver el perfil
+        const { asegurarCargosAlDia } = require('../services/cargos.service');
+        await asegurarCargosAlDia(cliente.id);
+
+        const clienteActualizado = await prisma.cliente.findUnique({
+            where: { id: cliente.id }
+        });
+
         // Generar token JWT
         const payload = {
-            id: cliente.id,
-            nombre: cliente.nombre,
-            apellido: cliente.apellido,
+            id: clienteActualizado.id,
+            nombre: clienteActualizado.nombre,
+            apellido: clienteActualizado.apellido,
             role: 'SOCIO'
         };
 
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });
 
         // Retornar token y datos del cliente sin la contraseña
-        const { password: _, ...clienteData } = cliente;
+        const { password: _, ...clienteData } = clienteActualizado;
 
         return res.status(200).json({
             success: true,

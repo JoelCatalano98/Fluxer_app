@@ -533,18 +533,25 @@ const ClientesTotales = () => {
               </div>
             ) : estadoCuentaData ? (
               <>
+                {estadoCuentaData.limiteAlcanzado && (
+                  <div style={{ backgroundColor: '#fef2f2', color: '#991b1b', padding: '12px', borderRadius: '8px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <AlertCircle size={20} />
+                    <span>Este cliente tiene más de 12 cuotas impagas — la deuda mostrada puede estar incompleta, requiere revisión manual.</span>
+                  </div>
+                )}
+
                 {/* Resumen de Saldos — responsive grid */}
                 <div className="estado-cuenta-resumen">
                   <div className="estado-cuenta-resumen-item">
                     <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Saldo Deudor Histórico</p>
                     <p style={{ margin: '5px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', color: '#374151', fontFamily: 'monospace' }}>
-                      ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.monto < 0).reduce((acc, m) => acc + Math.abs(m.monto), 0).toFixed(2) : '0.00'}
+                      ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.tipo === 'CARGO' || m.monto < 0).reduce((acc, m) => acc + Math.abs(m.monto), 0).toFixed(2) : '0.00'}
                     </p>
                   </div>
                   <div className="estado-cuenta-resumen-item">
                     <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Pagos (Haber)</p>
                     <p style={{ margin: '5px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', color: '#374151', fontFamily: 'monospace' }}>
-                      ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.monto > 0).reduce((acc, m) => acc + m.monto, 0).toFixed(2) : '0.00'}
+                      ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.tipo !== 'CARGO' && m.monto > 0).reduce((acc, m) => acc + m.monto, 0).toFixed(2) : '0.00'}
                     </p>
                   </div>
                   <div className="estado-cuenta-resumen-item" style={{ borderRight: 'none' }}>
@@ -573,7 +580,17 @@ const ClientesTotales = () => {
                           let runningBalance = Number(estadoCuentaData.saldo);
                           return estadoCuentaData.movimientos.map((mov) => {
                             const currentSaldo = runningBalance;
-                            runningBalance -= Number(mov.monto);
+                            
+                            // Revertir el efecto del movimiento para ir hacia atrás en el tiempo
+                            if (mov.tipo === 'CARGO') {
+                              runningBalance += Number(mov.monto); // Los cargos restan al saldo, así que yendo atrás suman
+                            } else {
+                              runningBalance -= Number(mov.monto); // Los ingresos/ajustes suman, así que yendo atrás restan
+                            }
+                            
+                            const isDebe = mov.tipo === 'CARGO' || mov.monto < 0;
+                            const isHaber = mov.tipo !== 'CARGO' && mov.monto > 0;
+                            const displayMonto = Math.abs(mov.monto);
                             
                             return (
                               <tr key={mov.id}>
@@ -583,11 +600,11 @@ const ClientesTotales = () => {
                                 <td>
                                   {mov.descripcion}
                                 </td>
-                                <td style={{ textAlign: 'right', color: mov.monto < 0 ? '#dc2626' : '#d1d5db' }}>
-                                  {mov.monto < 0 ? `$${Math.abs(mov.monto).toFixed(2)}` : '-'}
+                                <td style={{ textAlign: 'right', color: isDebe ? '#dc2626' : '#d1d5db' }}>
+                                  {isDebe ? `$${displayMonto.toFixed(2)}` : '-'}
                                 </td>
-                                <td style={{ textAlign: 'right', color: mov.monto > 0 ? '#16a34a' : '#d1d5db' }}>
-                                  {mov.monto > 0 ? `$${mov.monto.toFixed(2)}` : '-'}
+                                <td style={{ textAlign: 'right', color: isHaber ? '#16a34a' : '#d1d5db' }}>
+                                  {isHaber ? `$${displayMonto.toFixed(2)}` : '-'}
                                 </td>
                                 <td className="estado-cuenta-saldo-cell" style={{ color: currentSaldo < 0 ? '#dc2626' : currentSaldo > 0 ? '#16a34a' : '#1f2937' }}>
                                   {currentSaldo > 0 ? `+ $${Math.abs(currentSaldo).toFixed(2)}` : currentSaldo < 0 ? `- $${Math.abs(currentSaldo).toFixed(2)}` : '$0.00'}

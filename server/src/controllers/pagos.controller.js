@@ -51,22 +51,11 @@ const registrarPago = async (req, res) => {
         }
 
         if (estado === 'APROBADO') {
-            // Compatibilidad: si viene 'monto' (flujo legacy), usarlo; si viene 'montoAbonado', calcular total
+            const { asegurarCargosAlDia } = require('../services/cargos.service');
+            await asegurarCargosAlDia(clienteIdInt);
+
             const montoEfectivo = montoAbonado !== undefined ? parseFloat(montoAbonado) : parseFloat(monto);
             const montoTotalPago = montoEfectivo + saldoUsadoFloat;
-
-            // Lógica de cálculo de nueva fecha de vencimiento (30 días)
-            let nuevaFechaVencimiento = new Date();
-            if (cliente.vencimientoCuota && cliente.vencimientoCuota > new Date()) {
-                nuevaFechaVencimiento = new Date(cliente.vencimientoCuota);
-            }
-            nuevaFechaVencimiento.setDate(nuevaFechaVencimiento.getDate() + 30);
-
-            const montoPlan = cliente.categoria?.plan?.precio ? parseFloat(cliente.categoria.plan.precio) : 0;
-            // El saldo neto cambia según lo que pagó en efectivo vs el plan.
-            // saldoUsado ya era del cliente, se usa para cubrir parte del plan → decrement.
-            // Si montoEfectivo > lo que faltaba del plan → genera nuevo saldo a favor.
-            const diferenciaNeta = montoTotalPago - montoPlan; // excedente total (podría venir de efectivo)
 
             // Construir operaciones de la transacción
             const transactionOps = [
@@ -101,17 +90,11 @@ const registrarPago = async (req, res) => {
                         }
                     }
                 }),
-                // 2. Actualizar cliente: vencimiento, estado, y ajustar saldo
-                //    - Restamos saldoUsado (se consumió de la billetera)
-                //    - Sumamos la diferencia neta (excedente si pagó de más)
-                //    Neto: increment(diferenciaNeta - saldoUsadoFloat)
-                //    Equivalente a: increment(montoEfectivo - montoPlan) cuando saldoUsado se cancela
+                // 2. Actualizar estado del cliente
                 prisma.cliente.update({
                     where: { id: clienteIdInt },
                     data: {
-                        vencimientoCuota: nuevaFechaVencimiento,
-                        estado_pago: 'ALDIA',
-                        saldo: { increment: diferenciaNeta - saldoUsadoFloat }
+                        estado_pago: 'ALDIA'
                     }
                 })
             ];
@@ -132,15 +115,18 @@ const registrarPago = async (req, res) => {
 
             const resultados = await prisma.$transaction(transactionOps);
             const nuevoPago = resultados[0];
-            const clienteActualizado = resultados[1];
+
+            // Recalcular el saldo llamando nuevamente al servicio (actualizará el saldo sumando todo)
+            const resultCargos = await asegurarCargosAlDia(clienteIdInt);
 
             return res.status(201).json({ 
                 success: true, 
                 data: { 
                     pago: nuevoPago, 
-                    vencimientoCuota: clienteActualizado.vencimientoCuota,
+                    vencimientoCuota: resultCargos?.nuevoVencimiento || cliente.vencimientoCuota,
                     saldoUsado: saldoUsadoFloat,
-                    nuevoSaldo: clienteActualizado.saldo
+                    nuevoSaldo: resultCargos?.nuevoSaldo || 0,
+                    ...(resultCargos?.limiteAlcanzado && { limiteAlcanzado: true })
                 } 
             });
         } else if (estado === 'PENDIENTE') {
@@ -251,28 +237,19 @@ const cambiarEstadoPago = async (req, res) => {
 
         if (estado === 'APROBADO') {
             const cliente = pagoActual.cliente;
-            let nuevaFechaVencimiento = new Date();
-            if (cliente.vencimientoCuota && cliente.vencimientoCuota > new Date()) {
-                nuevaFechaVencimiento = new Date(cliente.vencimientoCuota);
-            }
-            nuevaFechaVencimiento.setDate(nuevaFechaVencimiento.getDate() + 30);
+            const { asegurarCargosAlDia } = require('../services/cargos.service');
+            await asegurarCargosAlDia(cliente.id);
 
             const montoPagado = parseFloat(pagoActual.monto);
-            const montoPlan = cliente.categoria?.plan?.precio ? parseFloat(cliente.categoria.plan.precio) : 0;
-            const diferencia = montoPagado - montoPlan;
 
-            const [pagoActualizado, clienteActualizado] = await prisma.$transaction([
+            const [pagoActualizado] = await prisma.$transaction([
                 prisma.pago.update({
                     where: { id: pagoId },
                     data: { estado: 'APROBADO' }
                 }),
                 prisma.cliente.update({
                     where: { id: cliente.id },
-                    data: {
-                        vencimientoCuota: nuevaFechaVencimiento,
-                        estado_pago: 'ALDIA',
-                        saldo: { increment: diferencia }
-                    }
+                    data: { estado_pago: 'ALDIA' }
                 }),
                 prisma.movimientoCuenta.create({
                     data: {
@@ -282,14 +259,26 @@ const cambiarEstadoPago = async (req, res) => {
                         clienteId: cliente.id,
                         pagoId: pagoId
                     }
+                }),
+                prisma.movimientoGeneral.create({
+                    data: {
+                        tipo: 'INGRESO',
+                        monto: montoPagado,
+                        descripcion: `Aprobación Cuota ${cliente.nombre} ${cliente.apellido}`,
+                        origen: 'PAGO_CLIENTE',
+                        pagoId: pagoId
+                    }
                 })
             ]);
+
+            const resultCargos = await asegurarCargosAlDia(cliente.id);
 
             return res.json({
                 success: true,
                 data: {
                     pago: pagoActualizado,
-                    vencimientoCuota: clienteActualizado.vencimientoCuota
+                    vencimientoCuota: resultCargos?.nuevoVencimiento || cliente.vencimientoCuota,
+                    ...(resultCargos?.limiteAlcanzado && { limiteAlcanzado: true })
                 }
             });
         } else if (estado === 'RECHAZADO') {

@@ -15,6 +15,9 @@ const obtenerPerfil = async (req, res) => {
             });
         }
 
+        const { asegurarCargosAlDia } = require('../services/cargos.service');
+        const resultCargos = await asegurarCargosAlDia(id);
+
         const cliente = await prisma.cliente.findUnique({
             where: { id },
             include: {
@@ -37,7 +40,8 @@ const obtenerPerfil = async (req, res) => {
         return res.status(200).json({
             success: true,
             data: clienteData,
-            message: 'Perfil obtenido con éxito'
+            message: 'Perfil obtenido con éxito',
+            ...(resultCargos?.limiteAlcanzado && { limiteAlcanzado: true })
         });
     } catch (error) {
         console.error('Error en obtenerPerfil:', error);
