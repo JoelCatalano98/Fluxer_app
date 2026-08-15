@@ -54,8 +54,14 @@ const registrarPago = async (req, res) => {
             const { asegurarCargosAlDia } = require('../services/cargos.service');
             await asegurarCargosAlDia(clienteIdInt);
 
+            // Obtener saldo actualizado después de asegurarCargosAlDia
+            const clienteActualizado = await prisma.cliente.findUnique({ where: { id: clienteIdInt } });
+
             const montoEfectivo = montoAbonado !== undefined ? parseFloat(montoAbonado) : parseFloat(monto);
             const montoTotalPago = montoEfectivo + saldoUsadoFloat;
+
+            const saldoProyectado = parseFloat(clienteActualizado.saldo) + montoTotalPago;
+            const nuevoEstadoPago = saldoProyectado >= 0 ? 'ALDIA' : 'MOROSO';
 
             // Construir operaciones de la transacción
             const transactionOps = [
@@ -94,7 +100,7 @@ const registrarPago = async (req, res) => {
                 prisma.cliente.update({
                     where: { id: clienteIdInt },
                     data: {
-                        estado_pago: 'ALDIA',
+                        estado_pago: nuevoEstadoPago,
                         ...(cliente.estado_cliente === 'INACTIVO' ? { estado_cliente: 'ACTIVO' } : {})
                     }
                 })
@@ -241,7 +247,13 @@ const cambiarEstadoPago = async (req, res) => {
             const { asegurarCargosAlDia } = require('../services/cargos.service');
             await asegurarCargosAlDia(cliente.id);
 
+            // Obtener saldo actualizado después de asegurarCargosAlDia
+            const clienteActualizado = await prisma.cliente.findUnique({ where: { id: cliente.id } });
+
             const montoPagado = parseFloat(pagoActual.monto);
+            
+            const saldoProyectado = parseFloat(clienteActualizado.saldo) + montoPagado;
+            const nuevoEstadoPago = saldoProyectado >= 0 ? 'ALDIA' : 'MOROSO';
 
             const [pagoActualizado] = await prisma.$transaction([
                 prisma.pago.update({
@@ -251,7 +263,7 @@ const cambiarEstadoPago = async (req, res) => {
                 prisma.cliente.update({
                     where: { id: cliente.id },
                     data: {
-                        estado_pago: 'ALDIA',
+                        estado_pago: nuevoEstadoPago,
                         ...(cliente.estado_cliente === 'INACTIVO' ? { estado_cliente: 'ACTIVO' } : {})
                     }
                 }),

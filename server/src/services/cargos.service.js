@@ -41,8 +41,8 @@ async function asegurarCargosAlDia(clienteId) {
     let currentVencimiento = new Date(vencimiento);
     currentVencimiento.setHours(0, 0, 0, 0);
 
-    // Mientras el vencimiento ya pasó y no superamos el límite
-    while (currentVencimiento < hoy && cargosGenerados < maxCargos) {
+    // Mientras el vencimiento ya pasó o es hoy, y no superamos el límite
+    while (currentVencimiento <= hoy && cargosGenerados < maxCargos) {
         const mesAnio = `${String(currentVencimiento.getMonth() + 1).padStart(2, '0')}/${currentVencimiento.getFullYear()}`;
         
         // 1. Cargo base de la cuota
@@ -58,7 +58,10 @@ async function asegurarCargosAlDia(clienteId) {
         // Si el día de hoy es MAYOR al día configurado para el mes vencido, aplicar recargo.
         // Solo aplica si el recargo es mayor a 0 y la cuota es > 0.
         const fechaLimitePago = new Date(currentVencimiento);
-        fechaLimitePago.setDate(diaMaximoCobro);
+        // Si el cargo se genera un día mayor al diaMaximoCobro (ej: alta el día 15), 
+        // su límite para ESTA cuota inicial es su mismo día de alta, no el día 10 hacia atrás.
+        const diaReal = Math.max(diaMaximoCobro, currentVencimiento.getDate());
+        fechaLimitePago.setDate(diaReal);
 
         if (hoy > fechaLimitePago && recargoPorcentaje > 0 && precio > 0) {
             const montoRecargo = (precio * recargoPorcentaje) / 100;
@@ -110,9 +113,14 @@ async function asegurarCargosAlDia(clienteId) {
         }
     });
 
+    const nuevoEstadoPago = nuevoSaldo < 0 ? 'MOROSO' : 'ALDIA';
+
     await prisma.cliente.update({
         where: { id: cliente.id },
-        data: { saldo: nuevoSaldo }
+        data: { 
+            saldo: nuevoSaldo,
+            estado_pago: nuevoEstadoPago
+        }
     });
 
     if (cargosGenerados >= maxCargos) {

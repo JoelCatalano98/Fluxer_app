@@ -135,16 +135,8 @@ const createCliente = async (req, res) => {
         // Obtener configuración financiera para el vencimiento
         let initialVencimiento = null;
         if (isSocio) {
-            // Buscar el día de cobro global en la BD (10 por defecto)
-            const config = await prisma.configuracion.findFirst();
-            const diaCobro = config?.diaMaximoCobro || 10;
-        
             const baseDate = fecha_inicio ? new Date(fecha_inicio) : new Date();
             initialVencimiento = new Date(baseDate);
-            
-            // Sumar 1 mes exacto y fijar el día de cobro, reseteando la hora
-            initialVencimiento.setMonth(initialVencimiento.getMonth() + 1);
-            initialVencimiento.setDate(diaCobro);
             initialVencimiento.setHours(0, 0, 0, 0);
         }
 
@@ -160,7 +152,7 @@ const createCliente = async (req, res) => {
                 fecha_inicio: isSocio && fecha_inicio ? new Date(fecha_inicio) : null,
                 observaciones: observaciones || null,
                 estado_pago: estado_pago || 'ALDIA',
-                estado_cliente: estado_cliente || 'ACTIVO',
+                estado_cliente: estado_cliente || 'INACTIVO',
                 es_socio: isSocio,
                 categoriaId: categoriaId ? parseInt(categoriaId) : null,
                 vencimientoCuota: initialVencimiento
@@ -581,7 +573,9 @@ const resetFinanzasCliente = async (req, res) => {
                 where: { id },
                 data: {
                     saldo: 0,
-                    estado_pago: 'ALDIA'
+                    estado_pago: 'ALDIA',
+                    estado_cliente: 'INACTIVO',
+                    vencimientoCuota: new Date(new Date().setHours(0, 0, 0, 0))
                 }
             })
         ]);

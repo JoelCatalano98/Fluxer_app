@@ -117,6 +117,42 @@ const reservarTurno = async (req, res) => {
             });
         }
 
+        // Validar estado del cliente
+        const clienteActual = await prisma.cliente.findUnique({
+            where: { id: parseInt(clienteId) }
+        });
+
+        if (!clienteActual) {
+            return res.status(404).json({
+                success: false,
+                message: 'Cliente no encontrado'
+            });
+        }
+
+        if (clienteActual.estado_cliente === 'INACTIVO') {
+            return res.status(403).json({
+                success: false,
+                message: 'Tu cuenta está inactiva, comunicate con el gimnasio para regularizar tu pago'
+            });
+        }
+
+        const hoy = new Date();
+        hoy.setUTCHours(0,0,0,0);
+        
+        let estaVencido = clienteActual.estado_pago === 'MOROSO';
+        if (!estaVencido && clienteActual.vencimientoCuota) {
+            const v = new Date(clienteActual.vencimientoCuota);
+            v.setUTCHours(0,0,0,0);
+            if (v < hoy) estaVencido = true;
+        }
+
+        if (estaVencido) {
+            return res.status(403).json({
+                success: false,
+                message: 'Tu cuenta registra deuda pendiente o vencida, comunicate con el gimnasio'
+            });
+        }
+
         // Parsear fecha YYYY-MM-DD o ISO a YYYY-MM-DDT00:00:00.000Z
         const d = new Date(fechaExacta);
         d.setUTCHours(0,0,0,0);
