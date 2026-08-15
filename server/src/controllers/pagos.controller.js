@@ -94,7 +94,8 @@ const registrarPago = async (req, res) => {
                 prisma.cliente.update({
                     where: { id: clienteIdInt },
                     data: {
-                        estado_pago: 'ALDIA'
+                        estado_pago: 'ALDIA',
+                        ...(cliente.estado_cliente === 'INACTIVO' ? { estado_cliente: 'ACTIVO' } : {})
                     }
                 })
             ];
@@ -249,7 +250,10 @@ const cambiarEstadoPago = async (req, res) => {
                 }),
                 prisma.cliente.update({
                     where: { id: cliente.id },
-                    data: { estado_pago: 'ALDIA' }
+                    data: {
+                        estado_pago: 'ALDIA',
+                        ...(cliente.estado_cliente === 'INACTIVO' ? { estado_cliente: 'ACTIVO' } : {})
+                    }
                 }),
                 prisma.movimientocuenta.create({
                     data: {

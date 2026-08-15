@@ -4,6 +4,11 @@ async function asegurarCargosAlDia(clienteId) {
     const idInt = parseInt(clienteId);
     if (isNaN(idInt)) return;
 
+    // Obtener la configuración financiera
+    const config = await prisma.configuracion.findFirst();
+    const diaMaximoCobro = config?.diaMaximoCobro || 10;
+    const recargoPorcentaje = config?.recargoPorcentaje || 10.0;
+
     const cliente = await prisma.cliente.findUnique({
         where: { id: idInt },
         include: {
@@ -19,15 +24,13 @@ async function asegurarCargosAlDia(clienteId) {
 
     const plan = cliente.categoria.plan;
     const precio = parseFloat(plan.precio) || 0;
-    
-    // Incluso si el precio es 0, podríamos querer generar el cargo de $0 por completitud histórica,
-    // o no generarlo. Generémoslo igual si tiene plan para mantener el vencimiento actualizado.
 
     let vencimiento = cliente.vencimientoCuota;
     const hoy = new Date();
-    
+    // Limpiamos horas para comparar solo fechas de forma justa
+    hoy.setHours(0,0,0,0);
+
     if (!vencimiento) {
-        // Si no tiene fecha, tomamos hoy como fecha de inicio para calcular el primer cargo atrasado.
         vencimiento = new Date();
         vencimiento.setHours(0, 0, 0, 0);
     }
@@ -36,21 +39,46 @@ async function asegurarCargosAlDia(clienteId) {
     const maxCargos = 12;
     const nuevosMovimientos = [];
     let currentVencimiento = new Date(vencimiento);
+    currentVencimiento.setHours(0, 0, 0, 0);
 
-    // Mientras el vencimiento ya pasó (es anterior a hoy) y no superamos el límite
+    // Mientras el vencimiento ya pasó y no superamos el límite
     while (currentVencimiento < hoy && cargosGenerados < maxCargos) {
         const mesAnio = `${String(currentVencimiento.getMonth() + 1).padStart(2, '0')}/${currentVencimiento.getFullYear()}`;
         
+        // 1. Cargo base de la cuota
         nuevosMovimientos.push({
-            monto: precio, // Guardado como positivo según instrucciones
+            monto: precio,
             tipo: 'CARGO',
             descripcion: `Cuota mensual - ${mesAnio}`,
             fecha: new Date(currentVencimiento),
             clienteId: cliente.id
         });
 
-        // Avanzar 30 días
-        currentVencimiento.setDate(currentVencimiento.getDate() + 30);
+        // 2. Comprobar si corresponde recargo: 
+        // Si el día de hoy es MAYOR al día configurado para el mes vencido, aplicar recargo.
+        // Solo aplica si el recargo es mayor a 0 y la cuota es > 0.
+        const fechaLimitePago = new Date(currentVencimiento);
+        fechaLimitePago.setDate(diaMaximoCobro);
+
+        if (hoy > fechaLimitePago && recargoPorcentaje > 0 && precio > 0) {
+            const montoRecargo = (precio * recargoPorcentaje) / 100;
+            nuevosMovimientos.push({
+                monto: montoRecargo,
+                tipo: 'RECARGO',
+                descripcion: `Recargo por mora (${recargoPorcentaje}%) - ${mesAnio}`,
+                fecha: new Date(currentVencimiento), // Lo guardamos con la fecha de facturación
+                clienteId: cliente.id
+            });
+        }
+
+        // 3. Avanzar 1 mes EXACTO apuntando siempre al día configurado (diaMaximoCobro)
+        const targetMonth = currentVencimiento.getMonth() + 1;
+        currentVencimiento.setMonth(targetMonth);
+        currentVencimiento.setDate(diaMaximoCobro);
+        if (currentVencimiento.getMonth() !== (targetMonth % 12)) {
+            currentVencimiento.setDate(0); // Vuelve al último día del targetMonth
+        }
+
         cargosGenerados++;
     }
 
@@ -59,14 +87,13 @@ async function asegurarCargosAlDia(clienteId) {
             data: nuevosMovimientos
         });
 
-        // Actualizar la fecha de vencimiento
         await prisma.cliente.update({
             where: { id: cliente.id },
             data: { vencimientoCuota: currentVencimiento }
         });
     }
 
-    // Recalcular saldo sumando todos los movimientos
+    // Recalcular saldo sumando todos los movimientos (incluyendo los recargos recién creados)
     const todosLosMovimientos = await prisma.movimientocuenta.findMany({
         where: { clienteId: cliente.id }
     });
@@ -74,13 +101,12 @@ async function asegurarCargosAlDia(clienteId) {
     let nuevoSaldo = 0;
     todosLosMovimientos.forEach(mov => {
         const monto = parseFloat(mov.monto);
-        if (mov.tipo === 'CARGO') {
-            nuevoSaldo -= monto; // Se guarda positivo, pero representa una deuda (resta)
+        if (mov.tipo === 'CARGO' || mov.tipo === 'RECARGO') { // RECARGO también suma deuda
+            nuevoSaldo -= monto; 
         } else if (mov.tipo === 'INGRESO' || mov.tipo === 'PAGO') {
-            nuevoSaldo += monto; // Pagos suman a favor
-        } else {
-            // EGRESO, ANULACION, AJUSTE (ya vienen con su propio signo, típicamente negativo para egresos)
             nuevoSaldo += monto; 
+        } else {
+            nuevoSaldo += monto;
         }
     });
 
@@ -90,7 +116,7 @@ async function asegurarCargosAlDia(clienteId) {
     });
 
     if (cargosGenerados >= maxCargos) {
-        console.warn(`Cliente ${cliente.id} alcanzó el límite de 12 cargos generados. Puede requerir revisión manual.`);
+        console.warn(`Cliente ${cliente.id} alcanzó el límite de 12 cargos generados.`);
     }
 
     return { cargosGenerados, limiteAlcanzado: cargosGenerados >= maxCargos, nuevoSaldo, nuevoVencimiento: currentVencimiento };

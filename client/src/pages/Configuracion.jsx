@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Palette, Upload, ShoppingBag, CircleCheck, Briefcase, RotateCcw, Loader2, User, Calendar } from 'lucide-react';
+import { Palette, Upload, ShoppingBag, CircleCheck, Briefcase, RotateCcw, Loader2, User, Calendar, DollarSign } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -21,7 +21,9 @@ const Configuracion = () => {
     adminDni: '',
     adminEmail: '',
     diasApertura: '1,2,3,4,5,6',
-    profesoresPorTurno: false
+    profesoresPorTurno: false,
+    diaMaximoCobro: 10,
+    recargoPorcentaje: 10.0
   });
 
   const DIAS_SEMANA = [
@@ -56,7 +58,9 @@ const Configuracion = () => {
             adminDni: res.data.data.adminDni || '',
             adminEmail: res.data.data.adminEmail || '',
             diasApertura: res.data.data.diasApertura || '1,2,3,4,5,6',
-            profesoresPorTurno: res.data.data.profesoresPorTurno || false
+            profesoresPorTurno: res.data.data.profesoresPorTurno || false,
+            diaMaximoCobro: res.data.data.diaMaximoCobro || 10,
+            recargoPorcentaje: res.data.data.recargoPorcentaje || 10.0
           });
         }
       } catch (err) {
@@ -139,7 +143,12 @@ const Configuracion = () => {
       setSaving(true);
       setMessage({ text: '', type: '' });
 
-      const res = await api.put('/api/configuracion', config);
+      const payloadParaGuardar = {
+          ...config,
+          diaMaximoCobro: parseInt(config.diaMaximoCobro, 10),
+          recargoPorcentaje: parseFloat(config.recargoPorcentaje)
+      };
+      const res = await api.put('/api/configuracion', payloadParaGuardar);
 
       if (res.data.success) {
         setMessage({ text: '¡Configuración guardada con éxito!', type: 'success' });
@@ -405,6 +414,51 @@ const Configuracion = () => {
             </div>
           </section>
         </div>
+
+          {/* 5. PARÁMETROS FINANCIEROS */}
+          <section className="seccion-configuracion">
+            <div className="cabecera-seccion">
+              <DollarSign size={24} className="icon-blue" />
+              <h2>5. Configuración Financiera</h2>
+            </div>
+            <div className="cuerpo-seccion">
+              <div className="formulario-config" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <div className="grupo-entrada">
+                  <label htmlFor="diaMaximoCobro">Día de cobro mensual (Vencimiento)</label>
+                  <div className="input-con-unidad">
+                    <input 
+                      type="number" 
+                      id="diaMaximoCobro" 
+                      value={config.diaMaximoCobro} 
+                      onChange={handleInputChange} 
+                      min="1" 
+                      max="31" 
+                      required
+                    />
+                    <span>del mes</span>
+                  </div>
+                </div>
+                <div className="grupo-entrada">
+                  <label htmlFor="recargoPorcentaje">Recargo por mora</label>
+                  <div className="input-con-unidad">
+                    <input 
+                      type="number" 
+                      id="recargoPorcentaje" 
+                      value={config.recargoPorcentaje} 
+                      onChange={handleInputChange} 
+                      step="0.1" 
+                      min="0" 
+                      required
+                    />
+                    <span>%</span>
+                  </div>
+                </div>
+              </div>
+              <p className="p-ayuda" style={{ marginTop: '15px' }}>
+                💡 El motor financiero generará los cargos automáticamente en estas fechas y aplicará el recargo si el cliente se atrasa.
+              </p>
+            </div>
+          </section>
 
         <div className="acciones-finales-config">
           <button type="button" className="btn-discard" onClick={handleDiscard} disabled={saving}>

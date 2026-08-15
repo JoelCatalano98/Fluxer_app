@@ -132,12 +132,20 @@ const createCliente = async (req, res) => {
             });
         }
 
-        // Calcular vencimientoCuota inicial (fecha base + 30 días)
+        // Obtener configuración financiera para el vencimiento
         let initialVencimiento = null;
         if (isSocio) {
+            // Buscar el día de cobro global en la BD (10 por defecto)
+            const config = await prisma.configuracion.findFirst();
+            const diaCobro = config?.diaMaximoCobro || 10;
+        
             const baseDate = fecha_inicio ? new Date(fecha_inicio) : new Date();
             initialVencimiento = new Date(baseDate);
-            initialVencimiento.setDate(initialVencimiento.getDate() + 30);
+            
+            // Sumar 1 mes exacto y fijar el día de cobro, reseteando la hora
+            initialVencimiento.setMonth(initialVencimiento.getMonth() + 1);
+            initialVencimiento.setDate(diaCobro);
+            initialVencimiento.setHours(0, 0, 0, 0);
         }
 
         // Crear registro en la base de datos
@@ -503,7 +511,7 @@ const getMovimientosCliente = async (req, res) => {
                 nombre: true,
                 apellido: true,
                 saldo: true,
-                movimientos: {
+                movimientocuenta: {
                     orderBy: { fecha: 'desc' },
                     include: { pago: true }
                 }
@@ -520,7 +528,13 @@ const getMovimientosCliente = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            data: cliente,
+            data: {
+                id: cliente.id,
+                nombre: cliente.nombre,
+                apellido: cliente.apellido,
+                saldo: cliente.saldo,
+                movimientos: cliente.movimientocuenta
+            },
             message: 'Movimientos obtenidos con éxito',
             ...(resultCargos?.limiteAlcanzado && { limiteAlcanzado: true })
         });

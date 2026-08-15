@@ -545,13 +545,13 @@ const ClientesTotales = () => {
                   <div className="estado-cuenta-resumen-item">
                     <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Saldo Deudor Histórico</p>
                     <p style={{ margin: '5px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', color: '#374151', fontFamily: 'monospace' }}>
-                      ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.tipo === 'CARGO' || m.monto < 0).reduce((acc, m) => acc + Math.abs(m.monto), 0).toFixed(2) : '0.00'}
+                      ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.tipo === 'CARGO' || m.tipo === 'RECARGO' || m.monto < 0).reduce((acc, m) => acc + Math.abs(m.monto), 0).toFixed(2) : '0.00'}
                     </p>
                   </div>
                   <div className="estado-cuenta-resumen-item">
                     <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Pagos (Haber)</p>
                     <p style={{ margin: '5px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', color: '#374151', fontFamily: 'monospace' }}>
-                      ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.tipo !== 'CARGO' && m.monto > 0).reduce((acc, m) => acc + m.monto, 0).toFixed(2) : '0.00'}
+                      ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.tipo !== 'CARGO' && m.tipo !== 'RECARGO' && m.monto > 0).reduce((acc, m) => acc + m.monto, 0).toFixed(2) : '0.00'}
                     </p>
                   </div>
                   <div className="estado-cuenta-resumen-item" style={{ borderRight: 'none' }}>
@@ -582,14 +582,14 @@ const ClientesTotales = () => {
                             const currentSaldo = runningBalance;
                             
                             // Revertir el efecto del movimiento para ir hacia atrás en el tiempo
-                            if (mov.tipo === 'CARGO') {
+                            if (mov.tipo === 'CARGO' || mov.tipo === 'RECARGO') {
                               runningBalance += Number(mov.monto); // Los cargos restan al saldo, así que yendo atrás suman
                             } else {
                               runningBalance -= Number(mov.monto); // Los ingresos/ajustes suman, así que yendo atrás restan
                             }
                             
-                            const isDebe = mov.tipo === 'CARGO' || mov.monto < 0;
-                            const isHaber = mov.tipo !== 'CARGO' && mov.monto > 0;
+                            const isDebe = mov.tipo === 'CARGO' || mov.tipo === 'RECARGO' || mov.monto < 0;
+                            const isHaber = mov.tipo !== 'CARGO' && mov.tipo !== 'RECARGO' && mov.monto > 0;
                             const displayMonto = Math.abs(mov.monto);
                             
                             return (

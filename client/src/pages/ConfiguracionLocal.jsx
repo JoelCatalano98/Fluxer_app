@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Palette, Upload, ShoppingBag, CircleCheck, Briefcase, Camera, MessageCircle, RotateCcw } from 'lucide-react';
+import { Palette, Upload, ShoppingBag, CircleCheck, Briefcase, Camera, MessageCircle, RotateCcw, DollarSign } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import '../styles/style.css';
 import '../styles/Servicios/configuracion_local.css';
@@ -16,7 +16,10 @@ const ConfiguracionLocal = () => {
     maxCapacity: 20,
     cancelMargin: '4',
     blockCapacity: true,
-    logo: null
+    logo: null,
+    // Nuevos campos financieros
+    diaMaximoCobro: 10,
+    recargoPorcentaje: 10.0
   });
 
   const handleInputChange = (e) => {
@@ -38,8 +41,14 @@ const ConfiguracionLocal = () => {
   };
 
   const handleSave = () => {
+    // Alerta temporal, aquí irá el axios.put al backend luego
     alert(`¡Configuración de "${config.gymName}" guardada con éxito!`);
-    console.log('Configuración guardada:', config);
+    console.log('Configuración guardada (Lista para enviar a BD):', {
+      ...config,
+      // Simulamos el parseo que se hará antes de enviar al backend
+      diaMaximoCobro: parseInt(config.diaMaximoCobro, 10),
+      recargoPorcentaje: parseFloat(config.recargoPorcentaje)
+    });
   };
 
   const handleDiscard = () => {
@@ -163,6 +172,51 @@ const ConfiguracionLocal = () => {
               </div>
             </div>
           </section>
+
+          {/* 3. PARÁMETROS FINANCIEROS (NUEVO) */}
+          <section className="seccion-configuracion">
+            <div className="cabecera-seccion">
+              <DollarSign size={24} className="icon-blue" />
+              <h2>3. Configuración Financiera</h2>
+            </div>
+
+            <div className="cuerpo-seccion">
+              <div className="formulario-config">
+                <div className="grupo-entrada">
+                  <label htmlFor="diaMaximoCobro">Día de cobro mensual (Vencimiento)</label>
+                  <div className="input-con-unidad">
+                    <input 
+                      type="number" 
+                      id="diaMaximoCobro" 
+                      value={config.diaMaximoCobro} 
+                      onChange={handleInputChange} 
+                      min="1" 
+                      max="31" 
+                    />
+                    <span>del mes</span>
+                  </div>
+                </div>
+                <div className="grupo-entrada">
+                  <label htmlFor="recargoPorcentaje">Recargo por mora</label>
+                  <div className="input-con-unidad">
+                    <input 
+                      type="number" 
+                      id="recargoPorcentaje" 
+                      value={config.recargoPorcentaje} 
+                      onChange={handleInputChange} 
+                      step="0.1" 
+                      min="0" 
+                    />
+                    <span>%</span>
+                  </div>
+                </div>
+              </div>
+              <div className="info-ayuda mt-2 text-sm text-gray-500">
+                <p>💡 El motor financiero generará los cargos automáticamente los días indicados y aplicará recargo si se supera la fecha.</p>
+              </div>
+            </div>
+          </section>
+
         </div>
 
         <div className="acciones-finales-config">
