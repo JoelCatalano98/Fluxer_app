@@ -187,10 +187,7 @@ const ClientesTotales = () => {
       return;
     }
 
-    if (formValues.es_socio && !formValues.codigo_socio) {
-      alert("El campo código de socio es obligatorio si es socio");
-      return;
-    }
+    // El código de socio ahora se genera automáticamente en el backend
 
     try {
       // Limpiar datos condicionales si no es socio
@@ -460,8 +457,8 @@ const ClientesTotales = () => {
                 {formValues.es_socio && (
                   <>
                     <div className="grupo-campo">
-                      <label htmlFor="codigo_socio">Código Socio *</label>
-                      <input type="text" id="codigo_socio" name="codigo_socio" value={formValues.codigo_socio} onChange={handleInputChange} placeholder="Ej: SOC-001" required={formValues.es_socio} />
+                      <label htmlFor="codigo_socio">Código Socio</label>
+                      <input type="text" id="codigo_socio" name="codigo_socio" value={isEditing && formValues.codigo_socio ? formValues.codigo_socio : 'Se asignará automáticamente'} disabled style={{ backgroundColor: '#f5f5f5', color: '#888', cursor: 'not-allowed' }} />
                     </div>
                     <div className="grupo-campo">
                       <label htmlFor="fecha_inicio">Fecha Inicio</label>

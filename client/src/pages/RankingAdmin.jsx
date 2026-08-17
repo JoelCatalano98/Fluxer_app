@@ -89,6 +89,7 @@ const RankingAdmin = () => {
         <PageHeader
           title={`Ranking: ${selectedEjercicio}`}
           subtitle="Top 20 mejores récords del gimnasio"
+          image="/img/welcome-background.png"
         />
 
         <div style={{ padding: '0 20px', marginBottom: '40px' }}>
@@ -163,6 +164,7 @@ const RankingAdmin = () => {
       <PageHeader
         title="Ranking y Récords"
         subtitle="Administra los récords 1RM de tus alumnos"
+        image="/img/welcome-background.png"
       />
 
       <div style={{ padding: '0 20px' }}>

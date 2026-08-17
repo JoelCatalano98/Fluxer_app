@@ -231,8 +231,9 @@ const Socios = () => {
           <div className="contenedor-form-socio">
             <form className="formulario-socio" onSubmit={handleSubmit}>
               <div className="grupo-entrada-socio">
-                <label htmlFor="codigo_socio">Código Socio *</label>
-                <input type="text" id="codigo_socio" value={formSocio.codigo_socio} onChange={handleInputChange} required />
+                <label htmlFor="codigo_socio">Código Socio</label>
+                <input type="text" id="codigo_socio" value={formSocio.codigo_socio} disabled style={{ backgroundColor: '#f5f5f5', color: '#888', cursor: 'not-allowed' }} />
+                <small style={{ color: '#888', display: 'block', marginTop: '4px' }}>Generado automáticamente</small>
               </div>
               <div className="grupo-entrada-socio">
                 <label htmlFor="nombre">Nombre *</label>

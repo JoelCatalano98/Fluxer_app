@@ -141,7 +141,7 @@ const Pagos = ({ isTab = false }) => {
 
   const content = (
     <>
-      <div className="contenedor-pagos" style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+      <div style={{ padding: '5px', display: 'flex', flexDirection: 'column', gap: '30px' }}>
         
         {/* Sección: Bandeja de Aprobaciones */}
         <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>

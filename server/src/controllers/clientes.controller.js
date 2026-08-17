@@ -106,13 +106,11 @@ const createCliente = async (req, res) => {
         const isSocio = es_socio === true || es_socio === 'true';
 
         // Validar campos obligatorios
-        if (!nombre || !apellido || !dni_cuit || (isSocio && !codigo_socio)) {
+        if (!nombre || !apellido || !dni_cuit) {
             return res.status(400).json({
                 success: false,
                 data: null,
-                message: isSocio 
-                    ? 'Los campos codigo_socio, nombre, apellido y dni_cuit son obligatorios para socios'
-                    : 'Los campos nombre, apellido y dni_cuit son obligatorios'
+                message: 'Los campos nombre, apellido y dni_cuit son obligatorios'
             });
         }
 
@@ -141,9 +139,8 @@ const createCliente = async (req, res) => {
         }
 
         // Crear registro en la base de datos
-        const nuevoCliente = await prisma.cliente.create({
+        let nuevoCliente = await prisma.cliente.create({
             data: {
-                codigo_socio: isSocio ? codigo_socio : null,
                 nombre,
                 apellido,
                 dni_cuit,
@@ -165,6 +162,21 @@ const createCliente = async (req, res) => {
                 }
             }
         });
+
+        // Si es socio, autogeneramos el código basado en su nuevo ID
+        if (isSocio) {
+            nuevoCliente = await prisma.cliente.update({
+                where: { id: nuevoCliente.id },
+                data: { codigo_socio: String(nuevoCliente.id).padStart(4, '0') },
+                include: {
+                    categoria: {
+                        include: {
+                            plan: true
+                        }
+                    }
+                }
+            });
+        }
 
         return res.status(201).json({
             success: true,
@@ -222,8 +234,18 @@ const updateCliente = async (req, res) => {
 
         const isSocio = es_socio === true || es_socio === 'true';
 
+        // Obtener el cliente actual para verificar si ya tiene código u otros datos
+        const clienteActual = await prisma.cliente.findUnique({ where: { id } });
+        if (!clienteActual) {
+            return res.status(404).json({
+                success: false,
+                data: null,
+                message: 'Cliente no encontrado'
+            });
+        }
+
         // Validar que los campos obligatorios no se envíen vacíos
-        if (nombre === '' || apellido === '' || dni_cuit === '' || (isSocio && codigo_socio === '')) {
+        if (nombre === '' || apellido === '' || dni_cuit === '') {
             return res.status(400).json({
                 success: false,
                 data: null,
@@ -264,11 +286,12 @@ const updateCliente = async (req, res) => {
                 updateData.codigo_socio = null;
                 updateData.fecha_inicio = null;
             } else {
-                if (codigo_socio !== undefined) updateData.codigo_socio = codigo_socio;
+                if (!clienteActual.codigo_socio) {
+                    updateData.codigo_socio = String(id).padStart(4, '0');
+                }
                 if (fecha_inicio !== undefined) updateData.fecha_inicio = fecha_inicio ? new Date(fecha_inicio) : null;
             }
         } else {
-            if (codigo_socio !== undefined) updateData.codigo_socio = codigo_socio;
             if (fecha_inicio !== undefined) updateData.fecha_inicio = fecha_inicio ? new Date(fecha_inicio) : null;
         }
 

@@ -115,7 +115,7 @@ const LibroDiario = () => {
                 />
             </div>
 
-            <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+            <div style={{ padding: '5px' }}>
                 
                 {/* Cabecera y Filtros */}
                 <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '25px', backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
