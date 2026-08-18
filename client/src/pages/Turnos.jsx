@@ -17,6 +17,27 @@ const getLunesDeSemana = (fecha = new Date()) => {
   return d;
 };
 
+// Calcula el color de texto (blanco o negro) basado en el fondo hexadecimal
+const getContrastColor = (hex, opacity = 1) => {
+  if (!hex) return '#000000';
+  hex = hex.replace('#', '');
+  if (hex.length === 3) {
+    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+  }
+  let r = parseInt(hex.substr(0, 2), 16) || 255;
+  let g = parseInt(hex.substr(2, 2), 16) || 255;
+  let b = parseInt(hex.substr(4, 2), 16) || 255;
+  
+  if (opacity < 1) {
+    r = Math.round(r * opacity + 255 * (1 - opacity));
+    g = Math.round(g * opacity + 255 * (1 - opacity));
+    b = Math.round(b * opacity + 255 * (1 - opacity));
+  }
+
+  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+  return (yiq >= 128) ? '#000000' : '#ffffff';
+};
+
 const Turnos = () => {
   // Estado de la semana visible (lunes de la semana actual por defecto)
   const [semanaBase, setSemanaBase] = useState(() => getLunesDeSemana());
@@ -676,12 +697,17 @@ const Turnos = () => {
                                 const catColor = slot.categoria?.color || '#00a8e8';
                                 const profNombre = slot.profesional ? `${slot.profesional.nombre} ${slot.profesional.apellido}` : '';
 
+                                const textColor = getContrastColor(catColor, 0.35);
+                                const isLightText = textColor === '#ffffff';
+                                const subTextColor = isLightText ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.65)';
+                                const highlightColor = isLightText ? '#ffffff' : '#000000';
+
                                 return (
                                   <div 
                                     key={slot.id} 
                                     style={{ 
-                                      backgroundColor: `${catColor}15`,
-                                      borderBottom: sIdx < slotsMatching.length - 1 ? `1px solid ${catColor}30` : 'none',
+                                      backgroundColor: `${catColor}59`, // 59 hex = 35% opacity
+                                      borderBottom: sIdx < slotsMatching.length - 1 ? '1px solid rgba(0,0,0,0.1)' : 'none',
                                       padding: '4px 6px',
                                       fontSize: '0.85rem',
                                       display: 'flex',
@@ -693,16 +719,15 @@ const Turnos = () => {
                                   >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: catColor }}></div>
-                                        <span style={{ color: '#111827', fontWeight: '600', fontSize: '0.75rem', textTransform: 'uppercase' }}>{catNombre}</span>
+                                        <span style={{ color: textColor, fontWeight: '600', fontSize: '0.75rem', textTransform: 'uppercase' }}>{catNombre}</span>
                                       </div>
                                       {profNombre && configGlobal.profesoresPorTurno && (
-                                        <span style={{ color: '#4b5563', fontSize: '0.70rem', textTransform: 'capitalize' }}>({profNombre})</span>
+                                        <span style={{ color: subTextColor, fontSize: '0.70rem', textTransform: 'capitalize' }}>({profNombre})</span>
                                       )}
                                     </div>
                                     
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', paddingLeft: '10px' }}>
-                                      <span style={{ color: count > 0 ? '#059669' : '#6b7280', fontSize: '0.75rem', fontWeight: count > 0 ? '600' : 'normal' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <span style={{ color: count > 0 ? highlightColor : subTextColor, fontSize: '0.75rem', fontWeight: count > 0 ? '700' : 'normal' }}>
                                         {count > 0 ? `${count} inscrito${count > 1 ? 's' : ''}` : 'Libre'}
                                       </span>
                                       {count > 0 && (
@@ -712,7 +737,7 @@ const Turnos = () => {
                                             e.stopPropagation();
                                             openViewTurnosDetails(turnosDelSlot);
                                           }}
-                                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4b5563', padding: '0 4px', display: 'flex' }}
+                                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: textColor, padding: '0 4px', display: 'flex', opacity: 0.8 }}
                                           title="Ver inscritos"
                                         >
                                           <Eye size={13} />
@@ -791,7 +816,9 @@ const Turnos = () => {
               >
                 <option value="">Selecciona una disciplina global...</option>
                 {categorias.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                  <option key={cat.id} value={cat.id} style={{ color: cat.color || '#000' }}>
+                    ■ {cat.nombre}
+                  </option>
                 ))}
               </select>
 
@@ -839,9 +866,11 @@ const Turnos = () => {
                           }));
                         }}
                       >
-                        <option value="">Disciplina...</option>
+                        <option value="">Selecciona una disciplina...</option>
                         {categorias.map(cat => (
-                          <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                          <option key={cat.id} value={cat.id} style={{ color: cat.color || '#000' }}>
+                            ■ {cat.nombre}
+                          </option>
                         ))}
                       </select>
                       
@@ -1088,7 +1117,9 @@ const Turnos = () => {
               >
                 <option value="">Selecciona una disciplina global...</option>
                 {categorias.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                  <option key={cat.id} value={cat.id} style={{ color: cat.color || '#000' }}>
+                    ■ {cat.nombre}
+                  </option>
                 ))}
               </select>
 
@@ -1138,7 +1169,9 @@ const Turnos = () => {
                       >
                         <option value="">Disciplina...</option>
                         {categorias.map(cat => (
-                          <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                          <option key={cat.id} value={cat.id} style={{ color: cat.color || '#000' }}>
+                            ■ {cat.nombre}
+                          </option>
                         ))}
                       </select>
                       

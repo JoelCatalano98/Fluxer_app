@@ -16,11 +16,11 @@ const Categorias = () => {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [selectedCategoria, setSelectedCategoria] = useState(null);
 
-  // Estado de Formulario
   const [formValues, setFormValues] = useState({
     nombre: '',
     planId: '',
-    profesionalId: ''
+    profesionalId: '',
+    color: '#888888'
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -71,7 +71,8 @@ const Categorias = () => {
     setFormValues({
       nombre: '',
       planId: '',
-      profesionalId: ''
+      profesionalId: '',
+      color: '#888888'
     });
     setIsFormModalOpen(true);
   };
@@ -81,7 +82,8 @@ const Categorias = () => {
     setFormValues({
       nombre: categoria.nombre,
       planId: categoria.planId ? String(categoria.planId) : '',
-      profesionalId: categoria.profesionalId ? String(categoria.profesionalId) : ''
+      profesionalId: categoria.profesionalId ? String(categoria.profesionalId) : '',
+      color: categoria.color || '#888888'
     });
     setIsFormModalOpen(true);
   };
@@ -93,7 +95,8 @@ const Categorias = () => {
       const payload = {
         nombre: formValues.nombre,
         planId: formValues.planId ? parseInt(formValues.planId) : null,
-        profesionalId: formValues.profesionalId ? parseInt(formValues.profesionalId) : null
+        profesionalId: formValues.profesionalId ? parseInt(formValues.profesionalId) : null,
+        color: formValues.color
       };
 
       if (selectedCategoria) {
@@ -313,6 +316,22 @@ const Categorias = () => {
                 required
                 style={{ width: '100%', boxSizing: 'border-box' }}
               />
+            </div>
+
+            <div className="grupo-entrada" style={{ marginBottom: '20px' }}>
+              <label htmlFor="color" style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Color de Identificación</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <input
+                  type="color"
+                  id="color"
+                  value={formValues.color}
+                  onChange={handleInputChange}
+                  style={{ width: '50px', height: '40px', padding: '0', border: 'none', borderRadius: '6px', cursor: 'pointer', background: 'none' }}
+                />
+                <span style={{ fontFamily: 'monospace', color: '#666', fontSize: '0.9rem', backgroundColor: '#f5f5f5', padding: '6px 12px', borderRadius: '4px' }}>
+                  {formValues.color.toUpperCase()}
+                </span>
+              </div>
             </div>
 
             <div className="grupo-entrada" style={{ marginBottom: '20px' }}>

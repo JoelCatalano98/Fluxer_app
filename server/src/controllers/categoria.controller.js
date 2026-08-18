@@ -32,7 +32,7 @@ const getCategorias = async (req, res) => {
 // POST /api/categorias
 const createCategoria = async (req, res) => {
     try {
-        const { nombre, planId, rubro_sector, profesionalId } = req.body;
+        const { nombre, planId, rubro_sector, profesionalId, color } = req.body;
 
         if (!nombre) {
             return res.status(400).json({
@@ -48,6 +48,7 @@ const createCategoria = async (req, res) => {
                 planId: planId ? parseInt(planId) : null,
                 profesionalId: profesionalId ? parseInt(profesionalId) : null,
                 rubro_sector: rubro_sector || null,
+                color: color || '#888888',
                 activo: true
             },
             include: {
@@ -75,7 +76,7 @@ const createCategoria = async (req, res) => {
 const updateCategoria = async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const { nombre, planId, rubro_sector, profesionalId } = req.body;
+        const { nombre, planId, rubro_sector, profesionalId, color } = req.body;
 
         if (isNaN(id)) {
             return res.status(400).json({
@@ -90,6 +91,7 @@ const updateCategoria = async (req, res) => {
         if (planId !== undefined) dataToUpdate.planId = planId ? parseInt(planId) : null;
         if (profesionalId !== undefined) dataToUpdate.profesionalId = profesionalId ? parseInt(profesionalId) : null;
         if (rubro_sector !== undefined) dataToUpdate.rubro_sector = rubro_sector;
+        if (color !== undefined) dataToUpdate.color = color;
 
         const categoriaActualizada = await prisma.categoria.update({
             where: { id },
