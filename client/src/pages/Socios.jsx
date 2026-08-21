@@ -18,6 +18,8 @@ const Socios = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoriasList, setCategoriasList] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Cargar categorías
   useEffect(() => {
@@ -52,7 +54,7 @@ const Socios = () => {
       setLoading(true);
       setError(null);
       // Filtro para traer solo socios
-      const res = await api.get('/api/clientes?filtro=socios');
+      const res = await api.get('/api/clientes?filtro=socios&limit=1000');
       if (res.data.success) {
         setClientes(res.data.data.clientes);
       } else {
@@ -133,6 +135,15 @@ const Socios = () => {
     );
   });
 
+  // Resetear a la página 1 cuando se busca
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const totalPages = Math.ceil(sociosFiltrados.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const sociosPaginados = sociosFiltrados.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div className="main-content">
       {/* Encabezado Estandarizado */}
@@ -186,8 +197,8 @@ const Socios = () => {
                     <p style={{ marginTop: '10px', color: '#666' }}>Cargando socios...</p>
                   </td>
                 </tr>
-              ) : sociosFiltrados.length > 0 ? (
-                sociosFiltrados.map(cliente => (
+              ) : sociosPaginados.length > 0 ? (
+                sociosPaginados.map(cliente => (
                   <tr key={cliente.id}>
                     <td className="columna-fija"><strong>{cliente.codigo_socio}</strong></td>
                     <td>{cliente.nombre}</td>
@@ -226,6 +237,29 @@ const Socios = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '20px', gap: '15px' }}>
+            <button 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', background: currentPage === 1 ? '#f5f5f5' : 'white', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? '#aaa' : '#333' }}
+            >
+              Anterior
+            </button>
+            <span style={{ fontSize: '0.95rem', color: '#555' }}>
+              Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+            </span>
+            <button 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', background: currentPage === totalPages ? '#f5f5f5' : 'white', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? '#aaa' : '#333' }}
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
 
         <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Editar Socio">
           <div className="contenedor-form-socio">

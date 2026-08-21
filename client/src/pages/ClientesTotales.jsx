@@ -22,6 +22,8 @@ const ClientesTotales = () => {
   const [clienteRutinaSeleccionado, setClienteRutinaSeleccionado] = useState(null);
   const [categoriasList, setCategoriasList] = useState([]);
   const [busqueda, setBusqueda] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   // Estado de Cuenta
   const [showEstadoCuenta, setShowEstadoCuenta] = useState(false);
@@ -64,7 +66,7 @@ const ClientesTotales = () => {
     try {
       setLoading(true);
       setError(null);
-      const res = await api.get('/api/clientes');
+      const res = await api.get('/api/clientes?limit=1000');
       if (res.data.success) {
         setClientes(res.data.data.clientes);
       } else {
@@ -224,6 +226,15 @@ const ClientesTotales = () => {
     return nombreCompleto.includes(termino) || dni.includes(termino);
   });
 
+  // Resetear a la página 1 cuando se busca
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [busqueda]);
+
+  const totalPages = Math.ceil(clientesFiltrados.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const clientesPaginados = clientesFiltrados.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <div className="main-content">
       <PageHeader
@@ -288,8 +299,8 @@ const ClientesTotales = () => {
                     <p style={{ marginTop: '10px', color: '#666' }}>Cargando clientes...</p>
                   </td>
                 </tr>
-              ) : clientesFiltrados.length > 0 ? (
-                clientesFiltrados.map(cliente => (
+              ) : clientesPaginados.length > 0 ? (
+                clientesPaginados.map(cliente => (
                   <tr key={cliente.id}>
                     <td className="columna-fija"><strong>{cliente.nombre}</strong></td>
                     <td>{cliente.apellido}</td>
@@ -400,6 +411,29 @@ const ClientesTotales = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '20px', gap: '15px' }}>
+            <button 
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', background: currentPage === 1 ? '#f5f5f5' : 'white', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? '#aaa' : '#333' }}
+            >
+              Anterior
+            </button>
+            <span style={{ fontSize: '0.95rem', color: '#555' }}>
+              Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
+            </span>
+            <button 
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', background: currentPage === totalPages ? '#f5f5f5' : 'white', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? '#aaa' : '#333' }}
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
 
         <Modal isOpen={showForm} onClose={handleCloseForm} title={isEditing ? "Editar Cliente" : "Nuevo Cliente"}>
           <div className="contenedor-formulario" style={{ padding: '0', boxShadow: 'none' }}>

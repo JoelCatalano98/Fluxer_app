@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { obtenerRangoSemanal } = require('../utils/rangoSemanal');
 
 // Helper: parsear DateTime @db.Time(0) de Prisma a string "HH:MM"
 // Prisma devuelve los campos Time como Date con fecha 1970-01-01 en UTC
@@ -25,15 +26,10 @@ const getDashboardMetrics = async (req, res) => {
       startOfRange = new Date(Date.UTC(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0));
       endOfRange = new Date(Date.UTC(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999));
     } else {
-      // Semanal: Lunes 00:00 → Domingo 23:59 (UTC puro)
-      const hoy = new Date();
-      const diaSemana = hoy.getDay() === 0 ? 7 : hoy.getDay(); 
-      const diffLunes = hoy.getDate() - diaSemana + 1;
-
-      startOfRange = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), diffLunes, 0, 0, 0, 0));
-      endOfRange = new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), diffLunes + 6, 23, 59, 59, 999));
-      
-      // console.log("Buscando turnos desde:", startOfRange, "hasta:", endOfRange);
+      // Semanal: Basado en diasApertura igual que getTurnos
+      const { startOfRange: start, endOfRange: end } = await obtenerRangoSemanal();
+      startOfRange = start;
+      endOfRange = end;
     }
 
     // ─── 2. Clientes activos con categoría y plan ────────────
