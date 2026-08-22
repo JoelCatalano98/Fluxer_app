@@ -404,6 +404,10 @@ th.columna-fija {
     overflow-y: auto;
 }
 
+.modal-small {
+    max-width: 450px !important;
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;

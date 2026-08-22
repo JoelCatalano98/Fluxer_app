@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { SquarePlus, Trash2, Pencil, Loader2, Dumbbell, AlertTriangle } from 'lucide-react';
+import { SquarePlus, Trash2, Pencil, Loader2, Dumbbell, AlertTriangle, CalendarCheck } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import Modal from '../components/Modal';
 import api from '../services/api';
@@ -15,6 +15,8 @@ const Categorias = () => {
   // Estados de Modales
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [selectedCategoria, setSelectedCategoria] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [categoriaToDelete, setCategoriaToDelete] = useState(null);
 
   const [formValues, setFormValues] = useState({
     nombre: '',
@@ -103,13 +105,13 @@ const Categorias = () => {
         // Editar
         const res = await api.put(`/api/categorias/${selectedCategoria.id}`, payload);
         if (res.data.success) {
-          alert('¡Categoría actualizada con éxito!');
+          setSuccessMessage('¡Categoría actualizada con éxito!');
         }
       } else {
         // Crear
         const res = await api.post('/api/categorias', payload);
         if (res.data.success) {
-          alert('¡Categoría creada con éxito!');
+          setSuccessMessage('¡Categoría creada con éxito!');
         }
       }
 
@@ -123,19 +125,23 @@ const Categorias = () => {
     }
   };
 
-  const handleDelete = async (categoria) => {
-    const confirm = window.confirm(`¿Estás seguro de que deseas dar de baja la categoría "${categoria.nombre}"?`);
-    if (!confirm) return;
+  const handleDelete = (categoria) => {
+    setCategoriaToDelete(categoria);
+  };
 
+  const confirmDelete = async () => {
+    if (!categoriaToDelete) return;
     try {
-      const res = await api.delete(`/api/categorias/${categoria.id}`);
+      const res = await api.delete(`/api/categorias/${categoriaToDelete.id}`);
       if (res.data.success) {
-        alert('¡Categoría eliminada con éxito!');
+        setSuccessMessage('¡Categoría eliminada con éxito!');
         loadData();
       }
     } catch (err) {
       console.error('Error al dar de baja categoría:', err);
       alert('Error al intentar dar de baja la categoría.');
+    } finally {
+      setCategoriaToDelete(null);
     }
   };
 
@@ -397,6 +403,55 @@ const Categorias = () => {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal: Confirmar Eliminación */}
+      <Modal 
+        isOpen={!!categoriaToDelete} 
+        onClose={() => setCategoriaToDelete(null)} 
+        title={<span><AlertTriangle size={20} className="modal-title-icon" style={{ color: '#e03131' }}/> Confirmar eliminación</span>}
+        contentClassName="modal-small"
+      >
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <p style={{ marginBottom: '20px', fontSize: '1.05rem', color: '#444' }}>
+            ¿Estás seguro de que deseas dar de baja la categoría <strong>"{categoriaToDelete?.nombre}"</strong>?
+          </p>
+          <div className="pie-formulario" style={{ justifyContent: 'center', gap: '15px' }}>
+            <button type="button" className="btn-cancel" onClick={() => setCategoriaToDelete(null)}>
+              Cancelar
+            </button>
+            <button 
+              type="button" 
+              className="btn-accion-delete"
+              onClick={confirmDelete}
+              style={{ border: 'none', background: '#e03131', color: '#fff', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '5px' }}
+            >
+              Sí, eliminar
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal: Éxito */}
+      <Modal
+        isOpen={!!successMessage}
+        onClose={() => setSuccessMessage('')}
+        title={<span><CalendarCheck size={20} className="modal-title-icon" style={{ color: '#2b8a3e' }}/> Éxito</span>}
+        contentClassName="modal-small"
+      >
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <p style={{ marginBottom: '20px', fontSize: '1.05rem', color: '#444' }}>
+            {successMessage}
+          </p>
+          <button 
+            type="button" 
+            className="btn-save"
+            onClick={() => setSuccessMessage('')}
+            style={{ margin: '0 auto', display: 'block' }}
+          >
+            Aceptar
+          </button>
+        </div>
       </Modal>
     </div>
   );

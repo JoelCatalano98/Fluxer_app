@@ -76,7 +76,7 @@ const registrarPago = async (req, res) => {
                             ? `${notas || ''} [Saldo aplicado: $${saldoUsadoFloat}]`.trim()
                             : notas,
                         estado: 'APROBADO',
-                        movimientos: {
+                        movimientocuenta: {
                             create: {
                                 monto: montoTotalPago,
                                 tipo: 'INGRESO',

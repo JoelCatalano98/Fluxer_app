@@ -25,6 +25,8 @@ const Navbar = ({ isOpen }) => {
   });
   const [sueldosHabilitado, setSueldosHabilitado] = useState(true);
   const [libroDiarioHabilitado, setLibroDiarioHabilitado] = useState(true);
+  const [sociosHabilitado, setSociosHabilitado] = useState(false);
+  const [qrHabilitado, setQrHabilitado] = useState(false);
 
   const loadConfig = async () => {
     try {
@@ -41,6 +43,12 @@ const Navbar = ({ isOpen }) => {
         
         const paramLibroDiario = resParams.data.data.find(p => p.clave === 'libroDiarioHabilitado');
         setLibroDiarioHabilitado(paramLibroDiario ? paramLibroDiario.valor === 'true' : true);
+        
+        const paramSocios = resParams.data.data.find(p => p.clave === 'sociosHabilitado');
+        setSociosHabilitado(paramSocios ? paramSocios.valor === 'true' : false);
+        
+        const paramQr = resParams.data.data.find(p => p.clave === 'qrHabilitado');
+        setQrHabilitado(paramQr ? paramQr.valor === 'true' : false);
       }
     } catch (err) {
       console.error('Error al cargar config en Navbar:', err);
@@ -113,11 +121,13 @@ const Navbar = ({ isOpen }) => {
                   Profesionales
                 </NavLink>
               </li>
-              <li>
-                <NavLink to="/socios" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Gestión de Socios
-                </NavLink>
-              </li>
+              {sociosHabilitado && (
+                <li>
+                  <NavLink to="/socios" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Gestión de Socios
+                  </NavLink>
+                </li>
+              )}
               <li>
                 <NavLink to="/clientes-totales" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
                   Clientes Totales
@@ -151,11 +161,13 @@ const Navbar = ({ isOpen }) => {
                       Medios de Pago
                     </NavLink>
                   </li>
-                  <li>
-                    <NavLink to="/demo-qr" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                      QR (Demo)
-                    </NavLink>
-                  </li>
+                  {qrHabilitado && (
+                    <li>
+                      <NavLink to="/demo-qr" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                        QR (Demo)
+                      </NavLink>
+                    </li>
+                  )}
                   {sueldosHabilitado && (
                     <li>
                       <NavLink to="/sueldos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>

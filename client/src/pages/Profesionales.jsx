@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Pencil, Trash, UserPlus, X, Save, AlertTriangle, Loader2 } from 'lucide-react';
+import { Pencil, Trash, UserPlus, X, Save, AlertTriangle, Loader2, CalendarCheck } from 'lucide-react';
 import api from '../services/api';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
@@ -18,6 +18,7 @@ const Profesionales = () => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [editingProfesional, setEditingProfesional] = useState(null);
   const [profesionalToDelete, setProfesionalToDelete] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const [nuevoProfesional, setNuevoProfesional] = useState({
     nombre: '',
@@ -119,13 +120,13 @@ const Profesionales = () => {
         const res = await api.put(`/api/profesionales/${editingProfesional.id}`, payload);
         if (res.data.success) {
           setProfesionales(profesionales.map(p => p.id === editingProfesional.id ? res.data.data : p));
-          alert("¡Profesional actualizado con éxito!");
+          setSuccessMessage("¡Profesional actualizado con éxito!");
         }
       } else {
         const res = await api.post('/api/profesionales', payload);
         if (res.data.success) {
           setProfesionales([res.data.data, ...profesionales]);
-          alert("¡Profesional registrado con éxito!");
+          setSuccessMessage("¡Profesional registrado con éxito!");
         }
       }
       setIsModalOpen(false);
@@ -140,7 +141,7 @@ const Profesionales = () => {
       const res = await api.delete(`/api/profesionales/${profesionalToDelete.id}`);
       if (res.data.success) {
         setProfesionales(profesionales.filter(p => p.id !== profesionalToDelete.id));
-        alert("Profesional dado de baja correctamente");
+        setSuccessMessage("Profesional dado de baja correctamente");
       }
       setIsDeleteConfirmOpen(false);
       setProfesionalToDelete(null);
@@ -302,6 +303,28 @@ const Profesionales = () => {
         cancelLabel="Cancelar"
         confirmLabel="Eliminar Staff"
       />
+
+      {/* Modal: Éxito */}
+      <Modal
+        isOpen={!!successMessage}
+        onClose={() => setSuccessMessage('')}
+        title={<span><CalendarCheck size={20} className="modal-title-icon" style={{ color: '#2b8a3e' }}/> Éxito</span>}
+        contentClassName="modal-small"
+      >
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <p style={{ marginBottom: '20px', fontSize: '1.05rem', color: '#444' }}>
+            {successMessage}
+          </p>
+          <button 
+            type="button" 
+            className="btn-save"
+            onClick={() => setSuccessMessage('')}
+            style={{ margin: '0 auto', display: 'block' }}
+          >
+            Aceptar
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 };

@@ -120,6 +120,9 @@ const Turnos = () => {
   const [isDetallesModalOpen, setIsDetallesModalOpen] = useState(false);
   const [isEditHorarioModalOpen, setIsEditHorarioModalOpen] = useState(false);
   const [errorValidacion, setErrorValidacion] = useState("");
+  const [turnoToCancel, setTurnoToCancel] = useState(null);
+  const [isDeleteHorarioConfirmOpen, setIsDeleteHorarioConfirmOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const [selectedCellTurnos, setSelectedCellTurnos] = useState([]);
   const [clientesList, setClientesList] = useState([]);
@@ -192,7 +195,7 @@ const Turnos = () => {
     const loadFormData = async () => {
       try {
         const [resClientes, resProfesionales] = await Promise.all([
-          api.get('/api/clientes'),
+          api.get('/api/clientes?limit=1000'),
           api.get('/api/profesionales')
         ]);
         if (resClientes.data.success) {
@@ -517,16 +520,20 @@ const Turnos = () => {
     }
   };
 
-  const handleDeleteHorario = async () => {
+  const handleDeleteHorario = () => {
     if (!selectedHorarioId) return;
-    if (window.confirm("¿Estás seguro de que deseas dar de baja esta configuración de horario? Se mantendrá en el historial pero se removerá del cronograma activo en todos los días configurados.")) {
-      try {
-        await eliminarHorario(selectedHorarioId);
-        setIsEditHorarioModalOpen(false);
-        alert("¡Franja horaria dada de baja con éxito!");
-      } catch (err) {
-        alert("Error al dar de baja el horario: " + err.message);
-      }
+    setIsDeleteHorarioConfirmOpen(true);
+  };
+
+  const confirmDeleteHorario = async () => {
+    if (!selectedHorarioId) return;
+    try {
+      await eliminarHorario(selectedHorarioId);
+      setIsDeleteHorarioConfirmOpen(false);
+      setIsEditHorarioModalOpen(false);
+      setSuccessMessage("¡Franja horaria dada de baja con éxito!");
+    } catch (err) {
+      alert("Error al dar de baja el horario: " + err.message);
     }
   };
 
@@ -535,15 +542,19 @@ const Turnos = () => {
     setIsDetallesModalOpen(true);
   };
 
-  const handleCancelTurno = async (turnoId) => {
-    if (window.confirm("¿Estás seguro de que deseas cancelar esta reserva?")) {
-      try {
-        await cancelarTurno(turnoId);
-        setSelectedCellTurnos(prev => prev.filter(t => t.id !== turnoId));
-        alert("Reserva cancelada con éxito");
-      } catch (err) {
-        alert("Error al cancelar la reserva: " + err.message);
-      }
+  const handleCancelTurno = (turnoId) => {
+    setTurnoToCancel(turnoId);
+  };
+
+  const confirmCancelTurno = async () => {
+    if (!turnoToCancel) return;
+    try {
+      await cancelarTurno(turnoToCancel);
+      setSelectedCellTurnos(prev => prev.filter(t => t.id !== turnoToCancel));
+      setTurnoToCancel(null);
+      setSuccessMessage("Reserva cancelada con éxito");
+    } catch (err) {
+      alert("Error al cancelar la reserva: " + err.message);
     }
   };
 
@@ -979,37 +990,7 @@ const Turnos = () => {
             </select>
           </div>
 
-          {/* Seleccionar Profesional con filtro rápido */}
-          <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
-            <label htmlFor="profesionalId" style={{ fontWeight: '600' }}>Asignar Profesional (Opcional)</label>
-            <input 
-              type="text" 
-              placeholder="🔍 Buscar profesional por nombre o apellido..." 
-              value={profesionalSearch}
-              onChange={(e) => setProfesionalSearch(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '6px',
-                border: '1px solid #ccc',
-                marginBottom: '8px',
-                boxSizing: 'border-box',
-                fontSize: '0.9rem'
-              }}
-            />
-            <select 
-              id="profesionalId" 
-              name="profesionalId"
-              value={anotarValues.profesionalId}
-              onChange={handleAnotarInputChange}
-              style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc' }}
-            >
-              <option value="">-- Ninguno / Sin Asignar ({filteredProfesionales.length} encontrados) --</option>
-              {filteredProfesionales.map(p => (
-                <option key={p.id} value={p.id}>{p.nombre} {p.apellido} ({p.especialidad || 'General'})</option>
-              ))}
-            </select>
-          </div>
+
 
           {/* Múltiples Días checkboxes o select */}
           <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
@@ -1290,9 +1271,12 @@ const Turnos = () => {
                       <div style={{ fontSize: '0.8rem', color: '#666' }}>DNI: {t.cliente?.dni_cuit}</div>
                     </td>
                     <td>
-                      {t.profesional 
-                        ? `${t.profesional.nombre} ${t.profesional.apellido}` 
-                        : <span style={{ color: '#999', fontStyle: 'italic' }}>Ninguno</span>}
+                      {(() => {
+                        const prof = t.profesional || horarios.find(h => h.id === t.horarioId)?.profesional;
+                        return prof 
+                          ? `${prof.nombre} ${prof.apellido}` 
+                          : <span style={{ color: '#999', fontStyle: 'italic' }}>Ninguno</span>;
+                      })()}
                     </td>
                     <td style={{ textAlign: 'center' }}>
                       <button
@@ -1316,6 +1300,82 @@ const Turnos = () => {
           <button type="button" className="btn-cancel" onClick={() => setIsDetallesModalOpen(false)}>
             Cerrar
           </button>
+        </div>
+      </Modal>
+
+      {/* Modal: Confirmar Cancelación */}
+      <Modal 
+        isOpen={!!turnoToCancel} 
+        onClose={() => setTurnoToCancel(null)} 
+        title={<span><AlertTriangle size={20} className="modal-title-icon" style={{ color: '#e03131' }}/> Confirmar Cancelación</span>}
+        contentClassName="modal-small"
+      >
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <p style={{ marginBottom: '20px', fontSize: '1.05rem', color: '#444' }}>
+            ¿Estás seguro de que deseas cancelar esta reserva?
+          </p>
+          <div className="pie-formulario" style={{ justifyContent: 'center', gap: '15px' }}>
+            <button type="button" className="btn-cancel" onClick={() => setTurnoToCancel(null)}>
+              Volver
+            </button>
+            <button 
+              type="button" 
+              className="btn-accion-delete"
+              onClick={confirmCancelTurno}
+              style={{ border: 'none', background: '#e03131', color: '#fff', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '5px' }}
+            >
+              Sí, cancelar reserva
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal: Éxito */}
+      <Modal
+        isOpen={!!successMessage}
+        onClose={() => setSuccessMessage('')}
+        title={<span><CalendarCheck size={20} className="modal-title-icon" style={{ color: '#2b8a3e' }}/> Éxito</span>}
+        contentClassName="modal-small"
+      >
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <p style={{ marginBottom: '20px', fontSize: '1.05rem', color: '#444' }}>
+            {successMessage}
+          </p>
+          <button 
+            type="button" 
+            className="btn-save"
+            onClick={() => setSuccessMessage('')}
+            style={{ margin: '0 auto', display: 'block' }}
+          >
+            Aceptar
+          </button>
+        </div>
+      </Modal>
+
+      {/* Modal: Confirmar Baja de Horario */}
+      <Modal 
+        isOpen={!!isDeleteHorarioConfirmOpen} 
+        onClose={() => setIsDeleteHorarioConfirmOpen(false)} 
+        title={<span><AlertTriangle size={20} className="modal-title-icon" style={{ color: '#e03131' }}/> Dar de Baja Horario</span>}
+        contentClassName="modal-small"
+      >
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <p style={{ marginBottom: '20px', fontSize: '1.05rem', color: '#444' }}>
+            ¿Estás seguro de que deseas dar de baja esta configuración de horario? Se mantendrá en el historial pero se removerá del cronograma activo.
+          </p>
+          <div className="pie-formulario" style={{ justifyContent: 'center', gap: '15px' }}>
+            <button type="button" className="btn-cancel" onClick={() => setIsDeleteHorarioConfirmOpen(false)}>
+              Volver
+            </button>
+            <button 
+              type="button" 
+              className="btn-accion-delete"
+              onClick={confirmDeleteHorario}
+              style={{ border: 'none', background: '#e03131', color: '#fff', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '5px' }}
+            >
+              Sí, dar de baja
+            </button>
+          </div>
         </div>
       </Modal>
     </div>

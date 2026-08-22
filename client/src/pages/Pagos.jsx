@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CirclePlus, CheckCircle, XCircle, AlertCircle, FileText, Undo2 } from 'lucide-react';
+import { CirclePlus, CheckCircle, XCircle, AlertCircle, FileText, Undo2, CalendarCheck, AlertTriangle } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ComprobanteGenerador from '../components/ComprobanteGenerador';
@@ -16,6 +16,17 @@ const Pagos = ({ isTab = false }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [usarSaldo, setUsarSaldo] = useState(false);
   const [comprobanteModal, setComprobanteModal] = useState({ open: false, tipo: '', datos: null });
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [pagoToAnular, setPagoToAnular] = useState(null);
+  const [searchTermCliente, setSearchTermCliente] = useState('');
+
+  const clientesFiltrados = clientes.filter(c => {
+    const searchStr = searchTermCliente.toLowerCase();
+    return c.nombre.toLowerCase().includes(searchStr) || 
+           c.apellido.toLowerCase().includes(searchStr) || 
+           (c.dni_cuit && c.dni_cuit.includes(searchStr));
+  });
 
   const [nuevoPago, setNuevoPago] = useState({
     clienteId: '',
@@ -41,7 +52,7 @@ const Pagos = ({ isTab = false }) => {
         setLoading(true);
         const [resPagos, resClientes] = await Promise.all([
           api.get('/api/pagos'),
-          api.get('/api/clientes')
+          api.get('/api/clientes?limit=1000')
         ]);
         if (resPagos.data?.success) {
           setPagos(resPagos.data.data);
@@ -61,24 +72,38 @@ const Pagos = ({ isTab = false }) => {
 
   const handleEstadoPago = async (id, nuevoEstado) => {
     try {
-      // Confirmación extra para anulaciones
       if (nuevoEstado === 'ANULADO') {
-        const ok = window.confirm('¿Estás seguro de ANULAR este pago? El cliente pasará a estado MOROSO.');
-        if (!ok) return;
+        setPagoToAnular(id);
+        return;
       }
+      await executeEstadoPago(id, nuevoEstado);
+    } catch (error) {
+      setErrorMessage(error.response?.data?.message || "Este pago ya ha sido procesado o no se puede modificar.");
+    }
+  };
 
+  const executeEstadoPago = async (id, nuevoEstado) => {
+    try {
       await api.patch(`/api/pagos/${id}/estado`, { estado: nuevoEstado });
-      // Refetch de los pagos
       const resPagos = await api.get('/api/pagos');
       if (resPagos.data?.success) {
         setPagos(resPagos.data.data);
       }
-
       if (nuevoEstado === 'ANULADO') {
-        alert('Pago anulado correctamente. El cliente fue marcado como MOROSO.');
+        setSuccessMessage('Pago anulado correctamente. El cliente fue marcado como MOROSO.');
       }
     } catch (error) {
-      alert(error.response?.data?.message || "Este pago ya ha sido procesado o no se puede modificar.");
+      setErrorMessage(error.response?.data?.message || "Este pago ya ha sido procesado o no se puede modificar.");
+    } finally {
+      if (nuevoEstado === 'ANULADO') {
+        setPagoToAnular(null);
+      }
+    }
+  };
+
+  const confirmAnular = () => {
+    if (pagoToAnular) {
+      executeEstadoPago(pagoToAnular, 'ANULADO');
     }
   };
 
@@ -112,19 +137,20 @@ const Pagos = ({ isTab = false }) => {
       setIsModalOpen(false);
       setUsarSaldo(false);
       setNuevoPago({ clienteId: '', monto: '', metodoPago: 'EFECTIVO', concepto: 'Cuota Mensual Pase Libre', notas: '' });
+      setSearchTermCliente('');
       
       // Refetch pagos y clientes (para actualizar saldos)
       const [resPagos, resClientes] = await Promise.all([
         api.get('/api/pagos'),
-        api.get('/api/clientes')
+        api.get('/api/clientes?limit=1000')
       ]);
       if (resPagos.data?.success) setPagos(resPagos.data.data);
       if (resClientes.data?.success) setClientes(resClientes.data.data.clientes || resClientes.data.data);
 
       const msgSaldo = saldoAplicado > 0 ? ` (Se aplicaron $${saldoAplicado} de saldo a favor)` : '';
-      alert(`Pago registrado con éxito${msgSaldo}`);
+      setSuccessMessage(`Pago registrado con éxito${msgSaldo}`);
     } catch (error) {
-      alert(error.response?.data?.message || "Error al registrar el pago.");
+      setErrorMessage(error.response?.data?.message || "Error al registrar el pago.");
     }
   };
 
@@ -304,6 +330,13 @@ const Pagos = ({ isTab = false }) => {
           <div className="grid-formulario-pagos">
             <div className="grupo-campo grid-full-width">
               <label htmlFor="clienteId">Cliente</label>
+              <input 
+                type="text" 
+                placeholder="Buscar por nombre, apellido o DNI..." 
+                value={searchTermCliente}
+                onChange={(e) => setSearchTermCliente(e.target.value)}
+                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc', marginBottom: '10px' }}
+              />
               <select 
                 id="clienteId" 
                 value={nuevoPago.clienteId} 
@@ -312,7 +345,7 @@ const Pagos = ({ isTab = false }) => {
                 style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ccc' }}
               >
                 <option value="">Seleccione un cliente...</option>
-                {clientes.map(c => (
+                {clientesFiltrados.map(c => (
                   <option key={c.id} value={c.id}>{c.nombre} {c.apellido} ({c.dni_cuit})</option>
                 ))}
               </select>
@@ -440,6 +473,77 @@ const Pagos = ({ isTab = false }) => {
         tipo={comprobanteModal.tipo}
         datosIniciales={comprobanteModal.datos}
       />
+
+      {/* Modal: Confirmar Anulación */}
+      <Modal 
+        isOpen={!!pagoToAnular} 
+        onClose={() => setPagoToAnular(null)} 
+        title={<span><AlertTriangle size={20} className="modal-title-icon" style={{ color: '#e03131' }}/> Confirmar Anulación</span>}
+        contentClassName="modal-small"
+      >
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <p style={{ marginBottom: '20px', fontSize: '1.05rem', color: '#444' }}>
+            ¿Estás seguro de <strong>ANULAR</strong> este pago? El cliente pasará a estado MOROSO y el saldo se revertirá.
+          </p>
+          <div className="pie-formulario" style={{ justifyContent: 'center', gap: '15px' }}>
+            <button type="button" className="btn-cancel" onClick={() => setPagoToAnular(null)}>
+              Cancelar
+            </button>
+            <button 
+              type="button" 
+              className="btn-accion-delete"
+              onClick={confirmAnular}
+              style={{ border: 'none', background: '#e03131', color: '#fff', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '5px' }}
+            >
+              Sí, Anular
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal: Éxito */}
+      <Modal
+        isOpen={!!successMessage}
+        onClose={() => setSuccessMessage('')}
+        title={<span><CalendarCheck size={20} className="modal-title-icon" style={{ color: '#2b8a3e' }}/> Éxito</span>}
+        contentClassName="modal-small"
+      >
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <p style={{ marginBottom: '20px', fontSize: '1.05rem', color: '#444' }}>
+            {successMessage}
+          </p>
+          <button 
+            type="button" 
+            className="btn-save"
+            onClick={() => setSuccessMessage('')}
+            style={{ margin: '0 auto', display: 'block' }}
+          >
+            Aceptar
+          </button>
+        </div>
+      </Modal>
+
+      {/* Modal: Error */}
+      <Modal
+        isOpen={!!errorMessage}
+        onClose={() => setErrorMessage('')}
+        title={<span><AlertTriangle size={20} className="modal-title-icon" style={{ color: '#e03131' }}/> Error</span>}
+        contentClassName="modal-small"
+      >
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <p style={{ marginBottom: '20px', fontSize: '1.05rem', color: '#444' }}>
+            {errorMessage}
+          </p>
+          <button 
+            type="button" 
+            className="btn-cancel"
+            onClick={() => setErrorMessage('')}
+            style={{ margin: '0 auto', display: 'block' }}
+          >
+            Aceptar
+          </button>
+        </div>
+      </Modal>
     </>
   );
 
