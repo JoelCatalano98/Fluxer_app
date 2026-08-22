@@ -26,4 +26,13 @@ router.get('/:id/movimientos', clientesController.getMovimientosCliente);
 // Hard Reset financiero de un cliente (elimina pagos, movimientos y resetea saldo)
 router.delete('/:id/reset-finanzas', clientesController.resetFinanzasCliente);
 
+// Obtener clientes pendientes de aprobación
+router.get('/pendientes', clientesController.getPendientes);
+
+// Aprobar cliente pendiente
+router.patch('/:id/aprobar', clientesController.aprobarCliente);
+
+// Rechazar un cliente pendiente
+router.delete('/:id/rechazar', clientesController.rechazarCliente);
+
 module.exports = router;

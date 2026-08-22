@@ -40,6 +40,11 @@ const getClientes = async (req, res) => {
             where.saldo = { lt: 0 };
         }
 
+        // Excluir a los PENDIENTES por defecto a menos que un filtro ya lo restrinja
+        if (!where.estado_cliente) {
+            where.estado_cliente = { not: 'PENDIENTE' };
+        }
+
         // Obtener cantidad total y registros paginados con su plan
         const [total, clientes] = await prisma.$transaction([
             prisma.cliente.count({ where }),
@@ -618,6 +623,147 @@ const resetFinanzasCliente = async (req, res) => {
     }
 };
 
+// GET /api/clientes/pendientes
+const getPendientes = async (req, res) => {
+    try {
+        const pendientes = await prisma.cliente.findMany({
+            where: { estado_cliente: 'PENDIENTE' },
+            select: {
+                id: true,
+                nombre: true,
+                apellido: true,
+                dni_cuit: true,
+                email: true,
+                telefono: true,
+                fecha_inicio: true,
+                observaciones: true,
+                es_socio: true,
+                estado_cliente: true,
+                estado_pago: true,
+                origenSolicitud: true
+            },
+            orderBy: { id: 'desc' }
+        });
+        
+        return res.status(200).json({
+            success: true,
+            data: pendientes,
+            message: 'Clientes pendientes obtenidos con éxito'
+        });
+    } catch (error) {
+        console.error('Error al obtener pendientes:', error);
+        return res.status(500).json({
+            success: false,
+            data: null,
+            message: 'Error interno del servidor al obtener clientes pendientes'
+        });
+    }
+};
+
+// PATCH /api/clientes/:id/aprobar
+const aprobarCliente = async (req, res) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            return res.status(400).json({
+                success: false,
+                data: null,
+                message: 'ID de cliente no válido'
+            });
+        }
+
+        const { categoriaId } = req.body;
+        
+        const clienteActualizado = await prisma.cliente.update({
+            where: { id },
+            data: {
+                estado_cliente: 'ACTIVO',
+                categoriaId: categoriaId ? parseInt(categoriaId) : null
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: clienteActualizado,
+            message: 'Cliente aprobado con éxito'
+        });
+    } catch (error) {
+        console.error('Error al aprobar cliente:', error);
+        if (error.code === 'P2025') {
+            return res.status(404).json({
+                success: false,
+                data: null,
+                message: 'Cliente no encontrado'
+            });
+        }
+        return res.status(500).json({
+            success: false,
+            data: null,
+            message: 'Error interno del servidor al aprobar cliente'
+        });
+    }
+};
+
+// Rechazar solicitud de PENDIENTE
+const rechazarCliente = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const clienteId = parseInt(id);
+
+        const cliente = await prisma.cliente.findUnique({
+            where: { id: clienteId }
+        });
+
+        if (!cliente) {
+            return res.status(404).json({ success: false, message: 'Cliente no encontrado' });
+        }
+
+        const esActualizacion = cliente.observaciones && cliente.observaciones.includes('Completó datos de registro por web/app.');
+
+        if (!esActualizacion) {
+            // Es un cliente completamente nuevo
+            const pagosCount = await prisma.pago.count({ where: { clienteId } });
+            if (pagosCount > 0) {
+                await prisma.cliente.update({
+                    where: { id: clienteId },
+                    data: { estado_cliente: 'INACTIVO', password: null }
+                });
+            } else {
+                await prisma.cliente.delete({ where: { id: clienteId } });
+            }
+        } else {
+            // Era un cliente existente que actualizó datos
+            let nuevasObservaciones = cliente.observaciones
+                .replace(/ ?\| ?Completó datos de registro por web\/app\./, '')
+                .replace(/Completó datos de registro por web\/app\./, '')
+                .trim();
+            
+            if (nuevasObservaciones === '') nuevasObservaciones = null;
+
+            await prisma.cliente.update({
+                where: { id: clienteId },
+                data: {
+                    estado_cliente: 'INACTIVO',
+                    password: null, // Le quitamos el acceso
+                    observaciones: nuevasObservaciones
+                }
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Solicitud rechazada con éxito.'
+        });
+
+    } catch (error) {
+        console.error('Error al rechazar solicitud:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Error en el servidor al rechazar la solicitud'
+        });
+    }
+};
+
 module.exports = {
     getClientes,
     createCliente,
@@ -626,5 +772,8 @@ module.exports = {
     updateEstadoPago,
     resetPasswordCliente,
     getMovimientosCliente,
-    resetFinanzasCliente
+    resetFinanzasCliente,
+    getPendientes,
+    aprobarCliente,
+    rechazarCliente
 };

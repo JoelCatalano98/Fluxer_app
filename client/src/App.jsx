@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Link } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Topbar from './components/Topbar';
 import Footer from './components/Footer';
@@ -36,6 +36,7 @@ function AppContent() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeAlarms, setActiveAlarms] = useState([]);
   const [isAlarmModalOpen, setIsAlarmModalOpen] = useState(false);
+  const [pendientesCount, setPendientesCount] = useState(0);
 
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
@@ -138,6 +139,28 @@ function AppContent() {
     };
   }, [location.pathname, isLoginPage]);
 
+  // Chequear clientes pendientes
+  useEffect(() => {
+    if (isLoginPage) return;
+    const fetchPendientes = async () => {
+      try {
+        const res = await api.get('/api/clientes/pendientes');
+        if (res.data.success) {
+          setPendientesCount(res.data.data.length);
+        }
+      } catch (err) {
+        console.error('Error fetching pendientes:', err);
+      }
+    };
+    fetchPendientes();
+
+    const handleUpdate = () => {
+      fetchPendientes();
+    };
+    window.addEventListener('pendientesUpdated', handleUpdate);
+    return () => window.removeEventListener('pendientesUpdated', handleUpdate);
+  }, [location.pathname, isLoginPage]);
+
   if (loading) return <div>Cargando sesión...</div>;
 
   if (isLoginPage || !user) {
@@ -160,6 +183,18 @@ function AppContent() {
       <div className="main-container" style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: '#f4f7f6', minWidth: 0 }}>
         <Topbar onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
         
+        {pendientesCount > 0 && (
+          <div style={{ backgroundColor: '#fffbeb', borderBottom: '1px solid #fde68a', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 40 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#b45309', fontWeight: '500' }}>
+              <span>🔔</span>
+              <span>Tienes {pendientesCount} cliente{pendientesCount !== 1 ? 's' : ''} esperando aprobación para ingresar.</span>
+            </div>
+            <Link to="/clientes-totales" style={{ backgroundColor: '#f59e0b', color: 'white', padding: '6px 12px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', transition: 'background-color 0.2s' }}>
+              Revisar ahora
+            </Link>
+          </div>
+        )}
+
         <main className="content-area" style={{ flex: 1, padding: '6px', width: '100%', boxSizing: 'border-box' }}>
           <Routes>
             <Route path="/" element={<Dashboard />} />

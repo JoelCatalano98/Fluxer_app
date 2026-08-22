@@ -73,6 +73,7 @@ model Cliente {
   password         String?
   vencimientoCuota DateTime?
   saldo            Float              @default(0)
+  origenSolicitud  String?            @default("NUEVO")
   categoria        Categoria?         @relation(fields: [categoriaId], references: [id])
   movimientocuenta movimientocuenta[]
   pago             pago[]
@@ -293,7 +294,7 @@ model movimientocuenta {
   fecha       DateTime @default(now())
   clienteId   Int
   pagoId      Int?
-  cliente Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade, map: "MovimientoCuenta_clienteId_fkey")
+  cliente     Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade, map: "MovimientoCuenta_clienteId_fkey")
   pago        pago?    @relation(fields: [pagoId], references: [id], map: "MovimientoCuenta_pagoId_fkey")
 
   @@index([clienteId], map: "MovimientoCuenta_clienteId_fkey")
@@ -311,7 +312,7 @@ model pago {
   estado               String              @default("APROBADO")
   movimientocuenta     movimientocuenta[]
   movimientosGenerales MovimientoGeneral[]
-  cliente Cliente @relation(fields: [clienteId], references: [id], map: "Pago_clienteId_fkey")
+  cliente              Cliente             @relation(fields: [clienteId], references: [id], map: "Pago_clienteId_fkey")
 
   @@index([clienteId], map: "Pago_clienteId_fkey")
 }
@@ -324,4 +325,5 @@ enum EstadoPago {
 enum EstadoCliente {
   ACTIVO
   INACTIVO
+  PENDIENTE
 }

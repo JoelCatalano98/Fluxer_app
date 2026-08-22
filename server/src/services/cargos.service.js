@@ -46,11 +46,14 @@ async function asegurarCargosAlDia(clienteId) {
         const mesAnio = `${String(currentVencimiento.getMonth() + 1).padStart(2, '0')}/${currentVencimiento.getFullYear()}`;
         
         // 1. Cargo base de la cuota
+        const fechaCargo = new Date(currentVencimiento);
+        fechaCargo.setHours(0, 0, 0, 0); // Normalización explícita a inicio del día
+
         nuevosMovimientos.push({
             monto: precio,
             tipo: 'CARGO',
             descripcion: `Cuota mensual - ${mesAnio}`,
-            fecha: new Date(currentVencimiento),
+            fecha: fechaCargo,
             clienteId: cliente.id
         });
 
@@ -65,11 +68,14 @@ async function asegurarCargosAlDia(clienteId) {
 
         if (hoy > fechaLimitePago && recargoPorcentaje > 0 && precio > 0) {
             const montoRecargo = (precio * recargoPorcentaje) / 100;
+            const fechaRecargo = new Date(currentVencimiento);
+            fechaRecargo.setHours(0, 0, 0, 0);
+
             nuevosMovimientos.push({
                 monto: montoRecargo,
                 tipo: 'RECARGO',
                 descripcion: `Recargo por mora (${recargoPorcentaje}%) - ${mesAnio}`,
-                fecha: new Date(currentVencimiento), // Lo guardamos con la fecha de facturación
+                fecha: fechaRecargo, // Lo guardamos con la fecha de facturación a inicio del día
                 clienteId: cliente.id
             });
         }

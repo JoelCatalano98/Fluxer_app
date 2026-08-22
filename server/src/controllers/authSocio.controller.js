@@ -19,45 +19,51 @@ if (!JWT_SECRET) {
  */
 const registerSocio = async (req, res) => {
     try {
-        const { nombre, apellido, dni_cuit, email, password } = req.body;
+        const { nombre, apellido, dni_cuit, email, password, telefono } = req.body;
 
         // Validar campos requeridos
-        if (!nombre || !apellido || !dni_cuit || !email || !password) {
+        if (!nombre || !apellido || !dni_cuit || !email || !password || !telefono) {
             return res.status(400).json({
                 success: false,
-                message: 'Todos los campos son requeridos: nombre, apellido, dni_cuit, email y password'
+                message: 'Todos los campos son requeridos, incluyendo el teléfono.'
             });
         }
 
-        // Buscar al cliente por email o dni_cuit
-        const clienteExistente = await prisma.cliente.findFirst({
-            where: {
-                OR: [
-                    { email },
-                    { dni_cuit }
-                ]
-            }
-        });
+        // Buscar cliente por email y por DNI por separado para validación cruzada
+        const emailExistente = await prisma.cliente.findFirst({ where: { email } });
+        const dniExistente = await prisma.cliente.findFirst({ where: { dni_cuit } });
 
-        if (clienteExistente) {
+        // Si el email ya está en uso por otro DNI, rechazar
+        if (emailExistente && (!dniExistente || emailExistente.id !== dniExistente.id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Este email ya está en uso por otro cliente.'
+            });
+        }
+
+        if (dniExistente) {
             // ── El cliente YA EXISTE ──
-
-            // Si ya tiene password, significa que ya tiene cuenta activa
-            if (clienteExistente.password) {
+            if (dniExistente.password) {
                 return res.status(400).json({
                     success: false,
                     message: 'Este usuario ya tiene una cuenta activa. Inicia sesión.'
                 });
             }
 
-            // Si NO tiene password, activamos su cuenta vinculando la contraseña
+            // Completar datos, vincular contraseña y marcar como PENDIENTE
             const hashedPassword = await bcrypt.hash(password, 10);
-
+            const notasAnteriores = dniExistente.observaciones ? `${dniExistente.observaciones} | ` : '';
+            
             const clienteActivado = await prisma.cliente.update({
-                where: { id: clienteExistente.id },
+                where: { id: dniExistente.id },
                 data: {
                     password: hashedPassword,
-                    es_socio: true
+                    es_socio: true,
+                    estado_cliente: 'PENDIENTE',
+                    email,
+                    telefono,
+                    origenSolicitud: 'ACTUALIZACION_DNI',
+                    observaciones: `${notasAnteriores}Completó datos de registro por web/app.`
                 }
             });
 
@@ -66,7 +72,7 @@ const registerSocio = async (req, res) => {
             return res.status(200).json({
                 success: true,
                 data: clienteData,
-                message: 'Cuenta vinculada y activada con éxito.'
+                message: 'Cuenta vinculada, datos guardados y enviada a revisión.'
             });
         }
 
@@ -79,8 +85,11 @@ const registerSocio = async (req, res) => {
                 apellido,
                 dni_cuit,
                 email,
+                telefono,
                 password: hashedPassword,
-                es_socio: true
+                es_socio: true,
+                estado_cliente: 'PENDIENTE',
+                origenSolicitud: 'NUEVO'
             }
         });
 
@@ -138,6 +147,14 @@ const loginSocio = async (req, res) => {
             });
         }
 
+        // Si la cuenta está en revisión, bloquear el acceso con 403
+        if (cliente.estado_cliente === 'PENDIENTE') {
+            return res.status(403).json({
+                success: false,
+                message: 'Tu cuenta está pendiente de aprobación.'
+            });
+        }
+
         // Comparar contraseña
         const isMatch = await bcrypt.compare(password, cliente.password);
         if (!isMatch) {
@@ -165,14 +182,17 @@ const loginSocio = async (req, res) => {
 
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });
 
-        // Retornar token y datos del cliente sin la contraseña
+        // Detectar si el usuario ingresó con clave 123456
+        const isDefaultPassword = password === '123456';
+
         const { password: _, ...clienteData } = clienteActualizado;
 
         return res.status(200).json({
             success: true,
             data: {
                 token,
-                cliente: clienteData
+                cliente: clienteData,
+                defaultPassword: isDefaultPassword
             },
             message: 'Login exitoso'
         });

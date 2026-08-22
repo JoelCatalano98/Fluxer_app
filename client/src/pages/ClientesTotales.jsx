@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
-import { Pencil, Trash, UserPlus, Save, X, Loader2, AlertTriangle, Check, User, RefreshCw, MessageCircle, Dumbbell, Search, Unlock, Wallet } from 'lucide-react';
+import { Pencil, Trash, UserPlus, Save, X, Loader2, AlertTriangle, Check, User, RefreshCw, MessageCircle, Dumbbell, Search, Unlock, Wallet, AlertCircle } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
@@ -24,6 +24,12 @@ const ClientesTotales = () => {
   const [busqueda, setBusqueda] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [message, setMessage] = useState({ text: '', type: '' });
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {} });
+  
+  // Bandeja de Pendientes
+  const [pendientes, setPendientes] = useState([]);
+  const [showPendientesModal, setShowPendientesModal] = useState(false);
   
   // Estado de Cuenta
   const [showEstadoCuenta, setShowEstadoCuenta] = useState(false);
@@ -59,8 +65,27 @@ const ClientesTotales = () => {
     categoriaId: '',
     fecha_inicio: new Date().toISOString().split('T')[0],
     observaciones: '',
-    estado_pago: 'ALDIA'
+    estado_pago: 'ALDIA',
+    estado_cliente: ''
   });
+
+  const fetchPendientes = useCallback(async () => {
+    try {
+      const res = await api.get('/api/clientes/pendientes');
+      if (res.data.success) {
+        setPendientes(res.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching pendientes:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPendientes();
+    const handlePendientesUpdated = () => fetchPendientes();
+    window.addEventListener('pendientesUpdated', handlePendientesUpdated);
+    return () => window.removeEventListener('pendientesUpdated', handlePendientesUpdated);
+  }, [fetchPendientes]);
 
   const fetchClientes = useCallback(async () => {
     try {
@@ -84,6 +109,51 @@ const ClientesTotales = () => {
     fetchClientes();
   }, [fetchClientes]);
 
+  const handleAprobarPendiente = (cliente) => {
+    setIsEditing(true);
+    setFormValues({
+      id: cliente.id,
+      nombre: cliente.nombre,
+      apellido: cliente.apellido,
+      dni_cuit: cliente.dni_cuit,
+      email: cliente.email || '',
+      telefono: cliente.telefono || '',
+      es_socio: cliente.es_socio || false,
+      codigo_socio: cliente.codigo_socio || '',
+      categoriaId: cliente.categoriaId || '',
+      fecha_inicio: cliente.fecha_inicio ? new Date(cliente.fecha_inicio).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      observaciones: cliente.observaciones || '',
+      estado_pago: cliente.estado_pago || 'ALDIA',
+      estado_cliente: 'PENDIENTE'
+    });
+    setShowPendientesModal(false);
+    setShowForm(true);
+  };
+
+  const handleRechazarPendiente = async (id) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Rechazar Solicitud',
+      message: '¿Estás seguro de que quieres rechazar esta solicitud? Si es un usuario nuevo, se eliminará permanentemente.',
+      onConfirm: async () => {
+        setConfirmDialog({ isOpen: false });
+        try {
+          const res = await api.delete(`/api/clientes/${id}/rechazar`);
+          if (res.data.success) {
+            setMessage({ text: 'Solicitud rechazada.', type: 'success' });
+            setPendientes(prev => prev.filter(p => p.id !== id));
+            window.dispatchEvent(new Event('pendientesUpdated'));
+            fetchPendientes();
+            fetchClientes();
+          }
+        } catch (err) {
+          console.error('Error al rechazar:', err);
+          setMessage({ text: 'Error al rechazar la solicitud.', type: 'error' });
+        }
+      }
+    });
+  };
+
   const handleNewCliente = () => {
     setIsEditing(false);
     resetForm();
@@ -104,7 +174,8 @@ const ClientesTotales = () => {
       categoriaId: cliente.categoriaId || '',
       fecha_inicio: cliente.fecha_inicio ? new Date(cliente.fecha_inicio).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       observaciones: cliente.observaciones || '',
-      estado_pago: cliente.estado_pago || 'ALDIA'
+      estado_pago: cliente.estado_pago || 'ALDIA',
+      estado_cliente: cliente.estado_cliente || ''
     });
     setShowForm(true);
   };
@@ -119,11 +190,11 @@ const ClientesTotales = () => {
       const res = await api.delete(`/api/clientes/${clienteToDelete.id}`);
       if (res.data.success) {
         setClientes(clientes.map(c => c.id === clienteToDelete.id ? { ...c, estado_cliente: 'INACTIVO' } : c));
-        alert('Cliente dado de baja correctamente');
+        setMessage({ text: 'Cliente dado de baja correctamente', type: 'success' });
       }
     } catch (err) {
       console.error('Error handleDelete:', err);
-      alert('Error al dar de baja');
+      setMessage({ text: 'Error al dar de baja', type: 'error' });
     } finally {
       setIsDeleteConfirmOpen(false);
       setClienteToDelete(null);
@@ -131,30 +202,44 @@ const ClientesTotales = () => {
   };
 
   const handleReactivar = async (cliente) => {
-    if (!window.confirm(`¿Reactivar al cliente ${cliente.nombre} ${cliente.apellido}?`)) return;
-    try {
-      const res = await api.put(`/api/clientes/${cliente.id}`, { estado_cliente: 'ACTIVO' });
-      if (res.data.success) {
-        setClientes(clientes.map(c => c.id === cliente.id ? { ...c, estado_cliente: 'ACTIVO' } : c));
-        alert('Cliente reactivado con éxito');
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Reactivar Cliente',
+      message: `¿Reactivar al cliente ${cliente.nombre} ${cliente.apellido}?`,
+      onConfirm: async () => {
+        setConfirmDialog({ isOpen: false });
+        try {
+          const res = await api.put(`/api/clientes/${cliente.id}`, { estado_cliente: 'ACTIVO' });
+          if (res.data.success) {
+            setClientes(clientes.map(c => c.id === cliente.id ? { ...c, estado_cliente: 'ACTIVO' } : c));
+            setMessage({ text: 'Cliente reactivado con éxito', type: 'success' });
+          }
+        } catch (err) {
+          console.error('Error handleReactivar:', err);
+          setMessage({ text: 'Error al reactivar al cliente', type: 'error' });
+        }
       }
-    } catch (err) {
-      console.error('Error handleReactivar:', err);
-      alert('Error al reactivar al cliente');
-    }
+    });
   };
 
   const handleResetPassword = async (cliente) => {
-    if (!window.confirm(`¿Blanquear la contraseña de ${cliente.nombre} ${cliente.apellido} a "123456"?`)) return;
-    try {
-      const res = await api.patch(`/api/clientes/${cliente.id}/reset-password`);
-      if (res.data.success) {
-        alert('Contraseña blanqueada con éxito. Nueva clave: 123456');
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Blanquear Contraseña',
+      message: `¿Blanquear la contraseña de ${cliente.nombre} ${cliente.apellido} a "123456"?`,
+      onConfirm: async () => {
+        setConfirmDialog({ isOpen: false });
+        try {
+          const res = await api.patch(`/api/clientes/${cliente.id}/reset-password`);
+          if (res.data.success) {
+            setMessage({ text: 'Contraseña blanqueada con éxito. Nueva clave: 123456', type: 'success' });
+          }
+        } catch (err) {
+          console.error('Error handleResetPassword:', err);
+          setMessage({ text: 'Error al blanquear la contraseña: ' + (err.response?.data?.message || err.message), type: 'error' });
+        }
       }
-    } catch (err) {
-      console.error('Error handleResetPassword:', err);
-      alert('Error al blanquear la contraseña: ' + (err.response?.data?.message || err.message));
-    }
+    });
   };
 
   const handleOpenEstadoCuenta = async (cliente) => {
@@ -168,7 +253,7 @@ const ClientesTotales = () => {
       }
     } catch (err) {
       console.error('Error fetching estado cuenta:', err);
-      alert('Error al obtener el estado de cuenta');
+      setMessage({ text: 'Error al obtener el estado de cuenta', type: 'error' });
     } finally {
       setLoadingEstadoCuenta(false);
     }
@@ -185,11 +270,9 @@ const ClientesTotales = () => {
 
     // Validar campos obligatorios
     if (!formValues.nombre || !formValues.apellido || !formValues.dni_cuit) {
-      alert("Los campos obligatorios (nombre, apellido, dni_cuit) no pueden estar vacíos");
+      setMessage({ text: 'Los campos obligatorios (nombre, apellido, dni_cuit) no pueden estar vacíos', type: 'error' });
       return;
     }
-
-    // El código de socio ahora se genera automáticamente en el backend
 
     try {
       // Limpiar datos condicionales si no es socio
@@ -200,22 +283,30 @@ const ClientesTotales = () => {
       }
 
       if (isEditing) {
+        if (dataToSave.estado_cliente === 'PENDIENTE') {
+          dataToSave.estado_cliente = 'ACTIVO';
+        }
         const res = await api.put(`/api/clientes/${formValues.id}`, dataToSave);
         if (res.data.success) {
           setClientes(clientes.map(c => c.id === formValues.id ? res.data.data : c));
-          alert('¡Cliente actualizado con éxito!');
+          setMessage({ text: '¡Cliente actualizado con éxito!', type: 'success' });
+          if (formValues.estado_cliente === 'PENDIENTE') {
+            setPendientes(prev => prev.filter(p => p.id !== formValues.id));
+            window.dispatchEvent(new Event('pendientesUpdated'));
+            fetchPendientes();
+          }
         }
       } else {
         const res = await api.post('/api/clientes', dataToSave);
         if (res.data.success) {
           setClientes([res.data.data, ...clientes]);
-          alert('¡Cliente registrado con éxito!');
+          setMessage({ text: '¡Cliente registrado con éxito!', type: 'success' });
         }
       }
       setShowForm(false);
     } catch (err) {
       console.error('Error handleSubmit:', err);
-      alert('Error al guardar: ' + (err.response?.data?.message || err.message));
+      setMessage({ text: 'Error al guardar: ' + (err.response?.data?.message || err.message), type: 'error' });
     }
   };
 
@@ -249,13 +340,24 @@ const ClientesTotales = () => {
             <h1 style={{ color: '#333', margin: 0, fontSize: '2rem' }}>Clientes Totales</h1>
             <p style={{ color: '#666', margin: '5px 0 0 0' }}>Listado maestro de clientes registrados.</p>
           </div>
-          <button 
+          <div style={{ display: 'flex', gap: '10px' }}>
+            {pendientes.length > 0 && (
+              <button 
+                className="btn-secondary" 
+                onClick={() => setShowPendientesModal(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              >
+                🔔 Ver Pendientes ({pendientes.length})
+              </button>
+            )}
+            <button 
             className="btn-primary" 
             onClick={handleNewCliente}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: 'var(--accent-blue)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
           >
             <UserPlus size={20} /> Nuevo Cliente
           </button>
+          </div>
         </div>
 
         <div style={{ marginBottom: '20px', position: 'relative', maxWidth: '400px' }}>
@@ -602,7 +704,7 @@ const ClientesTotales = () => {
                         <th style={{ textAlign: 'left' }}>Concepto / Comprobante</th>
                         <th style={{ textAlign: 'right' }}>Debe (Cargos)</th>
                         <th style={{ textAlign: 'right' }}>Haber (Pagos)</th>
-                        <th style={{ textAlign: 'right' }}>Saldo</th>
+                        <th style={{ textAlign: 'right' }}>Saldo Acumulado</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -660,6 +762,76 @@ const ClientesTotales = () => {
             )}
           </div>
         </Modal>
+            <Modal isOpen={showPendientesModal} onClose={() => setShowPendientesModal(false)} title="Bandeja de Aprobaciones">
+          <div style={{ padding: '20px' }}>
+            {pendientes.length === 0 ? (
+              <p style={{ textAlign: 'center', color: '#666' }}>No hay clientes pendientes.</p>
+            ) : (
+              <div className="contenedor-scroll" style={{ maxHeight: '400px' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Apellido</th>
+                      <th>DNI / CUIT</th>
+                      <th>Teléfono</th>
+                      <th>Origen</th>
+                      <th>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendientes.map(p => (
+                      <tr key={p.id}>
+                        <td><strong>{p.nombre}</strong></td>
+                        <td>{p.apellido}</td>
+                        <td>{p.dni_cuit}</td>
+                        <td>{p.telefono || <span style={{ color: '#999', fontStyle: 'italic' }}>Sin teléfono</span>}</td>
+                        <td style={{ maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={p.observaciones}>
+                          {p.origenSolicitud === 'ACTUALIZACION_DNI' ? (
+                            <span style={{ color: '#b45309', fontWeight: '600', fontSize: '0.8rem', background: '#fef3c7', padding: '2px 6px', borderRadius: '4px' }}>⚠️ ACTUALIZACIÓN DNI</span>
+                          ) : (
+                            <span style={{ color: '#15803d', fontWeight: '600', fontSize: '0.8rem', background: '#dcfce7', padding: '2px 6px', borderRadius: '4px' }}>✨ NUEVO REGISTRO</span>
+                          )}
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button 
+                              onClick={() => handleAprobarPendiente(p)}
+                              title="Revisar y Aprobar"
+                              style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem' }}
+                            >
+                              Revisar y Aprobar
+                            </button>
+                            <button 
+                              onClick={() => handleRechazarPendiente(p.id)}
+                              title="Rechazar"
+                              style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem' }}
+                            >
+                              Rechazar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </Modal>
+
+      <ConfirmDeleteModal
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog({ isOpen: false })}
+        icon={<AlertCircle size={48} style={{ color: '#e03131', margin: '0 auto 16px' }} />}
+        cancelLabel="Cancelar"
+        confirmLabel="Aceptar"
+        confirmClassName="btn-save"
+        confirmStyle={{ backgroundColor: '#1f2937' }}
+      />
       </div>
     </div>
   );
