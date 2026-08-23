@@ -10,7 +10,12 @@ const obtenerRutinasSocio = async (req, res) => {
         }
 
         const rutinas = await prisma.rutina.findMany({
-            where: { clienteId: clienteId },
+            where: {
+                OR: [
+                    { clienteId: null },
+                    { clienteId: clienteId }
+                ]
+            },
             include: { ejercicios: true },
             orderBy: { createdAt: 'desc' }
         });

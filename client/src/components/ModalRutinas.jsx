@@ -3,7 +3,7 @@ import { X, Dumbbell, Trash2, Plus, ArrowLeft, ChevronDown, ChevronUp, Save, Loa
 import api from '../services/api';
 import CalculadoraPesos from './CalculadoraPesos';
 
-const ModalRutinas = ({ isOpen, onClose, cliente }) => {
+const ModalRutinas = ({ isOpen, onClose, cliente, isGeneral = false }) => {
   const [rutinasExistentes, setRutinasExistentes] = useState([]);
   const [modoCreacion, setModoCreacion] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,7 +18,7 @@ const ModalRutinas = ({ isOpen, onClose, cliente }) => {
   });
 
   useEffect(() => {
-    if (isOpen && cliente) {
+    if (isOpen && (cliente || isGeneral)) {
       cargarRutinas();
       setModoCreacion(false);
       setNuevaRutina({ nombre: '', descripcion: '', dias: [] });
@@ -28,7 +28,7 @@ const ModalRutinas = ({ isOpen, onClose, cliente }) => {
   const cargarRutinas = async () => {
     try {
       setLoading(true);
-      const res = await api.get(`/api/rutinas/cliente/${cliente.id}`);
+      const res = await api.get(isGeneral ? '/api/rutinas/general' : `/api/rutinas/cliente/${cliente.id}`);
       if (res.data.success) {
         setRutinasExistentes(res.data.data);
       }
@@ -124,12 +124,12 @@ const ModalRutinas = ({ isOpen, onClose, cliente }) => {
       });
 
       const payload = {
-        nombre: nuevaRutina.nombre,
-        clienteId: cliente.id,
+        nombre: nuevaRutina.nombre || (isGeneral ? 'Rutina General' : ''),
+        clienteId: isGeneral ? null : cliente.id,
         ejercicios: ejerciciosPlanos
       };
 
-      const res = await api.post('/api/rutinas', payload);
+      const res = await api.post(isGeneral ? '/api/rutinas/general' : '/api/rutinas', payload);
       if (res.data.success) {
         await cargarRutinas();
         setModoCreacion(false);
@@ -143,7 +143,7 @@ const ModalRutinas = ({ isOpen, onClose, cliente }) => {
     }
   };
 
-  if (!isOpen || !cliente) return null;
+  if (!isOpen || (!cliente && !isGeneral)) return null;
 
   return (
     <div className="modal-overlay" style={{
@@ -190,7 +190,11 @@ const ModalRutinas = ({ isOpen, onClose, cliente }) => {
               Gestión de Rutinas
             </h2>
             <p style={{ margin: '5px 0 0', fontSize: '0.9rem', color: '#666' }}>
-              Cliente: <strong>{cliente.nombre} {cliente.apellido}</strong>
+              {isGeneral ? (
+                <span style={{ color: '#0369a1' }}>Gestión de Rutina General (Compartida para todos)</span>
+              ) : (
+                <>Cliente: <strong>{cliente.nombre} {cliente.apellido}</strong></>
+              )}
             </p>
           </div>
           <button onClick={onClose} style={{
@@ -333,7 +337,9 @@ const ModalRutinas = ({ isOpen, onClose, cliente }) => {
               {rutinasExistentes.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: '#888' }}>
                   <Dumbbell size={48} color="#ddd" style={{ marginBottom: '15px' }} />
-                  <p style={{ fontSize: '1.1rem', margin: 0 }}>Este cliente aún no tiene rutinas asignadas.</p>
+                  <p style={{ fontSize: '1.1rem', margin: 0 }}>
+                    {isGeneral ? 'Aún no existe una rutina general configurada.' : 'Este cliente aún no tiene rutinas asignadas.'}
+                  </p>
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>

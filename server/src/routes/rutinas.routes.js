@@ -9,6 +9,10 @@ router.use(verifyToken);
 // POST /api/rutinas
 router.post('/', rutinasController.crearRutina);
 
+// Rutina General (Debe ir antes de rutas con parámetros para evitar conflictos si hubieran, aunque aquí las rutas difieren)
+router.get('/general', rutinasController.obtenerRutinaGeneral);
+router.post('/general', rutinasController.crearOActualizarRutinaGeneral);
+
 // GET /api/rutinas/cliente/:clienteId
 router.get('/cliente/:clienteId', rutinasController.obtenerRutinasPorCliente);
 

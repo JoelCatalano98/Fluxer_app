@@ -207,10 +207,10 @@ model CalendarioNota {
 model Rutina {
   id         Int               @id @default(autoincrement())
   nombre     String
-  clienteId  Int
+  clienteId  Int?
   createdAt  DateTime          @default(now())
   ejercicios RutinaEjercicio[]
-  cliente    Cliente           @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  cliente    Cliente?          @relation(fields: [clienteId], references: [id], onDelete: Cascade)
 
   @@index([clienteId], map: "rutinas_clienteId_fkey")
   @@map("rutinas")

@@ -20,6 +20,7 @@ const ClientesTotales = () => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [clienteToDelete, setClienteToDelete] = useState(null);
   const [clienteRutinaSeleccionado, setClienteRutinaSeleccionado] = useState(null);
+  const [showRutinaGeneral, setShowRutinaGeneral] = useState(false);
   const [categoriasList, setCategoriasList] = useState([]);
   const [busqueda, setBusqueda] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -351,12 +352,19 @@ const ClientesTotales = () => {
               </button>
             )}
             <button 
-            className="btn-primary" 
-            onClick={handleNewCliente}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: 'var(--accent-blue)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-          >
-            <UserPlus size={20} /> Nuevo Cliente
-          </button>
+              className="btn-primary" 
+              onClick={() => setShowRutinaGeneral(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+            >
+              <Dumbbell size={20} /> Rutina del Día
+            </button>
+            <button 
+              className="btn-primary" 
+              onClick={handleNewCliente}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: 'var(--accent-blue)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+            >
+              <UserPlus size={20} /> Nuevo Cliente
+            </button>
           </div>
         </div>
 
@@ -655,6 +663,13 @@ const ClientesTotales = () => {
           isOpen={!!clienteRutinaSeleccionado}
           onClose={() => setClienteRutinaSeleccionado(null)}
           cliente={clienteRutinaSeleccionado}
+        />
+
+        <ModalRutinas 
+          isOpen={showRutinaGeneral}
+          onClose={() => setShowRutinaGeneral(false)}
+          cliente={null}
+          isGeneral={true}
         />
 
         <Modal isOpen={showEstadoCuenta} onClose={() => setShowEstadoCuenta(false)} title={`Estado de Cuenta - ${clienteEstadoCuenta?.nombre || ''}`} contentClassName="modal-estado-cuenta">
