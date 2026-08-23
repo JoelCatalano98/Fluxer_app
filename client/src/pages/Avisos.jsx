@@ -10,6 +10,7 @@ const Avisos = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [selectedAviso, setSelectedAviso] = useState(null);
+  const [message, setMessage] = useState({ text: '', type: '' });
 
   const [avisos, setAvisos] = useState([]);
   const [horariosLista, setHorariosLista] = useState([]);
@@ -63,7 +64,8 @@ const Avisos = () => {
   const handleCreateAviso = async (e) => {
     e.preventDefault();
     if (!nuevoAviso.titulo || !nuevoAviso.fechaDesde) {
-        alert("El título y la fecha desde son obligatorios");
+        setMessage({ text: 'El título y la fecha desde son obligatorios', type: 'error' });
+        setTimeout(() => setMessage({ text: '', type: '' }), 3000);
         return;
     }
     try {
@@ -90,11 +92,13 @@ const Avisos = () => {
         horaFinBloqueo: '',
         horariosBloqueados: []
       });
-      alert("Aviso registrado con éxito");
+      setMessage({ text: 'Aviso registrado con éxito', type: 'success' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
       fetchAvisos();
     } catch (error) {
       console.error('Error creating aviso:', error);
-      alert("Error al registrar el aviso");
+      setMessage({ text: 'Error al registrar el aviso', type: 'error' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     }
   };
 
@@ -108,7 +112,8 @@ const Avisos = () => {
       await api.delete(`/api/avisos/${selectedAviso.id}`);
       setIsDeleteConfirmOpen(false);
       setSelectedAviso(null);
-      alert("Aviso eliminado");
+      setMessage({ text: 'Aviso eliminado', type: 'success' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
       fetchAvisos();
     } catch (error) {
       console.error('Error deleting aviso:', error);
@@ -133,8 +138,22 @@ const Avisos = () => {
 
   return (
     <div className="main-content">
-      <PageHeader
-        title="Gestión de Avisos"
+      {message.text && (
+        <div style={{
+          backgroundColor: message.type === 'success' ? '#ebfbee' : '#fff1f1',
+          color: message.type === 'success' ? '#2f9e44' : '#e03131',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          margin: '16px 30px 0 30px',
+          fontWeight: '500',
+          fontSize: '0.9rem',
+          border: `1px solid ${message.type === 'success' ? '#b2f2bb' : '#ffc9c9'}`
+        }}>
+          {message.text}
+        </div>
+      )}
+      <PageHeader 
+        title="Novedades y Avisos" 
         subtitle="Crea feriados, noticias, promociones o alertas"
         image="/img/welcome-background.png"
       />
@@ -333,9 +352,7 @@ const Avisos = () => {
         title="Eliminar Aviso"
         message={`¿Estás seguro que deseas eliminar el aviso "${selectedAviso?.titulo}"?`}
         confirmLabel={<div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}><Trash2 size={16} /> Eliminar</div>}
-        confirmClassName="flex items-center justify-center gap-2 px-4 py-2 bg-[#00a8e8] text-white hover:bg-[#0092c9] rounded-lg transition-colors text-sm font-medium"
         cancelLabel="Cancelar"
-        cancelClassName="flex items-center justify-center px-4 py-2 bg-[#e6f6fd] text-[#00a8e8] hover:bg-[#ccebfc] rounded-lg transition-colors text-sm font-medium"
       />
     </div>
   );
