@@ -41,6 +41,7 @@ const getContrastColor = (hex, opacity = 1) => {
 const Turnos = () => {
   // Estado de la semana visible (lunes de la semana actual por defecto)
   const [semanaBase, setSemanaBase] = useState(() => getLunesDeSemana());
+  const [message, setMessage] = useState({ text: '', type: '' });
 
   const {
     turnos,
@@ -344,9 +345,11 @@ const Turnos = () => {
       });
       setIsConfigModalOpen(false);
       setNuevoHorario({ inicio: '', fin: '', dias: [], globalCategoriaId: '', globalProfesionalId: '', diasConfig: {} });
-      alert("¡Nueva(s) franja(s) horaria(s) agregada(s) con éxito!");
+      setMessage({ text: "¡Nueva(s) franja(s) horaria(s) agregada(s) con éxito!", type: 'success' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     } catch (err) {
-      alert("Error al configurar horario: " + err.message);
+      setMessage({ text: "Error al configurar horario: " + err.message, type: 'error' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     }
   };
 
@@ -589,6 +592,22 @@ const Turnos = () => {
           </button>
         </div>
       </PageHeader>
+
+      {/* Alerta de mensaje */}
+      {message.text && (
+        <div style={{
+          backgroundColor: message.type === 'success' ? '#ebfbee' : '#fff1f1',
+          color: message.type === 'success' ? '#2f9e44' : '#e03131',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          margin: '16px 30px 0 30px',
+          fontWeight: '500',
+          fontSize: '0.9rem',
+          border: `1px solid ${message.type === 'success' ? '#b2f2bb' : '#ffc9c9'}`
+        }}>
+          {message.text}
+        </div>
+      )}
 
       {/* Navegador de Semanas */}
       <div className="semana-navegador" style={{ marginTop: '20px' }}>

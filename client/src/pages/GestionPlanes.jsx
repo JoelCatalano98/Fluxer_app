@@ -17,6 +17,7 @@ const GestionPlanes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [viewMode, setViewMode] = useState('cards'); // 'cards' o 'list'
   const [editingPlan, setEditingPlan] = useState(null);
+  const [message, setMessage] = useState({ text: '', type: '' });
   
   const [nuevoPlan, setNuevoPlan] = useState({
     nombre: '',
@@ -85,7 +86,8 @@ const GestionPlanes = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!nuevoPlan.nombre || !nuevoPlan.precio || !nuevoPlan.frecuencia) {
-      alert("Los campos obligatorios no pueden estar vacíos");
+      setMessage({ text: "Los campos obligatorios no pueden estar vacíos", type: 'error' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
       return;
     }
 
@@ -103,19 +105,22 @@ const GestionPlanes = () => {
         const res = await api.put(`/api/planes/${editingPlan.id}`, dataToSave);
         if (res.data.success) {
           setPlanes(planes.map(p => p.id === editingPlan.id ? res.data.data : p));
-          alert("¡Plan actualizado con éxito!");
+          setMessage({ text: "¡Plan actualizado con éxito!", type: 'success' });
+          setTimeout(() => setMessage({ text: '', type: '' }), 3000);
         }
       } else {
         const res = await api.post('/api/planes', dataToSave);
         if (res.data.success) {
           setPlanes([res.data.data, ...planes]);
-          alert("¡Plan creado con éxito!");
+          setMessage({ text: "¡Plan creado con éxito!", type: 'success' });
+          setTimeout(() => setMessage({ text: '', type: '' }), 3000);
         }
       }
       setIsModalOpen(false);
     } catch (err) {
       console.error('Error handleSubmit:', err);
-      alert('Error al guardar: ' + (err.response?.data?.message || err.message));
+      setMessage({ text: 'Error al guardar: ' + (err.response?.data?.message || err.message), type: 'error' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     }
   };
 
@@ -126,11 +131,13 @@ const GestionPlanes = () => {
       const res = await api.delete(`/api/planes/${plan.id}`);
       if (res.data.success) {
         setPlanes(planes.filter(p => p.id !== plan.id));
-        alert("Plan eliminado correctamente");
+        setMessage({ text: "Plan eliminado correctamente", type: 'success' });
+        setTimeout(() => setMessage({ text: '', type: '' }), 3000);
       }
     } catch (err) {
       console.error('Error handleDelete:', err);
-      alert('Error al eliminar el plan');
+      setMessage({ text: 'Error al eliminar el plan', type: 'error' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     } finally {
       deleteModal.closeModal();
     }
@@ -144,6 +151,22 @@ const GestionPlanes = () => {
         subtitle="Configura los abonos y membresías"
         image="/img/welcome-background.png"
       />
+
+      {/* Alerta de mensaje */}
+      {message.text && (
+        <div style={{
+          backgroundColor: message.type === 'success' ? '#ebfbee' : '#fff1f1',
+          color: message.type === 'success' ? '#2f9e44' : '#e03131',
+          padding: '12px 20px',
+          borderRadius: '8px',
+          margin: '16px 30px 0 30px',
+          fontWeight: '500',
+          fontSize: '0.9rem',
+          border: `1px solid ${message.type === 'success' ? '#b2f2bb' : '#ffc9c9'}`
+        }}>
+          {message.text}
+        </div>
+      )}
 
       {/* Alerta de Error si ocurre alguno */}
       {error && (
