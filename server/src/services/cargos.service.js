@@ -136,4 +136,30 @@ async function asegurarCargosAlDia(clienteId) {
     return { cargosGenerados, limiteAlcanzado: cargosGenerados >= maxCargos, nuevoSaldo, nuevoVencimiento: currentVencimiento };
 }
 
-module.exports = { asegurarCargosAlDia };
+function calcularCicloActual(vencimientoActual, diaMaximoCobro = 10) {
+    if (!vencimientoActual) {
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const fin = new Date(hoy);
+        fin.setMonth(fin.getMonth() + 1);
+        fin.setDate(diaMaximoCobro);
+        return { inicio: hoy, fin };
+    }
+
+    const fin = new Date(vencimientoActual);
+    fin.setHours(0, 0, 0, 0);
+
+    const inicio = new Date(fin);
+    const targetMonth = inicio.getMonth() - 1;
+    inicio.setMonth(targetMonth);
+    inicio.setDate(diaMaximoCobro);
+    
+    const expectedMonth = (targetMonth % 12 + 12) % 12;
+    if (inicio.getMonth() !== expectedMonth) {
+        inicio.setDate(0); 
+    }
+
+    return { inicio, fin };
+}
+
+module.exports = { asegurarCargosAlDia, calcularCicloActual };

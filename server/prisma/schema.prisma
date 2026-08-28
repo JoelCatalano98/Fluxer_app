@@ -47,6 +47,8 @@ model Plan {
   etiqueta        String?
   precio          Decimal     @db.Decimal(10, 2)
   frecuencia      String
+  tipoFrecuencia  String      @default("SEMANAL")
+  cantidadClases  Int?
   caracteristicas String?     @db.Text
   activo          Boolean     @default(true)
   codigo          String?     @unique

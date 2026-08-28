@@ -41,6 +41,16 @@ async function main() {
             valor: 'false'
         }
     });
+    await prisma.parametroSistema.upsert({
+        where: { clave: 'bloquearReservaPorMora' },
+        update: {},
+        create: {
+            clave: 'bloquearReservaPorMora',
+            descripcion: 'Bloquear reservas de turnos a clientes morosos (no solo inactivos)',
+            tipo: 'boolean',
+            valor: 'true'
+        }
+    });
     console.log('Seed completado: parámetros del sistema inicializados.');
 }
 

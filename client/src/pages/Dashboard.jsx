@@ -130,43 +130,32 @@ const Dashboard = () => {
       {/* Sección de Gráficos (Rediseño 3 Columnas/Filas) */}
       <div className="charts-container" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px', marginTop: '30px' }}>
         
-        {/* Gráfico 1: Clientes por Disciplina (BarChart) */}
+        {/* Gráfico 1: Clientes por Disciplina (PieChart) */}
         <div className="chart-card">
-          <h3 className="chart-title">Crecimiento por Disciplina</h3>
+          <h3 className="chart-title">Clientes por Disciplina</h3>
           <div style={{ width: '100%', height: 300 }}>
             {loading ? renderLoading() : (
               <ResponsiveContainer>
-                <BarChart
-                  data={metrics?.clientesPorDisciplina || []}
-                  margin={{ top: 20, right: 30, left: -20, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#33333b" />
-                  <XAxis 
-                    dataKey="name" 
-                    stroke="#aaa" 
-                    tick={{ fill: '#aaa', fontSize: 12 }} 
-                    axisLine={false} 
-                    tickLine={false} 
-                    dy={10}
-                  />
-                  <YAxis 
-                    stroke="#aaa" 
-                    tick={{ fill: '#aaa', fontSize: 12 }} 
-                    axisLine={false} 
-                    tickLine={false}
-                  />
+                <PieChart>
+                  <Pie
+                    data={metrics?.clientesPorDisciplina || []}
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={3}
+                    dataKey="cantidad"
+                    nameKey="name"
+                    stroke="none"
+                  >
+                    {(metrics?.clientesPorDisciplina || []).map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color || '#00a8e8'} />
+                    ))}
+                  </Pie>
                   <Tooltip 
-                    cursor={{ fill: '#2a2a33' }}
                     contentStyle={{ backgroundColor: '#1a1a1f', border: 'none', borderRadius: '8px', color: '#fff' }}
+                    itemStyle={{ color: '#fff' }}
                   />
-                  <Bar 
-                    dataKey="cantidad" 
-                    fill="#00a8e8" 
-                    radius={[4, 4, 0, 0]} 
-                    barSize={30}
-                    name="Clientes"
-                  />
-                </BarChart>
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                </PieChart>
               </ResponsiveContainer>
             )}
           </div>

@@ -24,6 +24,8 @@ const GestionPlanes = () => {
     etiqueta: '',
     precio: '',
     frecuencia: 'Mensual',
+    tipoFrecuencia: 'SEMANAL',
+    cantidadClases: '',
     beneficios: ''
   });
 
@@ -66,6 +68,8 @@ const GestionPlanes = () => {
       etiqueta: '',
       precio: '',
       frecuencia: 'Mensual',
+      tipoFrecuencia: 'SEMANAL',
+      cantidadClases: '',
       beneficios: ''
     });
     setIsModalOpen(true);
@@ -78,6 +82,8 @@ const GestionPlanes = () => {
       etiqueta: plan.etiqueta || '',
       precio: Math.round(Number(plan.precio)).toString(),
       frecuencia: plan.frecuencia || 'Mensual',
+      tipoFrecuencia: plan.tipoFrecuencia || 'SEMANAL',
+      cantidadClases: plan.cantidadClases !== null ? plan.cantidadClases.toString() : '',
       beneficios: plan.caracteristicas || ''
     });
     setIsModalOpen(true);
@@ -96,6 +102,8 @@ const GestionPlanes = () => {
       etiqueta: nuevoPlan.etiqueta || null,
       precio: parseFloat(nuevoPlan.precio),
       frecuencia: nuevoPlan.frecuencia,
+      tipoFrecuencia: nuevoPlan.tipoFrecuencia,
+      cantidadClases: nuevoPlan.cantidadClases ? parseInt(nuevoPlan.cantidadClases) : null,
       caracteristicas: nuevoPlan.beneficios || null,
       observaciones: nuevoPlan.beneficios ? nuevoPlan.beneficios.split('\n')[0] : null
     };
@@ -317,13 +325,24 @@ const GestionPlanes = () => {
                 <input type="number" id="precio" placeholder="0.00" value={nuevoPlan.precio} onChange={handleInputChange} required />
               </div>
               <div className="grupo-entrada">
-                <label htmlFor="frecuencia">Frecuencia</label>
+                <label htmlFor="frecuencia">Frecuencia (Visual)</label>
                 <select id="frecuencia" value={nuevoPlan.frecuencia} onChange={handleInputChange}>
                   <option value="Mensual">Mensual</option>
                   <option value="Semanal">Semanal</option>
                   <option value="Quincenal">Quincenal</option>
                   <option value="Anual">Anual</option>
                 </select>
+              </div>
+              <div className="grupo-entrada">
+                <label htmlFor="tipoFrecuencia">Límite de Clases (Ciclo)</label>
+                <select id="tipoFrecuencia" value={nuevoPlan.tipoFrecuencia} onChange={handleInputChange}>
+                  <option value="SEMANAL">Semanal</option>
+                  <option value="MENSUAL">Mensual</option>
+                </select>
+              </div>
+              <div className="grupo-entrada">
+                <label htmlFor="cantidadClases">Cantidad de Clases (Máx)</label>
+                <input type="number" id="cantidadClases" placeholder="Dejar vacío si es ilimitado" value={nuevoPlan.cantidadClases} onChange={handleInputChange} min="1" />
               </div>
               <div className="grupo-entrada full-width">
                 <label htmlFor="beneficios">Características / Beneficios (uno por línea)</label>

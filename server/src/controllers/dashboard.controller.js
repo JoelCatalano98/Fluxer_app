@@ -69,7 +69,12 @@ const getDashboardMetrics = async (req, res) => {
       // Agrupar por nombre de categoría (todos los clientes activos, sean socios o no)
       if (cliente.categoria) {
         const catName = cliente.categoria.nombre || 'Sin Categoría';
-        disciplinaMap[catName] = (disciplinaMap[catName] || 0) + 1;
+        const catColor = cliente.categoria.color || '#00a8e8'; // Fallback a color primario
+        
+        if (!disciplinaMap[catName]) {
+          disciplinaMap[catName] = { cantidad: 0, color: catColor };
+        }
+        disciplinaMap[catName].cantidad += 1;
 
         if (cliente.categoria.plan) {
           // Forzar conversión: Prisma.Decimal → Number
@@ -83,7 +88,7 @@ const getDashboardMetrics = async (req, res) => {
     });
 
     const clientesPorDisciplina = Object.entries(disciplinaMap)
-      .map(([name, cantidad]) => ({ name, cantidad }))
+      .map(([name, data]) => ({ name, cantidad: data.cantidad, color: data.color }))
       .sort((a, b) => b.cantidad - a.cantidad);
 
     const ingresosPorPlan = Object.entries(planMap)

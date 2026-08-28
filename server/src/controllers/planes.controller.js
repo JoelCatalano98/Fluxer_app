@@ -75,6 +75,8 @@ const createPlan = async (req, res) => {
             etiqueta,
             precio,
             frecuencia,
+            tipoFrecuencia,
+            cantidadClases,
             caracteristicas,
             observaciones
         } = req.body;
@@ -102,6 +104,8 @@ const createPlan = async (req, res) => {
                 etiqueta: etiqueta || null,
                 precio: parseFloat(precio),
                 frecuencia,
+                tipoFrecuencia: tipoFrecuencia || 'SEMANAL',
+                cantidadClases: cantidadClases ? parseInt(cantidadClases) : null,
                 caracteristicas: caracteristicas || null,
                 observaciones: observaciones || null,
                 activo: true
@@ -141,6 +145,8 @@ const updatePlan = async (req, res) => {
             etiqueta,
             precio,
             frecuencia,
+            tipoFrecuencia,
+            cantidadClases,
             caracteristicas,
             observaciones,
             activo
@@ -160,6 +166,8 @@ const updatePlan = async (req, res) => {
         if (etiqueta !== undefined) updateData.etiqueta = etiqueta || null;
         if (precio !== undefined) updateData.precio = parseFloat(precio);
         if (frecuencia !== undefined) updateData.frecuencia = frecuencia;
+        if (tipoFrecuencia !== undefined) updateData.tipoFrecuencia = tipoFrecuencia;
+        if (cantidadClases !== undefined) updateData.cantidadClases = cantidadClases ? parseInt(cantidadClases) : null;
         if (caracteristicas !== undefined) updateData.caracteristicas = caracteristicas || null;
         if (observaciones !== undefined) updateData.observaciones = observaciones || null;
         if (activo !== undefined) updateData.activo = activo;

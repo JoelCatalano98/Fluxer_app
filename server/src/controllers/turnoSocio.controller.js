@@ -1,4 +1,5 @@
 const prisma = require('../config/prisma');
+const { asegurarCargosAlDia, calcularCicloActual } = require('../services/cargos.service');
 
 // Obtener horarios disponibles para el socio
 const getClasesDisponibles = async (req, res) => {
@@ -117,9 +118,17 @@ const reservarTurno = async (req, res) => {
             });
         }
 
+        // 1. Asegurar que los cargos y la deuda estén actualizados
+        await asegurarCargosAlDia(clienteId);
+
         // Validar estado del cliente
         const clienteActual = await prisma.cliente.findUnique({
-            where: { id: parseInt(clienteId) }
+            where: { id: parseInt(clienteId) },
+            include: {
+                categoria: {
+                    include: { plan: true }
+                }
+            }
         });
 
         if (!clienteActual) {
@@ -136,6 +145,12 @@ const reservarTurno = async (req, res) => {
             });
         }
 
+        // Obtener parámetro de sistema para mora (fallback a true)
+        const paramBloquearMora = await prisma.parametroSistema.findUnique({
+            where: { clave: 'bloquearReservaPorMora' }
+        });
+        const bloquearPorMora = paramBloquearMora ? paramBloquearMora.valor === 'true' : true;
+
         const hoy = new Date();
         hoy.setUTCHours(0,0,0,0);
         
@@ -146,10 +161,10 @@ const reservarTurno = async (req, res) => {
             if (v < hoy) estaVencido = true;
         }
 
-        if (estaVencido) {
+        if (bloquearPorMora && estaVencido) {
             return res.status(403).json({
                 success: false,
-                message: 'Tu cuenta registra deuda pendiente o vencida, comunicate con el gimnasio'
+                message: 'Tenés cuotas pendientes, regularizá tu pago para poder reservar'
             });
         }
 
@@ -205,7 +220,7 @@ const reservarTurno = async (req, res) => {
             });
         }
 
-        // Validar límite dinámico semanal
+        // Validar límite dinámico global por configuración
         if (configuracion?.maxReservasSemana > 0) {
             // Calcular Lunes y Domingo de la semana de la fecha solicitada
             const diaSemana = d.getDay(); // 0 = Domingo, 1 = Lunes, etc.
@@ -232,7 +247,70 @@ const reservarTurno = async (req, res) => {
             if (turnosSemana >= configuracion.maxReservasSemana) {
                 return res.status(400).json({
                     success: false,
-                    message: "Has alcanzado tu límite máximo de clases permitidas para esta semana."
+                    message: "Has alcanzado tu límite máximo de clases permitidas para esta semana (Límite Global)."
+                });
+            }
+        }
+
+        // Validar límite dinámico por Plan (si aplica)
+        const plan = clienteActual.categoria?.plan;
+        if (plan && plan.cantidadClases !== null && plan.cantidadClases > 0) {
+            const tipoFrec = plan.tipoFrecuencia || 'SEMANAL';
+            let limiteExcedido = false;
+            let rangoMsg = '';
+
+            if (tipoFrec === 'SEMANAL') {
+                const diaSemana = d.getDay();
+                const diffLunes = d.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
+                const lunes = new Date(d);
+                lunes.setDate(diffLunes);
+                lunes.setUTCHours(0, 0, 0, 0);
+                const domingo = new Date(lunes);
+                domingo.setDate(lunes.getDate() + 6);
+                domingo.setUTCHours(23, 59, 59, 999);
+
+                const count = await prisma.turnoCliente.count({
+                    where: { clienteId: parseInt(clienteId), fecha: { gte: lunes, lte: domingo } }
+                });
+
+                if (count >= plan.cantidadClases) {
+                    limiteExcedido = true;
+                    rangoMsg = 'esta semana';
+                }
+            } else if (tipoFrec === 'MENSUAL') {
+                const diaMaximo = configuracion?.diaMaximoCobro || 10;
+                // calcularCicloActual recibe el próximo vencimiento (actualizado previamente) y devuelve el inicio y fin de mes
+                const { inicio, fin } = calcularCicloActual(clienteActual.vencimientoCuota, diaMaximo);
+                
+                // Las fechas que devuelve `calcularCicloActual` están en hora local 00:00:00 (desde Date)
+                // Para asegurarnos del count, las estandarizamos en UTC como las demás búsquedas
+                const inicioUTC = new Date(inicio);
+                inicioUTC.setUTCHours(0,0,0,0);
+                const finUTC = new Date(fin);
+                // El fin del ciclo (vencimiento) se considera el inicio del próximo, así que usamos lt: finUTC
+                finUTC.setUTCHours(0,0,0,0);
+
+                const count = await prisma.turnoCliente.count({
+                    where: { 
+                        clienteId: parseInt(clienteId), 
+                        fecha: { 
+                            gte: inicioUTC, 
+                            lt: finUTC 
+                        } 
+                    }
+                });
+
+                if (count >= plan.cantidadClases) {
+                    limiteExcedido = true;
+                    const fechaReseteo = `${finUTC.getDate()}/${finUTC.getMonth() + 1}/${finUTC.getFullYear()}`;
+                    rangoMsg = `tu ciclo mensual. Tus reservas se renuevan el ${fechaReseteo}`;
+                }
+            }
+
+            if (limiteExcedido) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Tu plan permite un máximo de ${plan.cantidadClases} clases. Has alcanzado el límite para ${rangoMsg}.`
                 });
             }
         }
