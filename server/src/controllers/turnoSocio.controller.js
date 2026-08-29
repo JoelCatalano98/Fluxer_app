@@ -177,7 +177,10 @@ const reservarTurno = async (req, res) => {
             where: { id: parseInt(horarioId) },
             include: { 
                 turnos: {
-                    where: { fecha: d }
+                    where: { 
+                        fecha: d,
+                        estado: 'ACTIVO'
+                    }
                 } 
             }
         });
@@ -398,6 +401,17 @@ const cancelarTurno = async (req, res) => {
         });
     } catch (error) {
         console.error('Error al cancelar turno:', error);
+        if (error.code === 'P2002') {
+            try {
+                await prisma.turnoCliente.delete({ where: { id: parseInt(id) } });
+                return res.status(200).json({
+                    success: true,
+                    message: 'Reserva cancelada con éxito (penalidad previa ya registrada)'
+                });
+            } catch (delErr) {
+                console.error("Error al borrar duplicado en turnoSocio:", delErr);
+            }
+        }
         return res.status(500).json({
             success: false,
             message: 'Error interno del servidor al cancelar la reserva'

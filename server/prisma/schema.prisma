@@ -135,7 +135,7 @@ model TurnoCliente {
   horario       HorarioConfig @relation(fields: [horarioId], references: [id])
   profesional   Profesional?  @relation(fields: [profesionalId], references: [id])
 
-  @@unique([fecha, horarioId, clienteId])
+  @@unique([fecha, horarioId, clienteId, estado])
   @@index([clienteId], map: "turnos_clientes_clienteId_fkey")
   @@index([horarioId], map: "turnos_clientes_horarioId_fkey")
   @@index([profesionalId], map: "turnos_clientes_profesionalId_fkey")

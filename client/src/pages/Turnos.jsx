@@ -360,12 +360,14 @@ const Turnos = () => {
   const handleAnotarSubmit = async (e) => {
     e.preventDefault();
     if (!anotarValues.clienteId) {
-      alert("Por favor selecciona un cliente");
+      setMessage({ text: "Por favor selecciona un cliente", type: 'error' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
       return;
     }
 
     if (diasSeleccionados.length === 0 || horariosSeleccionados.length === 0) {
-      alert("Por favor selecciona al menos un día y al menos una franja horaria");
+      setMessage({ text: "Por favor selecciona al menos un día y al menos una franja horaria", type: 'error' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
       return;
     }
 
@@ -391,7 +393,8 @@ const Turnos = () => {
     });
 
     if (turnosToCreate.length === 0) {
-      alert("Ninguna de las combinaciones de día y horario seleccionadas está configurada en el cronograma. Por favor crea primero las franjas horarias correspondientes.");
+      setMessage({ text: "Ninguna de las combinaciones de día y horario seleccionadas está configurada en el cronograma. Por favor crea primero las franjas horarias correspondientes.", type: 'error' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 4000);
       return;
     }
 
@@ -414,9 +417,11 @@ const Turnos = () => {
       setProfesionalSearch('');
       setDiasSeleccionados([]);
       setHorariosSeleccionados([]);
-      alert("¡Cliente anotado con éxito!");
+      setMessage({ text: "¡Cliente anotado con éxito!", type: 'success' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     } catch (err) {
-      alert("Error al anotar cliente: " + err.message);
+      setMessage({ text: "Error al anotar cliente: " + err.message, type: 'error' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 4000);
     }
   };
 

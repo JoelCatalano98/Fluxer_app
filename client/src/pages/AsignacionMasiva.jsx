@@ -190,9 +190,21 @@ const AsignacionMasiva = () => {
     e.preventDefault();
     setMessage({ text: '', type: '' });
 
-    if (clientesSeleccionados.length === 0) return alert("Selecciona al menos un cliente.");
-    if (diasSeleccionados.length === 0 || horariosSeleccionados.length === 0) return alert("Selecciona al menos un día y una franja horaria.");
-    if (mesesSeleccionados.length === 0) return alert("Selecciona al menos un mes.");
+    if (clientesSeleccionados.length === 0) {
+      setMessage({ text: "Selecciona al menos un cliente.", type: 'error' });
+      window.scrollTo(0, 0);
+      return;
+    }
+    if (diasSeleccionados.length === 0 || horariosSeleccionados.length === 0) {
+      setMessage({ text: "Selecciona al menos un día y una franja horaria.", type: 'error' });
+      window.scrollTo(0, 0);
+      return;
+    }
+    if (mesesSeleccionados.length === 0) {
+      setMessage({ text: "Selecciona al menos un mes.", type: 'error' });
+      window.scrollTo(0, 0);
+      return;
+    }
 
     const horariosMatches = [];
     // Match horarios by ranges AND by specific category if selected
@@ -211,7 +223,9 @@ const AsignacionMasiva = () => {
     });
 
     if (horariosMatches.length === 0) {
-      return alert("Ninguna de las combinaciones de día y horario seleccionadas está configurada en el sistema para la disciplina elegida. Asegúrate de elegir un día que tenga esa franja horaria activa para dicha disciplina.");
+      setMessage({ text: "Ninguna de las combinaciones de día y horario seleccionadas está configurada en el sistema para la disciplina elegida. Asegúrate de elegir un día que tenga esa franja horaria activa para dicha disciplina.", type: 'error' });
+      window.scrollTo(0, 0);
+      return;
     }
 
     const seleccionadosInfo = clientesList.filter(c => clientesSeleccionados.includes(c.id));

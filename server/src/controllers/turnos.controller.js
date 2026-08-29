@@ -244,6 +244,16 @@ const deleteTurno = async (req, res) => {
         }
     } catch (error) {
         console.error('Error al cancelar turno:', error);
+        if (error.code === 'P2002') {
+            // Ya existe un turno CANCELADO_PENALIZADO, por lo que no podemos actualizar este.
+            // Para resolverlo de forma silenciosa y liberar el cupo, lo borramos.
+            try {
+                await prisma.turnoCliente.delete({ where: { id: parseInt(req.params.id) } });
+                return res.status(200).json({ success: true, data: null, message: 'Turno cancelado (ya poseías una penalidad en esta clase)' });
+            } catch (delErr) {
+                console.error("Error al borrar el turno de reserva duplicada:", delErr);
+            }
+        }
         if (error.code === 'P2025') {
             return res.status(404).json({ success: false, data: null, message: 'Turno no encontrado' });
         }
