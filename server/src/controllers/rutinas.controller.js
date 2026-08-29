@@ -22,7 +22,8 @@ const crearRutina = async (req, res) => {
                         dia: ej.dia || null,
                         series: parseInt(ej.series),
                         repeticiones: String(ej.repeticiones),
-                        pesoSugerido: ej.pesoSugerido ? String(ej.pesoSugerido) : null
+                        pesoSugerido: ej.pesoSugerido ? String(ej.pesoSugerido) : null,
+                        notas: ej.notas ? String(ej.notas) : null
                     }))
                 }
             },
@@ -72,6 +73,60 @@ const obtenerRutinasPorCliente = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error interno al obtener las rutinas'
+        });
+    }
+};
+
+// Actualizar una rutina específica
+const actualizarRutina = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre, ejercicios } = req.body;
+
+        if (!nombre || !ejercicios || !Array.isArray(ejercicios)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Faltan datos requeridos o el formato es incorrecto.'
+            });
+        }
+
+        // Usamos transacción para asegurar consistencia
+        const rutinaActualizada = await prisma.$transaction(async (tx) => {
+            // Eliminar ejercicios anteriores
+            await tx.rutinaEjercicio.deleteMany({
+                where: { rutinaId: parseInt(id) }
+            });
+
+            // Actualizar nombre y crear nuevos ejercicios
+            return await tx.rutina.update({
+                where: { id: parseInt(id) },
+                data: {
+                    nombre,
+                    ejercicios: {
+                        create: ejercicios.map(ej => ({
+                            nombreEjercicio: ej.nombreEjercicio || ej.nombre,
+                            dia: ej.dia || null,
+                            series: parseInt(ej.series) || 0,
+                            repeticiones: String(ej.repeticiones || ''),
+                            pesoSugerido: ej.pesoSugerido ? String(ej.pesoSugerido) : null,
+                            notas: ej.notas ? String(ej.notas) : null
+                        }))
+                    }
+                },
+                include: { ejercicios: true }
+            });
+        });
+
+        res.status(200).json({
+            success: true,
+            data: rutinaActualizada,
+            message: 'Rutina actualizada exitosamente'
+        });
+    } catch (error) {
+        console.error('Error al actualizar rutina:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error interno al actualizar la rutina'
         });
     }
 };
@@ -188,5 +243,6 @@ module.exports = {
     obtenerRutinasPorCliente,
     eliminarRutina,
     obtenerRutinaGeneral,
-    crearOActualizarRutinaGeneral
+    crearOActualizarRutinaGeneral,
+    actualizarRutina
 };

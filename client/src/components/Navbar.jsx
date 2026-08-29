@@ -167,11 +167,7 @@ const Navbar = ({ isOpen }) => {
               </li>
               {hasPermission('permisoFinanzas') && (
                 <>
-                  <li>
-                    <NavLink to="/pagos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                      Medios de Pago
-                    </NavLink>
-                  </li>
+
                   {qrHabilitado && (
                     <li>
                       <NavLink to="/demo-qr" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>

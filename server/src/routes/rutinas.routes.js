@@ -16,6 +16,9 @@ router.post('/general', rutinasController.crearOActualizarRutinaGeneral);
 // GET /api/rutinas/cliente/:clienteId
 router.get('/cliente/:clienteId', rutinasController.obtenerRutinasPorCliente);
 
+// PUT /api/rutinas/:id
+router.put('/:id', rutinasController.actualizarRutina);
+
 // DELETE /api/rutinas/:id
 router.delete('/:id', rutinasController.eliminarRutina);
 

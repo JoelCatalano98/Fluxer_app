@@ -9,6 +9,7 @@ const ModalRutinas = ({ isOpen, onClose, cliente, isGeneral = false }) => {
   const [loading, setLoading] = useState(false);
   const [expandedRutinaId, setExpandedRutinaId] = useState(null);
   const [showCalculadora, setShowCalculadora] = useState(false);
+  const [editingRutinaId, setEditingRutinaId] = useState(null);
 
   // Estado del formulario dinámico
   const [nuevaRutina, setNuevaRutina] = useState({
@@ -21,6 +22,7 @@ const ModalRutinas = ({ isOpen, onClose, cliente, isGeneral = false }) => {
     if (isOpen && (cliente || isGeneral)) {
       cargarRutinas();
       setModoCreacion(false);
+      setEditingRutinaId(null);
       setNuevaRutina({ nombre: '', descripcion: '', dias: [] });
     }
   }, [isOpen, cliente]);
@@ -46,11 +48,50 @@ const ModalRutinas = ({ isOpen, onClose, cliente, isGeneral = false }) => {
       const res = await api.delete(`/api/rutinas/${rutinaId}`);
       if (res.data.success) {
         setRutinasExistentes(prev => prev.filter(r => r.id !== rutinaId));
+        if (expandedRutinaId === rutinaId) setExpandedRutinaId(null);
       }
     } catch (error) {
       console.error('Error al eliminar rutina:', error);
       alert('Error al eliminar rutina.');
     }
+  };
+
+  const handleEditarRutina = (rutina) => {
+    // Transformar los ejercicios de la BD al formato del form (agrupados por día)
+    const diasAgrupados = {};
+    if (rutina.ejercicios && rutina.ejercicios.length > 0) {
+      rutina.ejercicios.forEach(ej => {
+        const diaNombre = ej.dia || 'Día 1';
+        if (!diasAgrupados[diaNombre]) {
+          diasAgrupados[diaNombre] = [];
+        }
+        diasAgrupados[diaNombre].push({
+          nombre: ej.nombreEjercicio,
+          series: ej.series,
+          repeticiones: ej.repeticiones,
+          pesoSugerido: ej.pesoSugerido || '',
+          descanso: ej.descanso || '', // Si no existe en el schema, se mandará vacío
+          notas: ej.notas || '',
+          videoUrl: ej.videoUrl || ''
+        });
+      });
+    } else {
+      diasAgrupados['Día 1'] = [];
+    }
+
+    const diasArray = Object.keys(diasAgrupados).map(dia => ({
+      nombre: dia,
+      ejercicios: diasAgrupados[dia]
+    }));
+
+    setNuevaRutina({
+      nombre: rutina.nombre || '',
+      descripcion: rutina.descripcion || '',
+      dias: diasArray
+    });
+
+    setEditingRutinaId(rutina.id);
+    setModoCreacion(true);
   };
 
   const agregarDia = () => {
@@ -129,10 +170,17 @@ const ModalRutinas = ({ isOpen, onClose, cliente, isGeneral = false }) => {
         ejercicios: ejerciciosPlanos
       };
 
-      const res = await api.post(isGeneral ? '/api/rutinas/general' : '/api/rutinas', payload);
+      let res;
+      if (editingRutinaId && !isGeneral) { // isGeneral uses its own upsert endpoint
+        res = await api.put(`/api/rutinas/${editingRutinaId}`, payload);
+      } else {
+        res = await api.post(isGeneral ? '/api/rutinas/general' : '/api/rutinas', payload);
+      }
+      
       if (res.data.success) {
         await cargarRutinas();
         setModoCreacion(false);
+        setEditingRutinaId(null);
         setNuevaRutina({ nombre: '', descripcion: '', dias: [] });
       }
     } catch (error) {
@@ -216,7 +264,7 @@ const ModalRutinas = ({ isOpen, onClose, cliente, isGeneral = false }) => {
             <div className="rutina-form">
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
                 <button 
-                  onClick={() => setModoCreacion(false)}
+                  onClick={() => { setModoCreacion(false); setEditingRutinaId(null); }}
                   style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', color: '#666', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '500' }}
                 >
                   <ArrowLeft size={16} /> Volver a la lista
@@ -327,7 +375,7 @@ const ModalRutinas = ({ isOpen, onClose, cliente, isGeneral = false }) => {
             <div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
                 <button 
-                  onClick={() => setModoCreacion(true)}
+                  onClick={() => { setNuevaRutina({ nombre: '', descripcion: '', dias: [] }); setEditingRutinaId(null); setModoCreacion(true); }}
                   style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', backgroundColor: '#333', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: '500' }}
                 >
                   <Plus size={18} /> Crear Nueva Rutina
@@ -356,6 +404,13 @@ const ModalRutinas = ({ isOpen, onClose, cliente, isGeneral = false }) => {
                           </span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleEditarRutina(rutina); }}
+                            style={{ background: '#e1f0ff', border: 'none', color: '#00a8e8', padding: '8px', borderRadius: '6px', cursor: 'pointer', display: 'flex' }}
+                            title="Editar Rutina"
+                          >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                          </button>
                           <button 
                             onClick={(e) => { e.stopPropagation(); handleEliminarRutina(rutina.id); }}
                             style={{ background: '#fff1f1', border: 'none', color: '#e03131', padding: '8px', borderRadius: '6px', cursor: 'pointer', display: 'flex' }}
@@ -393,7 +448,8 @@ const ModalRutinas = ({ isOpen, onClose, cliente, isGeneral = false }) => {
                                       <th style={{ padding: '8px 10px' }}>Series</th>
                                       <th style={{ padding: '8px 10px' }}>Reps</th>
                                       <th style={{ padding: '8px 10px' }}>Sugerido</th>
-                                      <th style={{ padding: '8px 10px', borderRadius: '0 4px 4px 0' }}>Real</th>
+                                      <th style={{ padding: '8px 10px' }}>Real</th>
+                                      <th style={{ padding: '8px 10px', borderRadius: '0 4px 4px 0' }}>Notas Socio</th>
                                     </tr>
                                   </thead>
                                   <tbody>
@@ -404,6 +460,9 @@ const ModalRutinas = ({ isOpen, onClose, cliente, isGeneral = false }) => {
                                         <td style={{ padding: '10px', color: '#666' }}>{ej.repeticiones}</td>
                                         <td style={{ padding: '10px', color: '#666' }}>{ej.pesoSugerido || '-'}</td>
                                         <td style={{ padding: '10px', color: '#10b981', fontWeight: 'bold' }}>{ej.pesoReal ? `${ej.pesoReal} kg` : '-'}</td>
+                                        <td style={{ padding: '10px', color: '#666', fontStyle: 'italic', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={ej.notas || ''}>
+                                          {ej.notas || '-'}
+                                        </td>
                                       </tr>
                                     ))}
                                   </tbody>
@@ -427,7 +486,7 @@ const ModalRutinas = ({ isOpen, onClose, cliente, isGeneral = false }) => {
         {modoCreacion && (
           <div style={{ padding: '15px 25px', borderTop: '1px solid #eee', backgroundColor: '#fff', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
             <button 
-              onClick={() => setModoCreacion(false)}
+              onClick={() => { setModoCreacion(false); setEditingRutinaId(null); }}
               style={{ padding: '10px 20px', backgroundColor: '#f1f3f5', color: '#495057', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}
             >
               Cancelar

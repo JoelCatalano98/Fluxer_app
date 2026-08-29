@@ -227,6 +227,7 @@ model RutinaEjercicio {
   repeticiones    String
   pesoSugerido    String?
   pesoReal        String?
+  notas           String? @db.Text
   dia             String?
   rutina          Rutina  @relation(fields: [rutinaId], references: [id], onDelete: Cascade)
 
