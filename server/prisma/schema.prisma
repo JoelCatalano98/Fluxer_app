@@ -130,6 +130,7 @@ model TurnoCliente {
   horarioId     Int
   clienteId     Int
   profesionalId Int?
+  estado        String        @default("ACTIVO")
   cliente       Cliente       @relation(fields: [clienteId], references: [id])
   horario       HorarioConfig @relation(fields: [horarioId], references: [id])
   profesional   Profesional?  @relation(fields: [profesionalId], references: [id])

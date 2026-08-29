@@ -42,8 +42,9 @@ const getClasesDisponibles = async (req, res) => {
                 categoria: true,
                 profesional: true,
                 turnos: {
+                    where: { estado: 'ACTIVO' },
                     include: { cliente: true }
-                } // Trae todos los turnos con los datos de sus clientes
+                } // Solo trae turnos activos para el contador visual
             },
             orderBy: { hora_inicio: 'asc' }
         });
@@ -329,7 +330,8 @@ const reservarTurno = async (req, res) => {
             data: {
                 horarioId: parseInt(horarioId),
                 clienteId: parseInt(clienteId),
-                fecha: d
+                fecha: d,
+                estado: 'ACTIVO'
             }
         });
 

@@ -54,7 +54,8 @@ const Turnos = () => {
     cancelarTurno,
     crearHorario,
     editarHorario,
-    eliminarHorario
+    eliminarHorario,
+    fetchTurnos
   } = useTurnos(semanaBase);
 
   // Navegación de semanas
@@ -122,6 +123,9 @@ const Turnos = () => {
   const [isEditHorarioModalOpen, setIsEditHorarioModalOpen] = useState(false);
   const [errorValidacion, setErrorValidacion] = useState("");
   const [turnoToCancel, setTurnoToCancel] = useState(null);
+  const [cobrarClase, setCobrarClase] = useState(true);
+  const [isCancelAllConfirmOpen, setIsCancelAllConfirmOpen] = useState(false);
+  const [cobrarClaseMasivo, setCobrarClaseMasivo] = useState(true);
   const [isDeleteHorarioConfirmOpen, setIsDeleteHorarioConfirmOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -547,17 +551,36 @@ const Turnos = () => {
 
   const handleCancelTurno = (turnoId) => {
     setTurnoToCancel(turnoId);
+    setCobrarClase(true); // Por defecto penalizamos
   };
 
   const confirmCancelTurno = async () => {
     if (!turnoToCancel) return;
     try {
-      await cancelarTurno(turnoToCancel);
+      // Modify api wrapper or pass param
+      await api.delete(`/api/turnos/${turnoToCancel}?penalidad=${cobrarClase}`);
       setSelectedCellTurnos(prev => prev.filter(t => t.id !== turnoToCancel));
       setTurnoToCancel(null);
       setSuccessMessage("Reserva cancelada con éxito");
+      // Refrescar turnos
+      fetchTurnos();
     } catch (err) {
-      alert("Error al cancelar la reserva: " + err.message);
+      alert("Error al cancelar la reserva: " + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const confirmCancelAllTurnos = async () => {
+    try {
+      const turnoIds = selectedCellTurnos.map(t => t.id);
+      await api.delete('/api/turnos/masivo', { data: { turnoIds, penalidad: cobrarClaseMasivo } });
+      setSelectedCellTurnos([]);
+      setIsCancelAllConfirmOpen(false);
+      setIsDetallesModalOpen(false);
+      setSuccessMessage(`${turnoIds.length} reservas canceladas con éxito`);
+      // Refrescar turnos
+      fetchTurnos();
+    } catch (err) {
+      alert("Error al cancelar las reservas: " + (err.response?.data?.message || err.message));
     }
   };
 
@@ -1274,7 +1297,17 @@ const Turnos = () => {
       >
         <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '20px' }}>
           {selectedCellTurnos.length > 0 ? (
-            <table className="data-table" style={{ width: '100%' }}>
+            <>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
+                <button
+                  className="btn-accion-delete"
+                  onClick={() => setIsCancelAllConfirmOpen(true)}
+                  style={{ border: 'none', background: '#fff1f1', color: '#e03131', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                >
+                  Cancelar Todos
+                </button>
+              </div>
+              <table className="data-table" style={{ width: '100%' }}>
               <thead>
                 <tr>
                   <th>Cliente</th>
@@ -1311,6 +1344,7 @@ const Turnos = () => {
                 ))}
               </tbody>
             </table>
+            </>
           ) : (
             <p style={{ textAlign: 'center', color: '#666', padding: '20px' }}>No hay reservas en este horario.</p>
           )}
@@ -1330,9 +1364,21 @@ const Turnos = () => {
         contentClassName="modal-small"
       >
         <div style={{ padding: '20px', textAlign: 'center' }}>
-          <p style={{ marginBottom: '20px', fontSize: '1.05rem', color: '#444' }}>
+          <p style={{ marginBottom: '10px', fontSize: '1.05rem', color: '#444' }}>
             ¿Estás seguro de que deseas cancelar esta reserva?
           </p>
+          
+          <div style={{ marginBottom: '20px', background: '#f8f9fa', padding: '10px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem' }}>
+              <input 
+                type="checkbox" 
+                checked={cobrarClase} 
+                onChange={(e) => setCobrarClase(e.target.checked)} 
+              />
+              <strong>Descontar clase</strong> (modo penalidad / no devolver cupo)
+            </label>
+          </div>
+
           <div className="pie-formulario" style={{ justifyContent: 'center', gap: '15px' }}>
             <button type="button" className="btn-cancel" onClick={() => setTurnoToCancel(null)}>
               Volver
@@ -1344,6 +1390,45 @@ const Turnos = () => {
               style={{ border: 'none', background: '#e03131', color: '#fff', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '5px' }}
             >
               Sí, cancelar reserva
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal: Confirmar Cancelación Masiva */}
+      <Modal 
+        isOpen={isCancelAllConfirmOpen} 
+        onClose={() => setIsCancelAllConfirmOpen(false)} 
+        title={<span><AlertTriangle size={20} className="modal-title-icon" style={{ color: '#e03131' }}/> Cancelar Todos</span>}
+        contentClassName="modal-small"
+      >
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <p style={{ marginBottom: '10px', fontSize: '1.05rem', color: '#444' }}>
+            ¿Estás seguro de que deseas cancelar las <strong>{selectedCellTurnos.length}</strong> reservas de este horario?
+          </p>
+          
+          <div style={{ marginBottom: '20px', background: '#f8f9fa', padding: '10px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.95rem' }}>
+              <input 
+                type="checkbox" 
+                checked={cobrarClaseMasivo} 
+                onChange={(e) => setCobrarClaseMasivo(e.target.checked)} 
+              />
+              <strong>Descontar clase a todos</strong> (modo penalidad)
+            </label>
+          </div>
+
+          <div className="pie-formulario" style={{ justifyContent: 'center', gap: '15px' }}>
+            <button type="button" className="btn-cancel" onClick={() => setIsCancelAllConfirmOpen(false)}>
+              Volver
+            </button>
+            <button 
+              type="button" 
+              className="btn-accion-delete"
+              onClick={confirmCancelAllTurnos}
+              style={{ border: 'none', background: '#e03131', color: '#fff', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '5px' }}
+            >
+              Sí, cancelar {selectedCellTurnos.length} reservas
             </button>
           </div>
         </div>

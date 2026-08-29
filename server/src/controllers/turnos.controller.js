@@ -38,6 +38,8 @@ const getTurnos = async (req, res) => {
             };
         }
 
+        where.estado = 'ACTIVO'; // Solo traer turnos que no están cancelados penalizados
+
         const turnos = await prisma.turnoCliente.findMany({
             where,
             include: {
@@ -110,7 +112,8 @@ const createTurno = async (req, res) => {
         where: {
           clienteId: item.clienteId,
           horarioId: item.horarioId,
-          fecha: fechaObj
+          fecha: fechaObj,
+          estado: 'ACTIVO'
         }
       });
 
@@ -144,6 +147,81 @@ const createTurno = async (req, res) => {
   }
 };
 
+// POST /api/turnos/masivo
+const createTurnosMasivos = async (req, res) => {
+  try {
+    const { clienteIds, horarioIds, meses, anio } = req.body;
+
+    if (!clienteIds || !horarioIds || !meses || !anio) {
+      return res.status(400).json({ success: false, message: "Faltan parámetros obligatorios." });
+    }
+
+    const horarios = await prisma.horarioConfig.findMany({
+      where: { id: { in: horarioIds } }
+    });
+
+    const hoy = new Date();
+    const currentYear = hoy.getFullYear();
+    const currentMonth = hoy.getMonth() + 1;
+    const currentDay = hoy.getDate();
+
+    let itemsToCreate = [];
+
+    for (const mes of meses) {
+      const mesInt = parseInt(mes);
+      const anioInt = parseInt(anio);
+      const esMesActual = (anioInt === currentYear && mesInt === currentMonth);
+
+      // Iterar sobre los días del mes
+      const date = new Date(anioInt, mesInt - 1, 1);
+      
+      while (date.getMonth() === mesInt - 1) {
+        // 1. Si es el mes actual, saltar los días que ya pasaron (generar solo desde hoy inclusive)
+        if (esMesActual && date.getDate() < currentDay) {
+          date.setDate(date.getDate() + 1);
+          continue;
+        }
+
+        const diaSemana = date.getDay(); // 0 = Domingo, 1 = Lunes
+        
+        // Encontrar horarios que coincidan con este día de la semana
+        const horariosDelDia = horarios.filter(h => h.dia_semana === diaSemana);
+        
+        for (const horario of horariosDelDia) {
+          const fechaObj = new Date(date);
+          fechaObj.setUTCHours(0, 0, 0, 0); // Guardar como UTC a medianoche
+          
+          for (const clienteId of clienteIds) {
+            itemsToCreate.push({
+              clienteId: parseInt(clienteId),
+              horarioId: horario.id,
+              fecha: fechaObj,
+              profesionalId: horario.profesionalId || null // Heredar del horario si es que tiene
+            });
+          }
+        }
+        date.setDate(date.getDate() + 1);
+      }
+    }
+
+    let creados = 0;
+    for (const item of itemsToCreate) {
+      const existe = await prisma.turnoCliente.findFirst({
+        where: { clienteId: item.clienteId, horarioId: item.horarioId, fecha: item.fecha, estado: 'ACTIVO' }
+      });
+      if (!existe) {
+        await prisma.turnoCliente.create({ data: item });
+        creados++;
+      }
+    }
+
+    res.json({ success: true, message: `¡${creados} turnos generados con éxito!` });
+  } catch (error) {
+    console.error("Error en createTurnosMasivos:", error);
+    res.status(500).json({ success: false, message: "Error interno al crear los turnos", error: error.message });
+  }
+};
+
 // DELETE /api/turnos/:id
 const deleteTurno = async (req, res) => {
     try {
@@ -152,15 +230,53 @@ const deleteTurno = async (req, res) => {
             return res.status(400).json({ success: false, data: null, message: 'ID de turno no válido' });
         }
 
-        await prisma.turnoCliente.delete({ where: { id } });
+        const penalizar = req.query.penalidad === 'true';
 
-        return res.status(200).json({ success: true, data: null, message: 'Turno cancelado con éxito' });
+        if (penalizar) {
+            await prisma.turnoCliente.update({
+                where: { id },
+                data: { estado: 'CANCELADO_PENALIZADO' }
+            });
+            return res.status(200).json({ success: true, data: null, message: 'Turno cancelado (se cobró la clase al cliente)' });
+        } else {
+            await prisma.turnoCliente.delete({ where: { id } });
+            return res.status(200).json({ success: true, data: null, message: 'Turno cancelado con éxito (cupo devuelto al cliente)' });
+        }
     } catch (error) {
         console.error('Error al cancelar turno:', error);
         if (error.code === 'P2025') {
             return res.status(404).json({ success: false, data: null, message: 'Turno no encontrado' });
         }
         return res.status(500).json({ success: false, data: null, message: 'Error interno del servidor al cancelar el turno' });
+    }
+};
+
+// DELETE /api/turnos/masivo
+const cancelarTurnosMasivo = async (req, res) => {
+    try {
+        const { turnoIds, penalidad } = req.body;
+        
+        if (!Array.isArray(turnoIds) || turnoIds.length === 0) {
+            return res.status(400).json({ success: false, data: null, message: 'No se proporcionaron IDs de turnos válidos' });
+        }
+
+        const penalizar = penalidad === true || penalidad === 'true';
+
+        if (penalizar) {
+            await prisma.turnoCliente.updateMany({
+                where: { id: { in: turnoIds } },
+                data: { estado: 'CANCELADO_PENALIZADO' }
+            });
+            return res.status(200).json({ success: true, data: null, message: `${turnoIds.length} turnos cancelados (con penalidad)` });
+        } else {
+            await prisma.turnoCliente.deleteMany({
+                where: { id: { in: turnoIds } }
+            });
+            return res.status(200).json({ success: true, data: null, message: `${turnoIds.length} turnos eliminados (cupos devueltos)` });
+        }
+    } catch (error) {
+        console.error('Error al cancelar turnos masivos:', error);
+        return res.status(500).json({ success: false, data: null, message: 'Error interno del servidor al cancelar turnos' });
     }
 };
 
@@ -416,9 +532,11 @@ const deleteHorario = async (req, res) => {
 module.exports = {
     getTurnos,
     createTurno,
+    createTurnosMasivos,
     deleteTurno,
     getHorarios,
     createHorario,
     updateHorario,
-    deleteHorario
+    deleteHorario,
+    cancelarTurnosMasivo
 };

@@ -27,6 +27,7 @@ const Navbar = ({ isOpen }) => {
   const [libroDiarioHabilitado, setLibroDiarioHabilitado] = useState(true);
   const [sociosHabilitado, setSociosHabilitado] = useState(false);
   const [qrHabilitado, setQrHabilitado] = useState(false);
+  const [asignacionMasivaHabilitado, setAsignacionMasivaHabilitado] = useState(true);
 
   const loadConfig = async () => {
     try {
@@ -49,6 +50,9 @@ const Navbar = ({ isOpen }) => {
         
         const paramQr = resParams.data.data.find(p => p.clave === 'qrHabilitado');
         setQrHabilitado(paramQr ? paramQr.valor === 'true' : false);
+
+        const paramAsignacion = resParams.data.data.find(p => p.clave === 'asignacionMasivaHabilitado');
+        setAsignacionMasivaHabilitado(paramAsignacion ? paramAsignacion.valor === 'true' : true);
       }
     } catch (err) {
       console.error('Error al cargar config en Navbar:', err);
@@ -101,6 +105,13 @@ const Navbar = ({ isOpen }) => {
                   Turnos / Horarios
                 </NavLink>
               </li>
+              {asignacionMasivaHabilitado && (
+                <li>
+                  <NavLink to="/asignacion-mensual" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Asignación Masiva Mensual
+                  </NavLink>
+                </li>
+              )}
               <li>
                 <NavLink to="/configuracion" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
                   Configuración General

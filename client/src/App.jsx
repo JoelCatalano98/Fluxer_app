@@ -25,6 +25,7 @@ import Calendario from './pages/Calendario';
 import Usuarios from './pages/Usuarios';
 import Parametros from './pages/Parametros';
 import GeneradorQR from './pages/GeneradorQR';
+import AsignacionMasiva from './pages/AsignacionMasiva';
 import api from './services/api';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -203,6 +204,7 @@ function AppContent() {
             <Route path="/morosos" element={<Morosos />} />
             <Route path="/profesionales" element={<Profesionales />} />
             <Route path="/turnos" element={<Turnos />} />
+            <Route path="/asignacion-mensual" element={<AsignacionMasiva />} />
             <Route path="/gestion-planes" element={<GestionPlanes />} />
             <Route path="/configuracion" element={<Configuracion />} />
             <Route path="/categorias" element={<Categorias />} />

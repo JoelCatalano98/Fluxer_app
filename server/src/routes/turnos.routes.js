@@ -8,6 +8,12 @@ router.get('/', turnosController.getTurnos);
 // Crear una nueva reserva (turno)
 router.post('/', turnosController.createTurno);
 
+// Crear reservas masivas por meses y múltiples alumnos
+router.post('/masivo', turnosController.createTurnosMasivos);
+
+// Cancelar reservas masivas
+router.delete('/masivo', turnosController.cancelarTurnosMasivo);
+
 // Cancelar una reserva por ID
 router.delete('/:id', turnosController.deleteTurno);
 

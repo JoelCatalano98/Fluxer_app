@@ -10,6 +10,7 @@ const ROUTES_DATA = [
   { nombre: 'Morosos', path: '/morosos' },
   { nombre: 'Profesionales', path: '/profesionales' },
   { nombre: 'Turnos y Horarios', path: '/turnos' },
+  { nombre: 'Asignación Masiva Mensual', path: '/asignacion-mensual' },
   { nombre: 'Gestión de Planes', path: '/gestion-planes' },
   { nombre: 'Categorías', path: '/categorias' },
   { nombre: 'Feriados', path: '/feriados' },
