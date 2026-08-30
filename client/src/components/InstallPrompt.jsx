@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Download, Share } from 'lucide-react';
+import { X, Download, Share, MoreVertical } from 'lucide-react';
 
 export default function InstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
@@ -8,47 +8,55 @@ export default function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
 
   useEffect(() => {
-    // Detect iOS
     const userAgent = window.navigator.userAgent.toLowerCase();
     const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
+    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    
     setIsIOS(isIOSDevice);
 
-    // Detect if app is already installed
     const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     setIsStandalone(isStandaloneMode);
 
-    if (isStandaloneMode) return;
+    // Only show on mobile devices that are not already installed
+    if (isStandaloneMode || !isMobile) return;
 
-    // Listen for beforeinstallprompt on Android/Chrome
+    let promptFired = false;
+
     const handleBeforeInstallPrompt = (e) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Stash the event so it can be triggered later.
+      promptFired = true;
       setDeferredPrompt(e);
-      // Show the prompt custom UI
       setShowPrompt(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // For iOS, there is no beforeinstallprompt, so we just show the prompt if it's iOS and not standalone
-    if (isIOSDevice && !isStandaloneMode) {
-      // Delay prompt slightly
+    if (isIOSDevice) {
+      // Delay for iOS
       const timer = setTimeout(() => setShowPrompt(true), 1500);
       return () => clearTimeout(timer);
+    } else {
+      // For Android, if beforeinstallprompt doesn't fire after a few seconds,
+      // it means the browser (like Firefox) doesn't support the automatic prompt.
+      // We show manual instructions instead.
+      const timer = setTimeout(() => {
+        if (!promptFired) {
+          setShowPrompt(true);
+        }
+      }, 3000);
+      
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      };
     }
-
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
-    // Show the install prompt
     deferredPrompt.prompt();
-    // Wait for the user to respond to the prompt
     const { outcome } = await deferredPrompt.userChoice;
     console.log(`User response to the install prompt: ${outcome}`);
-    // We've used the prompt, and can't use it again, throw it away
     setDeferredPrompt(null);
     setShowPrompt(false);
   };
@@ -79,6 +87,11 @@ export default function InstallPrompt() {
           <div className="flex flex-col items-center justify-center gap-2 text-sm text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-200 text-center">
             <p>1. Toca el ícono <Share className="w-4 h-4 inline mx-1" /> en la barra inferior.</p>
             <p>2. Selecciona <strong>"Agregar a inicio"</strong> o <strong>"Add to Home Screen"</strong>.</p>
+          </div>
+        ) : !deferredPrompt ? (
+          <div className="flex flex-col items-center justify-center gap-2 text-sm text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-200 text-center">
+             <p>1. Abre el menú del navegador <MoreVertical className="w-4 h-4 inline mx-0.5" />.</p>
+             <p>2. Selecciona <strong>"Instalar aplicación"</strong> o <strong>"Agregar a inicio"</strong>.</p>
           </div>
         ) : (
           <button
