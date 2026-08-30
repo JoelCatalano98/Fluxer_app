@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Topbar from './components/Topbar';
 import Footer from './components/Footer';
 import Modal from './components/Modal';
+import InstallPrompt from './components/InstallPrompt';
 
 // Páginas
 import Dashboard from './pages/Dashboard';
@@ -174,6 +175,7 @@ function AppContent() {
 
   return (
     <div className={`app-layout ${isSidebarOpen ? 'sidebar-open' : ''}`} style={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+      <InstallPrompt />
       {/* Sidebar - Ancho fijo */}
       <Navbar isOpen={isSidebarOpen} /> 
       
