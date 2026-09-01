@@ -4,7 +4,7 @@ const Footer = () => {
   return (
     <footer className="app-footer">
       <div className="footer-left">
-        <span><Cpu size={14} style={{ marginRight: '5px' }} /> Fluxer v2.0 (MERN)</span>
+        <span><Cpu size={14} style={{ marginRight: '5px' }} /> Fluxer v1.1</span>
         <span className="status-online"><Circle size={8} fill="#28a745" style={{ marginRight: '5px' }} /> Sistema Activo</span>
       </div>
       <div className="footer-right">

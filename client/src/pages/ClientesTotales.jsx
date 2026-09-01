@@ -26,12 +26,12 @@ const ClientesTotales = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [message, setMessage] = useState({ text: '', type: '' });
-  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: () => {} });
-  
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: () => { } });
+
   // Bandeja de Pendientes
   const [pendientes, setPendientes] = useState([]);
   const [showPendientesModal, setShowPendientesModal] = useState(false);
-  
+
   // Estado de Cuenta
   const [showEstadoCuenta, setShowEstadoCuenta] = useState(false);
   const [clienteEstadoCuenta, setClienteEstadoCuenta] = useState(null);
@@ -335,7 +335,7 @@ const ClientesTotales = () => {
         image="/img/welcome-background.png"
       />
 
-      <div style={{ padding: '20px' }}>
+      <div style={{ padding: '5px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center' }}>
           <div>
             <h1 style={{ color: '#333', margin: 0, fontSize: '2rem' }}>Clientes Totales</h1>
@@ -343,23 +343,23 @@ const ClientesTotales = () => {
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             {pendientes.length > 0 && (
-              <button 
-                className="btn-secondary" 
+              <button
+                className="btn-secondary"
                 onClick={() => setShowPendientesModal(true)}
                 style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#fffbeb', color: '#b45309', border: '1px solid #fde68a', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 🔔 Ver Pendientes ({pendientes.length})
               </button>
             )}
-            <button 
-              className="btn-primary" 
+            <button
+              className="btn-primary"
               onClick={() => setShowRutinaGeneral(true)}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
             >
               <Dumbbell size={20} /> Rutina del Día
             </button>
-            <button 
-              className="btn-primary" 
+            <button
+              className="btn-primary"
               onClick={handleNewCliente}
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px', backgroundColor: 'var(--accent-blue)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
             >
@@ -370,9 +370,9 @@ const ClientesTotales = () => {
 
         <div style={{ marginBottom: '20px', position: 'relative', maxWidth: '400px' }}>
           <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
-          <input 
-            type="text" 
-            placeholder="Buscar por nombre, apellido o DNI..." 
+          <input
+            type="text"
+            placeholder="Buscar por nombre, apellido o DNI..."
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
             style={{ width: '100%', padding: '10px 10px 10px 38px', borderRadius: '8px', border: '1px solid #ddd', fontSize: '0.95rem' }}
@@ -525,7 +525,7 @@ const ClientesTotales = () => {
         {/* Paginación */}
         {totalPages > 1 && (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '20px', gap: '15px' }}>
-            <button 
+            <button
               onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
               disabled={currentPage === 1}
               style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', background: currentPage === 1 ? '#f5f5f5' : 'white', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? '#aaa' : '#333' }}
@@ -535,7 +535,7 @@ const ClientesTotales = () => {
             <span style={{ fontSize: '0.95rem', color: '#555' }}>
               Página <strong>{currentPage}</strong> de <strong>{totalPages}</strong>
             </span>
-            <button 
+            <button
               onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
               disabled={currentPage === totalPages}
               style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #ddd', background: currentPage === totalPages ? '#f5f5f5' : 'white', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? '#aaa' : '#333' }}
@@ -569,13 +569,13 @@ const ClientesTotales = () => {
                   <label htmlFor="telefono">Teléfono</label>
                   <input type="tel" id="telefono" name="telefono" value={formValues.telefono} onChange={handleInputChange} placeholder="+54 9..." />
                 </div>
-                
+
                 <div className="grupo-campo" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '25px' }}>
-                  <input 
-                    type="checkbox" 
-                    id="es_socio" 
+                  <input
+                    type="checkbox"
+                    id="es_socio"
                     name="es_socio"
-                    checked={formValues.es_socio} 
+                    checked={formValues.es_socio}
                     onChange={handleInputChange}
                     style={{ width: '20px', height: '20px', cursor: 'pointer' }}
                   />
@@ -585,10 +585,10 @@ const ClientesTotales = () => {
                 {isEditing && (
                   <div className="grupo-campo">
                     <label htmlFor="estado_pago">Estado de Pago</label>
-                    <select 
-                      id="estado_pago" 
+                    <select
+                      id="estado_pago"
                       name="estado_pago"
-                      value={formValues.estado_pago} 
+                      value={formValues.estado_pago}
                       onChange={handleInputChange}
                       style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
                     >
@@ -613,10 +613,10 @@ const ClientesTotales = () => {
 
                 <div className="grupo-campo">
                   <label htmlFor="categoriaId">Asignar Categoría / Actividad</label>
-                  <select 
-                    id="categoriaId" 
-                    name="categoriaId" 
-                    value={formValues.categoriaId} 
+                  <select
+                    id="categoriaId"
+                    name="categoriaId"
+                    value={formValues.categoriaId}
                     onChange={handleInputChange}
                     style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
                   >
@@ -629,7 +629,7 @@ const ClientesTotales = () => {
                   </select>
                 </div>
               </div>
-              
+
               <div className="grupo-campo ancho-completo">
                 <label htmlFor="observaciones">Observaciones</label>
                 <textarea id="observaciones" name="observaciones" rows="3" value={formValues.observaciones} onChange={handleInputChange} placeholder="Información adicional..."></textarea>
@@ -659,13 +659,13 @@ const ClientesTotales = () => {
           confirmLabel="Eliminar Cliente"
         />
 
-        <ModalRutinas 
+        <ModalRutinas
           isOpen={!!clienteRutinaSeleccionado}
           onClose={() => setClienteRutinaSeleccionado(null)}
           cliente={clienteRutinaSeleccionado}
         />
 
-        <ModalRutinas 
+        <ModalRutinas
           isOpen={showRutinaGeneral}
           onClose={() => setShowRutinaGeneral(false)}
           cliente={null}
@@ -728,18 +728,18 @@ const ClientesTotales = () => {
                           let runningBalance = Number(estadoCuentaData.saldo);
                           return estadoCuentaData.movimientos.map((mov) => {
                             const currentSaldo = runningBalance;
-                            
+
                             // Revertir el efecto del movimiento para ir hacia atrás en el tiempo
                             if (mov.tipo === 'CARGO' || mov.tipo === 'RECARGO') {
                               runningBalance += Number(mov.monto); // Los cargos restan al saldo, así que yendo atrás suman
                             } else {
                               runningBalance -= Number(mov.monto); // Los ingresos/ajustes suman, así que yendo atrás restan
                             }
-                            
+
                             const isDebe = mov.tipo === 'CARGO' || mov.tipo === 'RECARGO' || mov.monto < 0;
                             const isHaber = mov.tipo !== 'CARGO' && mov.tipo !== 'RECARGO' && mov.monto > 0;
                             const displayMonto = Math.abs(mov.monto);
-                            
+
                             return (
                               <tr key={mov.id}>
                                 <td>
@@ -777,7 +777,7 @@ const ClientesTotales = () => {
             )}
           </div>
         </Modal>
-            <Modal isOpen={showPendientesModal} onClose={() => setShowPendientesModal(false)} title="Bandeja de Aprobaciones">
+        <Modal isOpen={showPendientesModal} onClose={() => setShowPendientesModal(false)} title="Bandeja de Aprobaciones">
           <div style={{ padding: '20px' }}>
             {pendientes.length === 0 ? (
               <p style={{ textAlign: 'center', color: '#666' }}>No hay clientes pendientes.</p>
@@ -810,14 +810,14 @@ const ClientesTotales = () => {
                         </td>
                         <td>
                           <div style={{ display: 'flex', gap: '8px' }}>
-                            <button 
+                            <button
                               onClick={() => handleAprobarPendiente(p)}
                               title="Revisar y Aprobar"
                               style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem' }}
                             >
                               Revisar y Aprobar
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleRechazarPendiente(p.id)}
                               title="Rechazar"
                               style={{ background: '#ef4444', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.85rem' }}
@@ -835,18 +835,18 @@ const ClientesTotales = () => {
           </div>
         </Modal>
 
-      <ConfirmDeleteModal
-        isOpen={confirmDialog.isOpen}
-        title={confirmDialog.title}
-        message={confirmDialog.message}
-        onConfirm={confirmDialog.onConfirm}
-        onCancel={() => setConfirmDialog({ isOpen: false })}
-        icon={<AlertCircle size={48} style={{ color: '#e03131', margin: '0 auto 16px' }} />}
-        cancelLabel="Cancelar"
-        confirmLabel="Aceptar"
-        confirmClassName="btn-save"
-        confirmStyle={{ backgroundColor: '#1f2937' }}
-      />
+        <ConfirmDeleteModal
+          isOpen={confirmDialog.isOpen}
+          title={confirmDialog.title}
+          message={confirmDialog.message}
+          onConfirm={confirmDialog.onConfirm}
+          onCancel={() => setConfirmDialog({ isOpen: false })}
+          icon={<AlertCircle size={48} style={{ color: '#e03131', margin: '0 auto 16px' }} />}
+          cancelLabel="Cancelar"
+          confirmLabel="Aceptar"
+          confirmClassName="btn-save"
+          confirmStyle={{ backgroundColor: '#1f2937' }}
+        />
       </div>
     </div>
   );

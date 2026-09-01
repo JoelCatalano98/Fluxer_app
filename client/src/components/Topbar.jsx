@@ -129,11 +129,11 @@ const Topbar = ({ onToggleSidebar }) => {
 
       <div className="user-actions">
         <a 
-          href="mailto:soporte@fluxer.local?subject=Solicitud%20de%20Soporte%20-%20Fluxer"
+          href="mailto:fluxergestion@gmail.com?subject=Solicitud%20de%20Soporte%20-%20Fluxer"
           className="btn-help" 
           onClick={(e) => {
-            navigator.clipboard.writeText("soporte@fluxer.local");
-            alert("Si no se abre tu correo automáticamente, hemos copiado 'soporte@fluxer.local' a tu portapapeles.");
+            navigator.clipboard.writeText("fluxergestion@gmail.com");
+            alert("Si no se abre tu correo automáticamente, hemos copiado 'fluxergestion@gmail.com' a tu portapapeles.");
           }}
           style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', color: '#666' }}
         >
