@@ -48,6 +48,7 @@ const Login = () => {
                             <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
                             <input 
                                 type="text" 
+                                autoComplete="username"
                                 id="loginInput"
                                 value={loginInput}
                                 onChange={(e) => setLoginInput(e.target.value)}
@@ -64,6 +65,7 @@ const Login = () => {
                             <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
                             <input 
                                 type="password" 
+                                autoComplete="current-password"
                                 id="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
