@@ -51,7 +51,42 @@ async function main() {
             valor: 'true'
         }
     });
-    console.log('Seed completado: parámetros del sistema inicializados.');
+    // Creación del usuario administrador inicial
+    const adminEmail = process.env.ADMIN_EMAIL || 'sadmin@fluxer.local';
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Fluxer2026!!';
+    const adminUsuario = process.env.ADMIN_USUARIO || 'admin';
+
+    const existeAdmin = await prisma.usuario.findFirst({
+        where: { esSuperAdmin: true }
+    });
+
+    if (!existeAdmin) {
+        const bcrypt = require('bcryptjs');
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(adminPassword, salt);
+
+        const nuevoAdmin = await prisma.usuario.create({
+            data: {
+                email: adminEmail,
+                usuario: adminUsuario,
+                password: hashedPassword,
+                nombre: 'Administrador Principal',
+                esAdmin: true,
+                esSuperAdmin: true,
+                permisoClientes: true,
+                permisoFeriados: true,
+                permisoFinanzas: true,
+                permisoPlanes: true,
+                permisoTurnos: true
+            }
+        });
+        console.log(`✅ Administrador creado: ${nuevoAdmin.usuario} (${nuevoAdmin.email})`);
+        console.log(`⚠️ IMPORTANTE: Si usaste la contraseña por defecto, cámbiala desde el panel cuanto antes.`);
+    } else {
+        console.log(`✅ Ya existe un SuperAdministrador en la base de datos.`);
+    }
+
+    console.log('Seed completado: parámetros del sistema y admin inicializados.');
 }
 
 main()
