@@ -52,15 +52,35 @@ async function main() {
         }
     });
     // Creación del usuario administrador inicial
-    const adminEmail = process.env.ADMIN_EMAIL || 'sadmin@fluxer.local';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'Fluxer2026!!';
-    const adminUsuario = process.env.ADMIN_USUARIO || 'admin';
-
     const existeAdmin = await prisma.usuario.findFirst({
         where: { esSuperAdmin: true }
     });
 
     if (!existeAdmin) {
+        const readline = require('readline');
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
+        const question = (query) => new Promise((resolve) => rl.question(query, resolve));
+
+        console.log();
+        console.log('--- Configuración del Administrador Principal ---');
+        const adminEmail = await question('Email del administrador: ');
+        const adminUsuario = await question('Usuario (login): ');
+
+        let adminPassword = '';
+        while (true) {
+            adminPassword = await question('Contraseña: ');
+            if (adminPassword.length >= 10) {
+                break;
+            }
+            console.log('❌ Error: La contraseña debe tener al menos 10 caracteres. Inténtalo de nuevo.');
+        }
+        
+        rl.close();
+
         const bcrypt = require('bcryptjs');
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(adminPassword, salt);
@@ -80,8 +100,7 @@ async function main() {
                 permisoTurnos: true
             }
         });
-        console.log(`✅ Administrador creado: ${nuevoAdmin.usuario} (${nuevoAdmin.email})`);
-        console.log(`⚠️ IMPORTANTE: Si usaste la contraseña por defecto, cámbiala desde el panel cuanto antes.`);
+        console.log(`✅ Administrador creado exitosamente: ${nuevoAdmin.usuario} (${nuevoAdmin.email})`);
     } else {
         console.log(`✅ Ya existe un SuperAdministrador en la base de datos.`);
     }

@@ -7,7 +7,7 @@ import PageHeader from '../components/PageHeader';
 import '../styles/style.css';
 
 const Usuarios = () => {
-    const { hasPermission } = useAuth();
+    const { hasPermission, user } = useAuth();
     const [usuarios, setUsuarios] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -233,14 +233,16 @@ const Usuarios = () => {
                                     </td>
                                     <td>
                                         <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button 
-                                                onClick={() => handleEditar(u)}
-                                                style={{ padding: '6px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', color: '#00a8e8' }}
-                                                title="Editar"
-                                            >
-                                                <Edit size={18} />
-                                            </button>
-                                            {!u.esSuperAdmin && (
+                                            {(!u.esSuperAdmin || user.esSuperAdmin) && (
+                                                <button 
+                                                    onClick={() => handleEditar(u)}
+                                                    style={{ padding: '6px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', color: '#00a8e8' }}
+                                                    title="Editar"
+                                                >
+                                                    <Edit size={18} />
+                                                </button>
+                                            )}
+                                            {(!u.esSuperAdmin || user.esSuperAdmin) && (
                                                 <button 
                                                     onClick={() => handleEliminar(u.id)}
                                                     style={{ padding: '6px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', color: '#e60049' }}

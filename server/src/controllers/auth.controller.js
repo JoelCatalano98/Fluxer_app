@@ -154,6 +154,19 @@ const getUsuarios = async (req, res) => {
 const editarUsuario = async (req, res) => {
     try {
         const id = parseInt(req.params.id);
+        
+        const usuarioExistente = await prisma.usuario.findUnique({
+            where: { id }
+        });
+
+        if (!usuarioExistente) {
+            return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+        }
+
+        if (usuarioExistente.esSuperAdmin && !req.user.esSuperAdmin) {
+            return res.status(403).json({ success: false, message: 'No puedes editar a un Super Administrador' });
+        }
+
         const { 
             nombre, usuario, email, password, 
             esAdmin, 
@@ -164,14 +177,20 @@ const editarUsuario = async (req, res) => {
         const updateData = {
             nombre,
             usuario,
-            email,
-            esAdmin: esAdmin || false,
-            permisoFinanzas: permisoFinanzas || false,
-            permisoTurnos: permisoTurnos || false,
-            permisoClientes: permisoClientes || false,
-            permisoPlanes: permisoPlanes || false,
-            permisoFeriados: permisoFeriados || false,
+            email
         };
+
+        const isSelfEditing = (id === req.user.id);
+        const canEditPermissions = req.user.esSuperAdmin || !isSelfEditing;
+
+        if (canEditPermissions) {
+            updateData.esAdmin = esAdmin || false;
+            updateData.permisoFinanzas = permisoFinanzas || false;
+            updateData.permisoTurnos = permisoTurnos || false;
+            updateData.permisoClientes = permisoClientes || false;
+            updateData.permisoPlanes = permisoPlanes || false;
+            updateData.permisoFeriados = permisoFeriados || false;
+        }
 
         if (password && password.trim() !== '') {
             updateData.password = bcrypt.hashSync(password, 10);
@@ -208,8 +227,8 @@ const eliminarUsuario = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
         }
 
-        if (usuarioExistente.esSuperAdmin) {
-            return res.status(403).json({ success: false, message: 'No se puede eliminar a un Super Administrador' });
+        if (usuarioExistente.esSuperAdmin && !req.user.esSuperAdmin) {
+            return res.status(403).json({ success: false, message: 'No puedes eliminar a un Super Administrador' });
         }
 
         await prisma.usuario.delete({
