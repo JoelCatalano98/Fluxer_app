@@ -39,6 +39,7 @@ const parametrosRoutes = require('./routes/parametros.routes');
 const feriadosRoutes = require('./routes/feriados.routes');
 const liquidacionesRoutes = require('./routes/liquidaciones.routes');
 const movimientosGeneralesRoutes = require('./routes/movimientosGenerales.routes');
+const contactRoutes = require('./routes/contact.routes');
 const { verifyToken, requirePermiso } = require('./middlewares/auth.middleware');
 const { requireParametro } = require('./middlewares/parametros.middleware');
 
@@ -66,6 +67,7 @@ app.use('/api/pagos', pagosRoutes);
 app.use('/api/sueldos', verifyToken, requirePermiso('permisoFinanzas'), requireParametro('sueldosHabilitado'), sueldosRoutes);
 app.use('/api/liquidaciones', verifyToken, requirePermiso('permisoFinanzas'), requireParametro('sueldosHabilitado'), liquidacionesRoutes);
 app.use('/api/movimientos-generales', verifyToken, requirePermiso('permisoFinanzas'), requireParametro('libroDiarioHabilitado'), movimientosGeneralesRoutes);
+app.use('/api/contact', contactRoutes);
 app.use('/api/parametros', verifyToken, parametrosRoutes);
 
 module.exports = app;
