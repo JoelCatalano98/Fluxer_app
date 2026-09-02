@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icon-192.png', 'icon-512.png'],
       manifest: {
-        name: "Fluxer Admin",
-        short_name: "Admin",
+        name: "Fluxer",
+        short_name: "Fluxer",
         description: "Panel de administración",
         theme_color: "#ffffff",
         background_color: "#ffffff",
