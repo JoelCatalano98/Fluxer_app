@@ -10,7 +10,7 @@ const corsOptions = {
     'http://localhost:5174', // Por si levantás el otro front localmente
     'https://fluxer-web.vercel.app', 
     'https://fluxerapp.cloud', 
-    'https://www.fluxerapp.cloud'
+    /\.fluxerapp\.cloud$/ // Permite dinámicamente cualquier subdominio (ej: admin.herafitnes.fluxerapp.cloud)
   ],
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
