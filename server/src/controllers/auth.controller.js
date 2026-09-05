@@ -98,8 +98,8 @@ const registrarUsuario = async (req, res) => {
                 usuario,
                 email,
                 password: hashedPassword,
-                esSuperAdmin: esSuperAdmin || false,
-                esAdmin: esAdmin || false,
+                esSuperAdmin: false, // esSuperAdmin nunca se puede asignar desde la API
+                esAdmin: req.user.esSuperAdmin ? (esAdmin || false) : false, // Solo superAdmin puede crear admins
                 permisoFinanzas: permisoFinanzas || false,
                 permisoTurnos: permisoTurnos || false,
                 permisoClientes: permisoClientes || false,
@@ -184,7 +184,10 @@ const editarUsuario = async (req, res) => {
         const canEditPermissions = req.user.esSuperAdmin || !isSelfEditing;
 
         if (canEditPermissions) {
-            updateData.esAdmin = esAdmin || false;
+            // Solo superAdmin puede promover/degradar a admin
+            if (req.user.esSuperAdmin) {
+                updateData.esAdmin = esAdmin || false;
+            }
             updateData.permisoFinanzas = permisoFinanzas || false;
             updateData.permisoTurnos = permisoTurnos || false;
             updateData.permisoClientes = permisoClientes || false;

@@ -18,6 +18,7 @@ const Navbar = ({ isOpen }) => {
   
   const localUser = JSON.parse(localStorage.getItem('user') || '{}');
   const isSadmin = user?.esSuperAdmin || localUser?.esSuperAdmin;
+  const isAdmin = user?.esAdmin || localUser?.esAdmin || isSadmin;
 
   const [config, setConfig] = useState({
     nombreGimnasio: 'FLUXER',
@@ -116,7 +117,7 @@ const Navbar = ({ isOpen }) => {
                   </NavLink>
                 </li>
               )}
-              {isSadmin && (
+              {isAdmin && (
                 <li>
                   <NavLink to="/configuracion" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
                     Configuración General

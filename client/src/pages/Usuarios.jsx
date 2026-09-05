@@ -8,6 +8,7 @@ import '../styles/style.css';
 
 const Usuarios = () => {
     const { hasPermission, user } = useAuth();
+    const isSuperAdmin = user?.esSuperAdmin;
     const [usuarios, setUsuarios] = useState([]);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState({ text: '', type: '' });
@@ -304,17 +305,19 @@ const Usuarios = () => {
                         </div>
 
                         <div style={{ backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '8px', border: '1px solid #eee' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid #ddd' }}>
-                                <input 
-                                    type="checkbox" 
-                                    id="esAdmin" 
-                                    name="esAdmin"
-                                    checked={formData.esAdmin}
-                                    onChange={handleAdminToggle}
-                                    style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-                                />
-                                <label htmlFor="esAdmin" style={{ fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', color: '#333639' }}>Administrador Total</label>
-                            </div>
+                            {isSuperAdmin && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid #ddd' }}>
+                                    <input 
+                                        type="checkbox" 
+                                        id="esAdmin" 
+                                        name="esAdmin"
+                                        checked={formData.esAdmin}
+                                        onChange={handleAdminToggle}
+                                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                    />
+                                    <label htmlFor="esAdmin" style={{ fontWeight: 'bold', fontSize: '1.1rem', cursor: 'pointer', color: '#333639' }}>Administrador Total</label>
+                                </div>
+                            )}
 
                             <p style={{ fontWeight: 'bold', marginBottom: '10px', color: '#666' }}>Permisos Específicos:</p>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
