@@ -83,7 +83,7 @@ const updateConfiguracion = async (req, res) => {
                 diasApertura: diasApertura || '1,2,3,4,5,6',
                 maxReservasSemana: parseInt(maxReservasSemana) || 0,
                 diaMaximoCobro: diaMaximoCobro || 10,
-                recargoPorcentaje: recargoPorcentaje || 10.0
+                recargoPorcentaje: recargoPorcentaje ?? 10.0
             }
         });
 

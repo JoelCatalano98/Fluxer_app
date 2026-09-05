@@ -60,7 +60,7 @@ const Configuracion = () => {
             diasApertura: res.data.data.diasApertura || '1,2,3,4,5,6',
             profesoresPorTurno: res.data.data.profesoresPorTurno || false,
             diaMaximoCobro: res.data.data.diaMaximoCobro || 10,
-            recargoPorcentaje: res.data.data.recargoPorcentaje || 10.0
+            recargoPorcentaje: res.data.data.recargoPorcentaje ?? 10.0
           });
         }
       } catch (err) {
