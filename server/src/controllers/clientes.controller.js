@@ -53,11 +53,8 @@ const getClientes = async (req, res) => {
                 skip,
                 take,
                 include: {
-                    categoria: {
-                        include: {
-                            plan: true
-                        }
-                    }
+                    categoria: true,
+                    plan: true
                 },
                 orderBy: {
                     id: 'desc'
@@ -70,7 +67,7 @@ const getClientes = async (req, res) => {
             data: {
                 clientes: clientes.map(c => ({
                     ...c,
-                    plan: c.categoria?.plan || null
+                    plan: c.plan || null
                 })),
                 total,
                 page: p,
@@ -105,7 +102,8 @@ const createCliente = async (req, res) => {
             estado_pago,
             estado_cliente,
             es_socio,
-            categoriaId
+            categoriaId,
+            planId
         } = req.body;
 
         const isSocio = es_socio === true || es_socio === 'true';
@@ -137,10 +135,12 @@ const createCliente = async (req, res) => {
 
         // Obtener configuración financiera para el vencimiento
         let initialVencimiento = null;
+        let defaultPassword = null;
         if (isSocio) {
             const baseDate = fecha_inicio ? new Date(fecha_inicio) : new Date();
             initialVencimiento = new Date(baseDate);
             initialVencimiento.setHours(0, 0, 0, 0);
+            defaultPassword = await bcrypt.hash('123456', 10);
         }
 
         // Crear registro en la base de datos
@@ -157,14 +157,13 @@ const createCliente = async (req, res) => {
                 estado_cliente: estado_cliente || 'INACTIVO',
                 es_socio: isSocio,
                 categoriaId: categoriaId ? parseInt(categoriaId) : null,
-                vencimientoCuota: initialVencimiento
+                planId: planId ? parseInt(planId) : null,
+                vencimientoCuota: initialVencimiento,
+                password: defaultPassword
             },
             include: {
-                categoria: {
-                    include: {
-                        plan: true
-                    }
-                }
+                categoria: true,
+                plan: true
             }
         });
 
@@ -174,11 +173,8 @@ const createCliente = async (req, res) => {
                 where: { id: nuevoCliente.id },
                 data: { codigo_socio: String(nuevoCliente.id).padStart(4, '0') },
                 include: {
-                    categoria: {
-                        include: {
-                            plan: true
-                        }
-                    }
+                    categoria: true,
+                    plan: true
                 }
             });
         }
@@ -234,7 +230,8 @@ const updateCliente = async (req, res) => {
             estado_pago,
             estado_cliente,
             es_socio,
-            categoriaId
+            categoriaId,
+            planId
         } = req.body;
 
         const isSocio = es_socio === true || es_socio === 'true';
@@ -294,6 +291,9 @@ const updateCliente = async (req, res) => {
                 if (!clienteActual.codigo_socio) {
                     updateData.codigo_socio = String(id).padStart(4, '0');
                 }
+                if (!clienteActual.password) {
+                    updateData.password = await bcrypt.hash('123456', 10);
+                }
                 if (fecha_inicio !== undefined) updateData.fecha_inicio = fecha_inicio ? new Date(fecha_inicio) : null;
             }
         } else {
@@ -304,15 +304,16 @@ const updateCliente = async (req, res) => {
             updateData.categoriaId = categoriaId ? parseInt(categoriaId) : null;
         }
 
+        if (planId !== undefined) {
+            updateData.planId = planId ? parseInt(planId) : null;
+        }
+
         const clienteActualizado = await prisma.cliente.update({
             where: { id },
             data: updateData,
             include: {
-                categoria: {
-                    include: {
-                        plan: true
-                    }
-                }
+                categoria: true,
+                plan: true
             }
         });
 
@@ -370,11 +371,8 @@ const deleteCliente = async (req, res) => {
                 estado_cliente: 'INACTIVO'
             },
             include: {
-                categoria: {
-                    include: {
-                        plan: true
-                    }
-                }
+                categoria: true,
+                plan: true
             }
         });
 
@@ -432,11 +430,8 @@ const updateEstadoPago = async (req, res) => {
                 estado_pago
             },
             include: {
-                categoria: {
-                    include: {
-                        plan: true
-                    }
-                }
+                categoria: true,
+                plan: true
             }
         });
 
@@ -672,13 +667,14 @@ const aprobarCliente = async (req, res) => {
             });
         }
 
-        const { categoriaId } = req.body;
+        const { categoriaId, planId } = req.body;
         
         const clienteActualizado = await prisma.cliente.update({
             where: { id },
             data: {
                 estado_cliente: 'ACTIVO',
-                categoriaId: categoriaId ? parseInt(categoriaId) : null
+                categoriaId: categoriaId ? parseInt(categoriaId) : null,
+                planId: planId ? parseInt(planId) : null
             }
         });
 

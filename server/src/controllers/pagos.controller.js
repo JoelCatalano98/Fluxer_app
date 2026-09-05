@@ -17,6 +17,18 @@ const obtenerPagos = async (req, res) => {
     }
 };
 
+const obtenerPagosPendientesCount = async (req, res) => {
+    try {
+        const count = await prisma.pago.count({
+            where: { estado: 'PENDIENTE' }
+        });
+        res.json({ success: true, count });
+    } catch (error) {
+        console.error('Error al obtener conteo de pagos pendientes:', error);
+        res.status(500).json({ success: false, message: 'Error interno' });
+    }
+};
+
 const registrarPago = async (req, res) => {
     try {
         const { clienteId, monto, montoAbonado, saldoUsado = 0, metodoPago, concepto, notas, estado = 'APROBADO' } = req.body;
@@ -32,9 +44,7 @@ const registrarPago = async (req, res) => {
         const cliente = await prisma.cliente.findUnique({
             where: { id: clienteIdInt },
             include: {
-                categoria: {
-                    include: { plan: true }
-                }
+                plan: true
             }
         });
 
@@ -179,9 +189,7 @@ const cambiarEstadoPago = async (req, res) => {
             include: { 
                 cliente: {
                     include: {
-                        categoria: {
-                            include: { plan: true }
-                        }
+                        plan: true
                     }
                 } 
             }
@@ -200,7 +208,7 @@ const cambiarEstadoPago = async (req, res) => {
             const ayer = new Date(Date.now() - 86400000);
             
             const montoPagadoOriginal = parseFloat(pagoActual.monto);
-            const montoPlanOriginal = pagoActual.cliente.categoria?.plan?.precio ? parseFloat(pagoActual.cliente.categoria.plan.precio) : 0;
+            const montoPlanOriginal = pagoActual.cliente.plan?.precio ? parseFloat(pagoActual.cliente.plan.precio) : 0;
             const diferenciaOriginal = montoPagadoOriginal - montoPlanOriginal;
 
             const [pagoAnulado, clienteRevertido] = await prisma.$transaction([
@@ -318,6 +326,7 @@ const cambiarEstadoPago = async (req, res) => {
 
 module.exports = {
     obtenerPagos,
+    obtenerPagosPendientesCount,
     registrarPago,
     cambiarEstadoPago
 };

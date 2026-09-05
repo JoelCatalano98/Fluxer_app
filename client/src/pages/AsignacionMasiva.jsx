@@ -93,11 +93,11 @@ const AsignacionMasiva = () => {
       try {
         setLoadingInitial(true);
         const [resCategorias, resClientes, resHorarios, resPlanes, resConfig] = await Promise.all([
-          api.get('/api/categorias'),
-          api.get('/api/clientes?limit=2000'),
-          api.get('/api/turnos/horarios'),
-          api.get('/api/planes'),
-          api.get('/api/configuracion')
+          api.get('/api/categorias').catch(e => e.response || { data: { success: false } }),
+          api.get('/api/clientes?limit=2000').catch(e => e.response || { data: { success: false } }),
+          api.get('/api/turnos/horarios').catch(e => e.response || { data: { success: false } }),
+          api.get('/api/planes').catch(e => e.response || { data: { success: false } }),
+          api.get('/api/configuracion').catch(e => e.response || { data: { success: false } })
         ]);
 
         if (resCategorias.data.success) setCategorias(resCategorias.data.data);
@@ -135,9 +135,6 @@ const AsignacionMasiva = () => {
     let horariosFiltrados = horarios;
     if (disciplinaSeleccionada) {
       horariosFiltrados = horarios.filter(h => h.categoriaId === parseInt(disciplinaSeleccionada));
-    } else if (planSeleccionado) {
-      const categoriasDelPlan = categorias.filter(c => c.planId === parseInt(planSeleccionado)).map(c => c.id);
-      horariosFiltrados = horarios.filter(h => categoriasDelPlan.includes(h.categoriaId));
     }
 
     horariosFiltrados.forEach(h => {
@@ -157,12 +154,11 @@ const AsignacionMasiva = () => {
     let filtered = clientesList;
 
     if (planSeleccionado) {
-      if (disciplinaSeleccionada) {
-        filtered = filtered.filter(c => c.categoriaId === parseInt(disciplinaSeleccionada));
-      } else {
-        const categoriasDelPlan = categorias.filter(c => c.planId === parseInt(planSeleccionado)).map(c => c.id);
-        filtered = filtered.filter(c => categoriasDelPlan.includes(c.categoriaId));
-      }
+      filtered = filtered.filter(c => c.planId === parseInt(planSeleccionado));
+    }
+    
+    if (disciplinaSeleccionada) {
+      filtered = filtered.filter(c => c.categoriaId === parseInt(disciplinaSeleccionada));
     }
 
     if (filtroPago === 'AL_DIA') {
@@ -304,13 +300,10 @@ const AsignacionMasiva = () => {
                 value={disciplinaSeleccionada}
                 onChange={(e) => setDisciplinaSeleccionada(e.target.value)}
                 style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ccc', background: '#fff' }}
-                disabled={!planSeleccionado}
               >
-                <option value="">-- Todas las disciplinas del Abono --</option>
-                {categorias
-                  .filter(cat => cat.planId === parseInt(planSeleccionado))
-                  .map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                <option value="">-- Todas las disciplinas --</option>
+                {categorias.map(cat => (
+                  <option key={cat.id} value={cat.id}>{cat.nombre}</option>
                 ))}
               </select>
             </div>

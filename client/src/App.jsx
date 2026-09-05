@@ -39,6 +39,7 @@ function AppContent() {
   const [activeAlarms, setActiveAlarms] = useState([]);
   const [isAlarmModalOpen, setIsAlarmModalOpen] = useState(false);
   const [pendientesCount, setPendientesCount] = useState(0);
+  const [pagosPendientesCount, setPagosPendientesCount] = useState(0);
 
   const location = useLocation();
   const isLoginPage = location.pathname === '/login';
@@ -141,14 +142,20 @@ function AppContent() {
     };
   }, [location.pathname, isLoginPage]);
 
-  // Chequear clientes pendientes
+  // Chequear clientes pendientes y pagos pendientes
   useEffect(() => {
     if (isLoginPage) return;
     const fetchPendientes = async () => {
       try {
-        const res = await api.get('/api/clientes/pendientes');
-        if (res.data.success) {
-          setPendientesCount(res.data.data.length);
+        const [resClientes, resPagos] = await Promise.all([
+          api.get('/api/clientes/pendientes'),
+          api.get('/api/pagos/pendientes/count')
+        ]);
+        if (resClientes.data.success) {
+          setPendientesCount(resClientes.data.data.length);
+        }
+        if (resPagos.data.success) {
+          setPagosPendientesCount(resPagos.data.count);
         }
       } catch (err) {
         console.error('Error fetching pendientes:', err);
@@ -160,7 +167,16 @@ function AppContent() {
       fetchPendientes();
     };
     window.addEventListener('pendientesUpdated', handleUpdate);
-    return () => window.removeEventListener('pendientesUpdated', handleUpdate);
+    window.addEventListener('pagosUpdated', handleUpdate);
+    
+    // Polling cada 30 segundos
+    const pollInterval = setInterval(fetchPendientes, 30000);
+
+    return () => {
+      window.removeEventListener('pendientesUpdated', handleUpdate);
+      window.removeEventListener('pagosUpdated', handleUpdate);
+      clearInterval(pollInterval);
+    };
   }, [location.pathname, isLoginPage]);
 
   if (loading) return <div>Cargando sesión...</div>;
@@ -194,6 +210,18 @@ function AppContent() {
             </div>
             <Link to="/clientes-totales" style={{ backgroundColor: '#f59e0b', color: 'white', padding: '6px 12px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', transition: 'background-color 0.2s' }}>
               Revisar ahora
+            </Link>
+          </div>
+        )}
+        
+        {pagosPendientesCount > 0 && (
+          <div style={{ backgroundColor: '#e0e7ff', borderBottom: '1px solid #c7d2fe', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 40 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#3730a3', fontWeight: '500' }}>
+              <span>💸</span>
+              <span>Tienes {pagosPendientesCount} pago{pagosPendientesCount !== 1 ? 's' : ''} pendiente{pagosPendientesCount !== 1 ? 's' : ''} de revisión.</span>
+            </div>
+            <Link to="/pagos" style={{ backgroundColor: '#4f46e5', color: 'white', padding: '6px 12px', borderRadius: '6px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', transition: 'background-color 0.2s' }}>
+              Ver pagos
             </Link>
           </div>
         )}

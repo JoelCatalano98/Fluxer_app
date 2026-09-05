@@ -10,7 +10,7 @@ const Usuarios = () => {
     const { hasPermission, user } = useAuth();
     const [usuarios, setUsuarios] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [message, setMessage] = useState({ text: '', type: '' });
     const [showForm, setShowForm] = useState(false);
     const [usuarioEditando, setUsuarioEditando] = useState(null);
     
@@ -38,7 +38,7 @@ const Usuarios = () => {
             }
         } catch (err) {
             console.error('Error fetching usuarios:', err);
-            setError('Error al cargar empleados');
+            setMessage({ text: 'Error al cargar empleados', type: 'error' });
         } finally {
             setLoading(false);
         }
@@ -95,7 +95,8 @@ const Usuarios = () => {
                         permisoFinanzas: false, permisoTurnos: false, permisoClientes: false,
                         permisoPlanes: false, permisoFeriados: false
                     });
-                    alert('Empleado actualizado exitosamente');
+                    setMessage({ text: 'Empleado actualizado exitosamente', type: 'success' });
+                    setTimeout(() => setMessage({ text: '', type: '' }), 3000);
                 }
             } else {
                 const res = await api.post('/api/auth/registrar', formData);
@@ -107,12 +108,14 @@ const Usuarios = () => {
                         permisoFinanzas: false, permisoTurnos: false, permisoClientes: false,
                         permisoPlanes: false, permisoFeriados: false
                     });
-                    alert('Empleado registrado exitosamente');
+                    setMessage({ text: 'Empleado registrado exitosamente', type: 'success' });
+                    setTimeout(() => setMessage({ text: '', type: '' }), 3000);
                 }
             }
         } catch (err) {
             console.error('Error registrar/editar:', err);
-            alert(err.response?.data?.message || 'Error al procesar empleado');
+            setMessage({ text: err.response?.data?.message || 'Error al procesar empleado', type: 'error' });
+            setTimeout(() => setMessage({ text: '', type: '' }), 5000);
         }
     };
 
@@ -140,10 +143,13 @@ const Usuarios = () => {
                 const res = await api.delete(`/api/auth/usuarios/${id}`);
                 if (res.data.success) {
                     setUsuarios(usuarios.filter(u => u.id !== id));
+                    setMessage({ text: 'Empleado eliminado exitosamente', type: 'success' });
+                    setTimeout(() => setMessage({ text: '', type: '' }), 3000);
                 }
             } catch (err) {
                 console.error("Error eliminar:", err);
-                alert(err.response?.data?.message || 'Error al eliminar empleado');
+                setMessage({ text: err.response?.data?.message || 'Error al eliminar empleado', type: 'error' });
+                setTimeout(() => setMessage({ text: '', type: '' }), 5000);
             }
         }
     };
@@ -183,10 +189,19 @@ const Usuarios = () => {
                     </button>
                 </div>
 
-                {error && (
-                    <div style={{ backgroundColor: '#fff1f1', color: '#e03131', padding: '15px', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <AlertTriangle size={20} />
-                        <span>{error}</span>
+                {message.text && (
+                    <div style={{ 
+                        backgroundColor: message.type === 'error' ? '#fff1f1' : '#ecfdf5', 
+                        color: message.type === 'error' ? '#e03131' : '#059669', 
+                        padding: '15px', 
+                        borderRadius: '8px', 
+                        marginBottom: '20px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '10px' 
+                    }}>
+                        {message.type === 'error' ? <AlertTriangle size={20} /> : <CheckSquare size={20} />}
+                        <span>{message.text}</span>
                     </div>
                 )}
 

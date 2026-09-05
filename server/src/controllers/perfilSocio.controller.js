@@ -21,9 +21,8 @@ const obtenerPerfil = async (req, res) => {
         const cliente = await prisma.cliente.findUnique({
             where: { id },
             include: {
-                categoria: {
-                    include: { plan: true }
-                }
+                categoria: true,
+                plan: true
             }
         });
 

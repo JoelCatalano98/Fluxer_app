@@ -126,9 +126,7 @@ const reservarTurno = async (req, res) => {
         const clienteActual = await prisma.cliente.findUnique({
             where: { id: parseInt(clienteId) },
             include: {
-                categoria: {
-                    include: { plan: true }
-                }
+                plan: true
             }
         });
 
@@ -257,7 +255,7 @@ const reservarTurno = async (req, res) => {
         }
 
         // Validar límite dinámico por Plan (si aplica)
-        const plan = clienteActual.categoria?.plan;
+        const plan = clienteActual.plan;
         if (plan && plan.cantidadClases !== null && plan.cantidadClases > 0) {
             const tipoFrec = plan.tipoFrecuencia || 'SEMANAL';
             let limiteExcedido = false;

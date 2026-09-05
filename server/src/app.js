@@ -63,7 +63,7 @@ app.use('/api/socio/rutinas', rutinaSocioRoutes);
 app.use('/api/socio/avisos', avisosSocioRoutes);
 app.use('/api/clientes', verifyToken, requirePermiso('permisoClientes'), clientesRoutes);
 app.use('/api/profesionales', verifyToken, profesionalesRoutes);
-app.use('/api/planes', verifyToken, requirePermiso('permisoPlanes'), planesRoutes);
+app.use('/api/planes', verifyToken, planesRoutes);
 app.use('/api/turnos', verifyToken, requirePermiso('permisoTurnos'), turnosRoutes);
 app.use('/api/configuracion', verifyToken, configuracionRoutes);
 app.use('/api/categorias', verifyToken, categoriasRoutes);

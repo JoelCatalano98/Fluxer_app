@@ -6,7 +6,6 @@ const getCategorias = async (req, res) => {
         const categorias = await prisma.categoria.findMany({
             where: { activo: true },
             include: {
-                plan: true,
                 profesional: true
             },
             orderBy: {
@@ -32,7 +31,7 @@ const getCategorias = async (req, res) => {
 // POST /api/categorias
 const createCategoria = async (req, res) => {
     try {
-        const { nombre, planId, rubro_sector, profesionalId, color } = req.body;
+        const { nombre, rubro_sector, profesionalId, color } = req.body;
 
         if (!nombre) {
             return res.status(400).json({
@@ -45,14 +44,12 @@ const createCategoria = async (req, res) => {
         const nuevaCategoria = await prisma.categoria.create({
             data: {
                 nombre,
-                planId: planId ? parseInt(planId) : null,
                 profesionalId: profesionalId ? parseInt(profesionalId) : null,
                 rubro_sector: rubro_sector || null,
                 color: color || '#888888',
                 activo: true
             },
             include: {
-                plan: true,
                 profesional: true
             }
         });
@@ -76,7 +73,7 @@ const createCategoria = async (req, res) => {
 const updateCategoria = async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const { nombre, planId, rubro_sector, profesionalId, color } = req.body;
+        const { nombre, rubro_sector, profesionalId, color } = req.body;
 
         if (isNaN(id)) {
             return res.status(400).json({
@@ -88,7 +85,6 @@ const updateCategoria = async (req, res) => {
 
         const dataToUpdate = {};
         if (nombre !== undefined) dataToUpdate.nombre = nombre;
-        if (planId !== undefined) dataToUpdate.planId = planId ? parseInt(planId) : null;
         if (profesionalId !== undefined) dataToUpdate.profesionalId = profesionalId ? parseInt(profesionalId) : null;
         if (rubro_sector !== undefined) dataToUpdate.rubro_sector = rubro_sector;
         if (color !== undefined) dataToUpdate.color = color;
@@ -97,7 +93,6 @@ const updateCategoria = async (req, res) => {
             where: { id },
             data: dataToUpdate,
             include: {
-                plan: true,
                 profesional: true
             }
         });

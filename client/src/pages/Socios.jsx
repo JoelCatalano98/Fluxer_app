@@ -18,22 +18,29 @@ const Socios = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoriasList, setCategoriasList] = useState([]);
+  const [planesList, setPlanesList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Cargar categorías
+  // Cargar categorías y planes
   useEffect(() => {
-    const fetchCategorias = async () => {
+    const fetchDatos = async () => {
       try {
-        const res = await api.get('/api/categorias');
-        if (res.data.success) {
-          setCategoriasList(res.data.data);
+        const [resCat, resPlan] = await Promise.all([
+          api.get('/api/categorias'),
+          api.get('/api/planes')
+        ]);
+        if (resCat.data.success) {
+          setCategoriasList(resCat.data.data);
+        }
+        if (resPlan.data.success) {
+          setPlanesList(resPlan.data.data);
         }
       } catch (err) {
-        console.error('Error fetching categorias:', err);
+        console.error('Error fetching datos:', err);
       }
     };
-    fetchCategorias();
+    fetchDatos();
   }, []);
 
   const [formSocio, setFormSocio] = useState({
@@ -46,6 +53,7 @@ const Socios = () => {
     telefono: '',
     fecha_inicio: '',
     categoriaId: '',
+    planId: '',
     observaciones: ''
   });
 
@@ -91,6 +99,7 @@ const Socios = () => {
       telefono: cliente.telefono || '',
       fecha_inicio: cliente.fecha_inicio ? new Date(cliente.fecha_inicio).toISOString().split('T')[0] : '',
       categoriaId: cliente.categoriaId || '',
+      planId: cliente.planId || '',
       observaciones: cliente.observaciones || ''
     });
     setIsEditing(true);
@@ -183,6 +192,7 @@ const Socios = () => {
                 <th className="columna-fija">Código</th>
                 <th>Nombre</th>
                 <th>Apellido</th>
+                <th>Categoría</th>
                 <th>Plan</th>
                 <th>Estado Pago</th>
                 <th>Estado Cliente</th>
@@ -206,6 +216,11 @@ const Socios = () => {
                     <td>
                       <span className="etiqueta-plan-socio">
                         {cliente.categoria?.nombre || 'Sin Categoría'}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="etiqueta-plan-socio" style={{ backgroundColor: '#e6fcf5', color: '#0ca678' }}>
+                        {cliente.plan?.nombre || 'Sin Plan'}
                       </span>
                     </td>
                     <td>
@@ -292,7 +307,7 @@ const Socios = () => {
                   <option value="">-- Sin Categoría (Selecciona una) --</option>
                   {categoriasList.map(c => (
                     <option key={c.id} value={c.id}>
-                      {c.nombre} {c.plan ? `(${c.plan.nombre})` : ''}
+                      {c.nombre}
                     </option>
                   ))}
                 </select>
@@ -300,6 +315,22 @@ const Socios = () => {
               <div className="grupo-entrada-socio">
                 <label htmlFor="fecha_inicio">Fecha Inicio</label>
                 <input type="date" id="fecha_inicio" value={formSocio.fecha_inicio} onChange={handleInputChange} />
+              </div>
+              <div className="grupo-entrada-socio">
+                <label htmlFor="planId">Asignar Plan</label>
+                <select 
+                  id="planId" 
+                  value={formSocio.planId} 
+                  onChange={handleInputChange}
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
+                >
+                  <option value="">-- Sin Plan (Selecciona uno) --</option>
+                  {planesList.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.nombre} - ${p.precio}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="grupo-entrada-socio ancho-total">
                 <label htmlFor="observaciones">Observaciones</label>

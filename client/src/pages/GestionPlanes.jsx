@@ -18,7 +18,7 @@ const GestionPlanes = () => {
   const [viewMode, setViewMode] = useState('cards'); // 'cards' o 'list'
   const [editingPlan, setEditingPlan] = useState(null);
   const [message, setMessage] = useState({ text: '', type: '' });
-  
+
   const [nuevoPlan, setNuevoPlan] = useState({
     nombre: '',
     etiqueta: '',
@@ -186,14 +186,14 @@ const GestionPlanes = () => {
 
       {/* Acciones principales */}
       <div className="planes-actions-bar">
-        <button 
-          className="btn-create-plan" 
+        <button
+          className="btn-create-plan"
           onClick={openCreateModal}
         >
           <CirclePlus size={18} /> <span>Crear Nuevo Plan</span>
         </button>
-        <button 
-          className="btn-toggle-view" 
+        <button
+          className="btn-toggle-view"
           onClick={() => setViewMode(viewMode === 'cards' ? 'list' : 'cards')}
         >
           {viewMode === 'cards' ? (
@@ -243,7 +243,7 @@ const GestionPlanes = () => {
             <h2 className="listado-title">Abonos y Planes</h2>
             <p className="listado-subtitle">Gestiona las membresías y paquetes de servicios.</p>
           </div>
-          
+
           {/* Reemplazamos table-wrapper por contenedor-scroll para habilitar el desplazamiento */}
           <div className="contenedor-scroll ">
             {/* Cambiamos data-table por tabla-cronograma para heredar el min-width de 900px */}
@@ -304,9 +304,9 @@ const GestionPlanes = () => {
       )}
 
       {/* Modal Crear/Editar */}
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         title={editingPlan ? "Editar Plan de Abono" : "Crear Nuevo Plan de Abono"}
       >
         <div id="modalNuevoPlan">
@@ -325,7 +325,7 @@ const GestionPlanes = () => {
                 <input type="number" id="precio" placeholder="0.00" value={nuevoPlan.precio} onChange={handleInputChange} required />
               </div>
               <div className="grupo-entrada">
-                <label htmlFor="frecuencia">Frecuencia (Visual)</label>
+                <label htmlFor="frecuencia">Frecuencia </label>
                 <select id="frecuencia" value={nuevoPlan.frecuencia} onChange={handleInputChange}>
                   <option value="Mensual">Mensual</option>
                   <option value="Semanal">Semanal</option>

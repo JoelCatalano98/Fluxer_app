@@ -53,7 +53,7 @@ model Plan {
   activo          Boolean     @default(true)
   codigo          String?     @unique
   observaciones   String?     @db.Text
-  categorias      Categoria[]
+  clientes        Cliente[]
 
   @@map("planes")
 }
@@ -72,11 +72,13 @@ model Cliente {
   estado_cliente   EstadoCliente      @default(ACTIVO)
   es_socio         Boolean            @default(false)
   categoriaId      Int?
+  planId           Int?
   password         String?
   vencimientoCuota DateTime?
   saldo            Float              @default(0)
   origenSolicitud  String?            @default("NUEVO")
   categoria        Categoria?         @relation(fields: [categoriaId], references: [id])
+  plan             Plan?              @relation(fields: [planId], references: [id])
   movimientocuenta movimientocuenta[]
   pago             pago[]
   records          Record[]
@@ -84,6 +86,7 @@ model Cliente {
   turnosCliente    TurnoCliente[]
 
   @@index([categoriaId], map: "clientes_categoriaId_fkey")
+  @@index([planId], map: "clientes_planId_fkey")
   @@map("clientes")
 }
 
@@ -148,14 +151,11 @@ model Categoria {
   rubro_sector  String?
   color         String?
   activo        Boolean         @default(true)
-  planId        Int?
   profesionalId Int?
-  plan          Plan?           @relation(fields: [planId], references: [id])
   profesional   Profesional?    @relation(fields: [profesionalId], references: [id])
   clientes      Cliente[]
   horarios      HorarioConfig[]
 
-  @@index([planId], map: "categorias_planId_fkey")
   @@index([profesionalId], map: "categorias_profesionalId_fkey")
   @@map("categorias")
 }

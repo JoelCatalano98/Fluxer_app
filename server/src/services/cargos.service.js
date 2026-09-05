@@ -12,17 +12,15 @@ async function asegurarCargosAlDia(clienteId) {
     const cliente = await prisma.cliente.findUnique({
         where: { id: idInt },
         include: {
-            categoria: {
-                include: { plan: true }
-            }
+            plan: true
         }
     });
 
-    if (!cliente || !cliente.categoria || !cliente.categoria.plan) {
+    if (!cliente || !cliente.plan) {
         return; // Sin plan asignado, no hay cargos
     }
 
-    const plan = cliente.categoria.plan;
+    const plan = cliente.plan;
     const precio = parseFloat(plan.precio) || 0;
 
     let vencimiento = cliente.vencimientoCuota;

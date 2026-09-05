@@ -7,7 +7,6 @@ import '../styles/style.css';
 
 const Categorias = () => {
   const [categorias, setCategorias] = useState([]);
-  const [planes, setPlanes] = useState([]);
   const [profesionales, setProfesionales] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,7 +19,6 @@ const Categorias = () => {
 
   const [formValues, setFormValues] = useState({
     nombre: '',
-    planId: '',
     profesionalId: '',
     color: '#888888'
   });
@@ -33,17 +31,13 @@ const Categorias = () => {
       setLoading(true);
       setError(null);
 
-      const [resCategorias, resPlanes, resProfesionales] = await Promise.all([
+      const [resCategorias, resProfesionales] = await Promise.all([
         api.get('/api/categorias'),
-        api.get('/api/planes'),
         api.get('/api/profesionales')
       ]);
 
       if (resCategorias.data.success) {
         setCategorias(resCategorias.data.data);
-      }
-      if (resPlanes.data.success) {
-        setPlanes(resPlanes.data.data);
       }
       if (resProfesionales.data.success) {
         setProfesionales(resProfesionales.data.data);
@@ -72,7 +66,6 @@ const Categorias = () => {
     setSelectedCategoria(null);
     setFormValues({
       nombre: '',
-      planId: '',
       profesionalId: '',
       color: '#888888'
     });
@@ -83,7 +76,6 @@ const Categorias = () => {
     setSelectedCategoria(categoria);
     setFormValues({
       nombre: categoria.nombre,
-      planId: categoria.planId ? String(categoria.planId) : '',
       profesionalId: categoria.profesionalId ? String(categoria.profesionalId) : '',
       color: categoria.color || '#888888'
     });
@@ -96,7 +88,6 @@ const Categorias = () => {
       setSubmitting(true);
       const payload = {
         nombre: formValues.nombre,
-        planId: formValues.planId ? parseInt(formValues.planId) : null,
         profesionalId: formValues.profesionalId ? parseInt(formValues.profesionalId) : null,
         color: formValues.color
       };
@@ -188,7 +179,6 @@ const Categorias = () => {
               <tr>
                 <th style={{ width: '80px' }}>ID</th>
                 <th>Nombre de la Disciplina</th>
-                <th>Plan Asociado</th>
                 <th>Profesional</th>
                 <th style={{ width: '120px', textAlign: 'center' }}>Acciones</th>
               </tr>
@@ -206,24 +196,7 @@ const Categorias = () => {
                   <tr key={cat.id}>
                     <td>{cat.id}</td>
                     <td style={{ fontWeight: '600', color: 'var(--primary-dark)' }}>{cat.nombre}</td>
-                    <td>
-                      {cat.plan ? (
-                        <span style={{ 
-                          backgroundColor: '#e1f0ff', 
-                          color: 'var(--accent-blue)', 
-                          padding: '4px 10px', 
-                          borderRadius: '6px', 
-                          fontWeight: '600',
-                          fontSize: '0.85rem'
-                        }}>
-                          {cat.plan.nombre}
-                        </span>
-                      ) : (
-                        <span style={{ color: '#888', fontStyle: 'italic', fontSize: '0.85rem' }}>
-                          Sin Plan asignado
-                        </span>
-                      )}
-                    </td>
+
                     <td>
                       {cat.profesional ? (
                         <span style={{ 
@@ -340,22 +313,7 @@ const Categorias = () => {
               </div>
             </div>
 
-            <div className="grupo-entrada" style={{ marginBottom: '20px' }}>
-              <label htmlFor="planId" style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Asignar Plan</label>
-              <select
-                id="planId"
-                value={formValues.planId}
-                onChange={handleInputChange}
-                style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
-              >
-                <option value="">-- Sin Plan (Selecciona uno para vincular) --</option>
-                {planes.map(plan => (
-                  <option key={plan.id} value={plan.id}>
-                    {plan.nombre} ({plan.frecuencia})
-                  </option>
-                ))}
-              </select>
-            </div>
+
 
             <div className="grupo-entrada" style={{ marginBottom: '20px' }}>
               <label htmlFor="profesionalId" style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Profesional Asignado</label>

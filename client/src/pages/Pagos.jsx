@@ -20,6 +20,7 @@ const Pagos = ({ isTab = false }) => {
   const [errorMessage, setErrorMessage] = useState('');
   const [pagoToAnular, setPagoToAnular] = useState(null);
   const [searchTermCliente, setSearchTermCliente] = useState('');
+  const [isPendientesModalOpen, setIsPendientesModalOpen] = useState(false);
 
   const clientesFiltrados = clientes.filter(c => {
     const searchStr = searchTermCliente.toLowerCase();
@@ -39,7 +40,7 @@ const Pagos = ({ isTab = false }) => {
   // Cliente seleccionado actualmente en el formulario
   const clienteSeleccionado = clientes.find(c => c.id === parseInt(nuevoPago.clienteId)) || null;
   const saldoDisponible = clienteSeleccionado ? parseFloat(clienteSeleccionado.saldo) || 0 : 0;
-  const precioPlan = clienteSeleccionado?.categoria?.plan?.precio ? parseFloat(clienteSeleccionado.categoria.plan.precio) : 0;
+  const precioPlan = clienteSeleccionado?.plan?.precio ? parseFloat(clienteSeleccionado.plan.precio) : 0;
   const montoIngresado = parseFloat(nuevoPago.monto) || 0;
 
   // Cálculo dinámico de saldo a usar y efectivo final
@@ -89,6 +90,7 @@ const Pagos = ({ isTab = false }) => {
       if (resPagos.data?.success) {
         setPagos(resPagos.data.data);
       }
+      window.dispatchEvent(new Event('pagosUpdated'));
       if (nuevoEstado === 'ANULADO') {
         setSuccessMessage('Pago anulado correctamente. El cliente fue marcado como MOROSO.');
       }
@@ -171,45 +173,23 @@ const Pagos = ({ isTab = false }) => {
         
         {/* Sección: Bandeja de Aprobaciones */}
         <div style={{ backgroundColor: '#fff', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
-            <h2 style={{ fontSize: '1.2rem', color: '#333', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <AlertCircle size={20} color="#ff9800" /> Pagos Pendientes de Revisión
-            </h2>
-            <button className="btn-nuevo-pago" onClick={() => setIsModalOpen(true)} style={{ margin: 0 }}>
-              <CirclePlus size={18} /> Nuevo Pago Manual
-            </button>
-          </div>
-          
-          {pagosPendientes.length === 0 ? (
-            <p style={{ color: '#777', textAlign: 'center', padding: '20px 0' }}>No hay pagos pendientes de revisión.</p>
-          ) : (
-            <div style={{ display: 'grid', gap: '15px' }}>
-              {pagosPendientes.map(pago => (
-                <div key={pago.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '15px', flexWrap: 'wrap', gap: '15px' }}>
-                  <div style={{ flex: 1, minWidth: '280px' }}>
-                    <p style={{ margin: '0 0 5px 0', color: '#1f2937', fontSize: '1.05rem' }}>
-                      <strong>{pago.cliente?.nombre} {pago.cliente?.apellido}</strong> informó un pago de <strong>${pago.monto}</strong> por <strong>{pago.metodoPago}</strong>.
-                    </p>
-                    <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>Concepto: {pago.concepto} | Fecha: {new Date(pago.fecha).toLocaleDateString()}</p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button 
-                      onClick={() => handleEstadoPago(pago.id, 'APROBADO')}
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
-                    >
-                      <CheckCircle size={18} /> Aprobar
-                    </button>
-                    <button 
-                      onClick={() => handleEstadoPago(pago.id, 'RECHAZADO')}
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
-                    >
-                      <XCircle size={18} /> Rechazar
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+              <h2 style={{ fontSize: '1.2rem', color: '#333', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertCircle size={20} color={pagosPendientes.length > 0 ? "#ff9800" : "#9ca3af"} /> Pagos Pendientes
+              </h2>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button 
+                  className="btn-nuevo-pago" 
+                  onClick={() => setIsPendientesModalOpen(true)} 
+                  style={{ margin: 0, backgroundColor: '#f59e0b', color: '#fff' }}
+                >
+                  Ver Pendientes ({pagosPendientes.length})
+                </button>
+                <button className="btn-nuevo-pago" onClick={() => setIsModalOpen(true)} style={{ margin: 0 }}>
+                  <CirclePlus size={18} /> Nuevo Pago Manual
+                </button>
+              </div>
             </div>
-          )}
         </div>
 
         {/* Sección: Historial */}
@@ -319,6 +299,46 @@ const Pagos = ({ isTab = false }) => {
         </div>
 
       </div>
+
+      {/* Modal Pagos Pendientes */}
+      <Modal 
+        isOpen={isPendientesModalOpen} 
+        onClose={() => setIsPendientesModalOpen(false)} 
+        title={`Pagos Pendientes (${pagosPendientes.length})`}
+      >
+        <div style={{ maxHeight: '70vh', overflowY: 'auto', paddingRight: '10px' }}>
+          {pagosPendientes.length === 0 ? (
+            <p style={{ color: '#777', textAlign: 'center', padding: '20px 0' }}>No hay pagos pendientes de revisión.</p>
+          ) : (
+            <div style={{ display: 'grid', gap: '15px' }}>
+              {pagosPendientes.map(pago => (
+                <div key={pago.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '15px', flexWrap: 'wrap', gap: '15px' }}>
+                  <div style={{ flex: 1, minWidth: '280px' }}>
+                    <p style={{ margin: '0 0 5px 0', color: '#1f2937', fontSize: '1.05rem' }}>
+                      <strong>{pago.cliente?.nombre} {pago.cliente?.apellido}</strong> informó un pago de <strong>${pago.monto}</strong> por <strong>{pago.metodoPago}</strong>.
+                    </p>
+                    <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem' }}>Concepto: {pago.concepto} | Fecha: {new Date(pago.fecha).toLocaleDateString()}</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <button 
+                      onClick={() => handleEstadoPago(pago.id, 'APROBADO')}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                    >
+                      <CheckCircle size={18} /> Aprobar
+                    </button>
+                    <button 
+                      onClick={() => handleEstadoPago(pago.id, 'RECHAZADO')}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#ef4444', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                    >
+                      <XCircle size={18} /> Rechazar
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
 
       {/* Modal Nuevo Pago Manual */}
       <Modal 

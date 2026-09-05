@@ -41,11 +41,8 @@ const getDashboardMetrics = async (req, res) => {
         estado_cliente: 'ACTIVO'
       },
       include: {
-        categoria: {
-          include: {
-            plan: true
-          }
-        }
+        categoria: true,
+        plan: true
       }
     });
 
@@ -75,15 +72,15 @@ const getDashboardMetrics = async (req, res) => {
           disciplinaMap[catName] = { cantidad: 0, color: catColor };
         }
         disciplinaMap[catName].cantidad += 1;
+      }
 
-        if (cliente.categoria.plan) {
-          // Forzar conversión: Prisma.Decimal → Number
-          const precio = Number(cliente.categoria.plan.precio) || 0;
-          ingresosProyectados += precio;
+      if (cliente.plan) {
+        // Forzar conversión: Prisma.Decimal → Number
+        const precio = Number(cliente.plan.precio) || 0;
+        ingresosProyectados += precio;
 
-          const planName = cliente.categoria.plan.nombre || 'Plan Sin Nombre';
-          planMap[planName] = (planMap[planName] || 0) + precio;
-        }
+        const planName = cliente.plan.nombre || 'Plan Sin Nombre';
+        planMap[planName] = (planMap[planName] || 0) + precio;
       }
     });
 

@@ -51,6 +51,18 @@ async function main() {
             valor: 'true'
         }
     });
+
+    await prisma.parametroSistema.upsert({
+        where: { clave: 'asignacionMasivaHabilitado' },
+        update: {},
+        create: {
+            clave: 'asignacionMasivaHabilitado',
+            descripcion: 'Habilitar asignación masiva (pádel/Pilates)',
+            tipo: 'boolean',
+            valor: 'true'
+        }
+    });
+
     // Creación del usuario administrador inicial
     const existeAdmin = await prisma.usuario.findFirst({
         where: { esSuperAdmin: true }

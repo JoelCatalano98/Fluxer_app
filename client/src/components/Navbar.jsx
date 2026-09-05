@@ -95,28 +95,34 @@ const Navbar = ({ isOpen }) => {
               <Briefcase size={20} style={{ marginRight: '10px', color: '#00a8e8' }} /> <span>Servicios</span>
             </summary>
             <ul className="submenu">
-              <li>
-                <NavLink to="/gestion-planes" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Gestión de Planes
-                </NavLink>
-              </li>
-              <li>
-                <NavLink to="/turnos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Turnos / Horarios
-                </NavLink>
-              </li>
-              {asignacionMasivaHabilitado && (
+              {hasPermission('permisoPlanes') && (
+                <li>
+                  <NavLink to="/gestion-planes" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Gestión de Planes
+                  </NavLink>
+                </li>
+              )}
+              {hasPermission('permisoTurnos') && (
+                <li>
+                  <NavLink to="/turnos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Turnos / Horarios
+                  </NavLink>
+                </li>
+              )}
+              {asignacionMasivaHabilitado && hasPermission('permisoTurnos') && (
                 <li>
                   <NavLink to="/asignacion-mensual" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
                     Asignación Masiva Mensual
                   </NavLink>
                 </li>
               )}
-              <li>
-                <NavLink to="/configuracion" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Configuración General
-                </NavLink>
-              </li>
+              {isSadmin && (
+                <li>
+                  <NavLink to="/configuracion" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Configuración General
+                  </NavLink>
+                </li>
+              )}
             </ul>
           </details>
         </li>
@@ -127,28 +133,34 @@ const Navbar = ({ isOpen }) => {
               <Users size={20} style={{ marginRight: '10px', color: '#00a8e8' }} /> <span>Clientes</span>
             </summary>
             <ul className="submenu">
-              <li>
-                <NavLink to="/profesionales" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Profesionales
-                </NavLink>
-              </li>
-              {sociosHabilitado && (
+              {hasPermission('permisoClientes') && (
+                <li>
+                  <NavLink to="/profesionales" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Profesionales
+                  </NavLink>
+                </li>
+              )}
+              {sociosHabilitado && hasPermission('permisoClientes') && (
                 <li>
                   <NavLink to="/socios" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
                     Gestión de Socios
                   </NavLink>
                 </li>
               )}
-              <li>
-                <NavLink to="/clientes-totales" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Clientes Totales
-                </NavLink>
-              </li>
-              <li>
-                <NavLink to="/morosos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Morosos
-                </NavLink>
-              </li>
+              {hasPermission('permisoClientes') && (
+                <li>
+                  <NavLink to="/clientes-totales" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Clientes Totales
+                  </NavLink>
+                </li>
+              )}
+              {(hasPermission('permisoClientes') || hasPermission('permisoFinanzas')) && (
+                <li>
+                  <NavLink to="/morosos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Morosos
+                  </NavLink>
+                </li>
+              )}
             </ul>
           </details>
         </li>
@@ -160,14 +172,15 @@ const Navbar = ({ isOpen }) => {
               <Settings size={20} style={{ marginRight: '10px', color: '#00a8e8' }} /> <span>Utilidades</span>
             </summary>
             <ul className="submenu">
-              <li>
-                <NavLink to="/categorias" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  🏋️ Disciplinas / Categorías
-                </NavLink>
-              </li>
+              {hasPermission('permisoPlanes') && (
+                <li>
+                  <NavLink to="/categorias" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    🏋️ Disciplinas / Categorías
+                  </NavLink>
+                </li>
+              )}
               {hasPermission('permisoFinanzas') && (
                 <>
-
                   {qrHabilitado && (
                     <li>
                       <NavLink to="/demo-qr" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
@@ -191,20 +204,31 @@ const Navbar = ({ isOpen }) => {
                   )}
                 </>
               )}
-              <li>
-                <NavLink to="/avisos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Avisos
-                </NavLink>
-              </li>
-              <li>
-                <NavLink to="/ranking" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                  Ranking 1RM
-                </NavLink>
-              </li>
+              {hasPermission('permisoFeriados') && (
+                <li>
+                  <NavLink to="/avisos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Avisos
+                  </NavLink>
+                </li>
+              )}
               {isSadmin && (
                 <li>
-                  <NavLink to="/parametros" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit', color: '#856404', backgroundColor: '#fff3cd' }}>
-                    ⚙️ Parámetros (SADMIN)
+                  <NavLink to="/ranking" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Ranking / Estadísticas
+                  </NavLink>
+                </li>
+              )}
+              {isSadmin && (
+                <li>
+                  <NavLink to="/usuarios" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Personal Autorizado
+                  </NavLink>
+                </li>
+              )}
+              {isSadmin && (
+                <li>
+                  <NavLink to="/parametros" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Parámetros del Sistema
                   </NavLink>
                 </li>
               )}
