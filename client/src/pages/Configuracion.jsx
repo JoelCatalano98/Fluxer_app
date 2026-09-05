@@ -151,6 +151,14 @@ const Configuracion = () => {
       const res = await api.put('/api/configuracion', payloadParaGuardar);
 
       if (res.data.success) {
+        // Actualizar el estado local con los datos confirmados por el servidor
+        if (res.data.data) {
+          setConfig(prev => ({
+            ...prev,
+            ...res.data.data,
+            recargoPorcentaje: res.data.data.recargoPorcentaje ?? prev.recargoPorcentaje
+          }));
+        }
         setMessage({ text: '¡Configuración guardada con éxito!', type: 'success' });
         // Recargar el navbar/sidebar para actualizar el logo dinámico
         window.dispatchEvent(new Event('configUpdated'));
@@ -162,6 +170,7 @@ const Configuracion = () => {
       setSaving(false);
     }
   };
+
 
   const handleDiscard = () => {
     if (window.confirm('¿Estás seguro de que deseas descartar los cambios y restaurar la configuración guardada?')) {
