@@ -52,10 +52,12 @@ const feriadosRoutes = require('./routes/feriados.routes');
 const liquidacionesRoutes = require('./routes/liquidaciones.routes');
 const movimientosGeneralesRoutes = require('./routes/movimientosGenerales.routes');
 const contactRoutes = require('./routes/contact.routes');
+const branchesRoutes = require('./routes/branches.routes');
 const { verifyToken, requirePermiso } = require('./middlewares/auth.middleware');
 const { requireParametro } = require('./middlewares/parametros.middleware');
 
 app.use('/api/auth', authRoutes);
+app.use('/api/branches', branchesRoutes);
 app.use('/api/socio/auth', authSocioRoutes);
 app.use('/api/socio/perfil', perfilSocioRoutes);
 app.use('/api/socio/turnos', turnoSocioRoutes);
