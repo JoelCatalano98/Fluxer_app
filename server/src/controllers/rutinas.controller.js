@@ -97,22 +97,40 @@ const actualizarRutina = async (req, res) => {
                 where: { rutinaId: parseInt(id) }
             });
 
-            // Actualizar nombre y crear nuevos ejercicios
-            return await tx.rutina.update({
-                where: { id: parseInt(id) },
-                data: {
-                    nombre,
-                    ejercicios: {
-                        create: ejercicios.map(ej => ({
-                            nombreEjercicio: ej.nombreEjercicio || ej.nombre,
-                            dia: ej.dia || null,
-                            series: parseInt(ej.series) || 0,
-                            repeticiones: String(ej.repeticiones || ''),
-                            pesoSugerido: ej.pesoSugerido ? String(ej.pesoSugerido) : null,
-                            notas: ej.notas ? String(ej.notas) : null
-                        }))
-                    }
-                },
+            // Actualizar nombre — reescrito como updateMany para incluir branchId en where.
+            // tx no hereda la Prisma Extension (limitación documentada del SDK),
+            // por eso el filtro de branch se aplica manualmente acá.
+            const rutinaId = parseInt(id);
+            const whereClause = req.branchId
+                ? { id: rutinaId, branchId: req.branchId }
+                : { id: rutinaId };
+
+            const updateResult = await tx.rutina.updateMany({
+                where: whereClause,
+                data: { nombre }
+            });
+
+            if (updateResult.count === 0) {
+                const err = new Error(`Rutina no encontrada en esta sucursal`);
+                err.code = 'P2025';
+                throw err;
+            }
+
+            // Crear nuevos ejercicios y retornar la rutina completa
+            await tx.rutinaEjercicio.createMany({
+                data: ejercicios.map(ej => ({
+                    rutinaId,
+                    nombreEjercicio: ej.nombreEjercicio || ej.nombre,
+                    dia: ej.dia || null,
+                    series: parseInt(ej.series) || 0,
+                    repeticiones: String(ej.repeticiones || ''),
+                    pesoSugerido: ej.pesoSugerido ? String(ej.pesoSugerido) : null,
+                    notas: ej.notas ? String(ej.notas) : null
+                }))
+            });
+
+            return await tx.rutina.findUnique({
+                where: { id: rutinaId },
                 include: { ejercicios: true }
             });
         });
@@ -208,21 +226,37 @@ const crearOActualizarRutinaGeneral = async (req, res) => {
                 where: { rutinaId: rutinaGeneral.id }
             });
 
-            // Actualizar nombre y crear nuevos ejercicios
-            return await tx.rutina.update({
+            // Actualizar nombre — mismo patrOn que actualizarRutina:
+            // tx no hereda la extension, branchId se aplica manualmente.
+            // rutinaGeneral es la rutina global (clienteId: null) — puede tener branchId null.
+            const whereClause = req.branchId
+                ? { id: rutinaGeneral.id, branchId: req.branchId }
+                : { id: rutinaGeneral.id };
+
+            const updateResult = await tx.rutina.updateMany({
+                where: whereClause,
+                data: { nombre }
+            });
+
+            if (updateResult.count === 0) {
+                const err = new Error('Rutina general no encontrada en esta sucursal');
+                err.code = 'P2025';
+                throw err;
+            }
+
+            await tx.rutinaEjercicio.createMany({
+                data: ejercicios.map(ej => ({
+                    rutinaId: rutinaGeneral.id,
+                    nombreEjercicio: ej.nombreEjercicio || ej.nombre,
+                    dia: ej.dia || null,
+                    series: parseInt(ej.series) || 0,
+                    repeticiones: String(ej.repeticiones || ''),
+                    pesoSugerido: ej.pesoSugerido ? String(ej.pesoSugerido) : null
+                }))
+            });
+
+            return await tx.rutina.findUnique({
                 where: { id: rutinaGeneral.id },
-                data: {
-                    nombre,
-                    ejercicios: {
-                        create: ejercicios.map(ej => ({
-                            nombreEjercicio: ej.nombreEjercicio || ej.nombre,
-                            dia: ej.dia || null,
-                            series: parseInt(ej.series) || 0,
-                            repeticiones: String(ej.repeticiones || ''),
-                            pesoSugerido: ej.pesoSugerido ? String(ej.pesoSugerido) : null
-                        }))
-                    }
-                },
                 include: { ejercicios: true }
             });
         });

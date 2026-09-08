@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/prisma');
 
 const crearLiquidacion = async (req, res) => {
     try {
@@ -32,7 +31,9 @@ const crearLiquidacion = async (req, res) => {
                     clasesSemanales: parseInt(clasesSemanales),
                     montoTotal: parseFloat(montoTotal),
                     metodoPago,
-                    notas
+                    notas,
+                    // Inyectar branchId desde el JWT (req.branchId = null si feature apagada)
+                    ...(req.branchId && { branchId: req.branchId })
                 }
             });
 
@@ -44,7 +45,8 @@ const crearLiquidacion = async (req, res) => {
                     monto: parseFloat(montoTotal),
                     descripcion,
                     origen: 'LIQUIDACION_SUELDO',
-                    liquidacionId: liquidacion.id
+                    liquidacionId: liquidacion.id,
+                    ...(req.branchId && { branchId: req.branchId })
                 }
             });
 

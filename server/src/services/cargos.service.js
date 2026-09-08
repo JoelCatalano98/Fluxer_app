@@ -67,7 +67,11 @@ async function asegurarCargosAlDia(clienteId) {
                 tipo: 'CARGO',
                 descripcion: `Cuota mensual - ${mesAnio}`,
                 fecha: fechaCargo,
-                clienteId: cliente.id
+                clienteId: cliente.id,
+                // Inyectar branchId del cliente para que el movimiento quede asignado
+                // a la sucursal correcta. cliente.branchId puede ser null en instalaciones
+                // sin multi-sucursal (comportamiento válido, el campo es nullable).
+                ...(cliente.branchId && { branchId: cliente.branchId })
             });
 
             // 2. Comprobar si corresponde recargo: 
@@ -85,7 +89,8 @@ async function asegurarCargosAlDia(clienteId) {
                     tipo: 'RECARGO',
                     descripcion: `Recargo por mora (${recargoPorcentaje}%) - ${mesAnio}`,
                     fecha: fechaRecargo,
-                    clienteId: cliente.id
+                    clienteId: cliente.id,
+                    ...(cliente.branchId && { branchId: cliente.branchId })
                 });
             }
 

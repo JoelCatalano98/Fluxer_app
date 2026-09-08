@@ -1,13 +1,8 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/prisma');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-    throw new Error("CRITICAL: JWT_SECRET no está configurado en las variables de entorno.");
-}
+const { getMultiSucursalEnabled } = require('../config/branchCache');
+const { JWT_SECRET, BRANCH_SELECTION_SCOPE } = require('../middlewares/auth.middleware');
 
 const login = async (req, res) => {
     try {
@@ -35,8 +30,8 @@ const login = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
         }
 
-        // Token payload
-        const payload = {
+        // Payload base de permisos (sin branchId aún)
+        const basePayload = {
             id: usuario.id,
             nombre: usuario.nombre,
             esSuperAdmin: usuario.esSuperAdmin,
@@ -48,20 +43,138 @@ const login = async (req, res) => {
             permisoFeriados: usuario.permisoFeriados
         };
 
-        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });
+        // ── Flujo multi-sucursal ──────────────────────────────────────────
+        const isMultiEnabled = await getMultiSucursalEnabled();
 
+        if (isMultiEnabled) {
+            // Buscar sucursales activas asignadas al usuario
+            const asignaciones = await prisma.usuarioSucursal.findMany({
+                where: { usuarioId: usuario.id },
+                include: { branch: { where: { activa: true } } }
+            });
+            const branches = asignaciones
+                .filter(a => a.branch !== null)
+                .map(a => ({ id: a.branch.id, nombre: a.branch.nombre, direccion: a.branch.direccion }));
+
+            if (branches.length === 0) {
+                // Usuario sin sucursales asignadas — error de configuración
+                return res.status(403).json({
+                    success: false,
+                    message: 'Este usuario no tiene sucursales asignadas. Contactar al administrador.'
+                });
+            }
+
+            if (branches.length === 1) {
+                // Una sola sucursal → incluir branchId en el token directamente
+                const payload = { ...basePayload, branchId: branches[0].id };
+                const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });
+                return res.status(200).json({
+                    success: true,
+                    data: { token, usuario: payload },
+                    message: 'Login exitoso'
+                });
+            }
+
+            // Dos o más sucursales → emitir token temporal de selección
+            // scope: 'branch-selection-only' — NO sirve para acceder a rutas operativas
+            // Expira en 5 minutos — ventana suficiente para seleccionar
+            const tempToken = jwt.sign(
+                { id: usuario.id, scope: BRANCH_SELECTION_SCOPE },
+                JWT_SECRET,
+                { expiresIn: '5m' }
+            );
+            return res.status(200).json({
+                success: true,
+                needsBranchSelection: true,
+                tempToken,   // frontend lo guarda en memoria (NO en localStorage)
+                branches,
+                message: 'Seleccioná una sucursal para continuar'
+            });
+        }
+
+        // ── Flujo estándar (sin multi-sucursal) — comportamiento actual ───
+        const token = jwt.sign(basePayload, JWT_SECRET, { expiresIn: '30d' });
         return res.status(200).json({
             success: true,
-            data: {
-                token,
-                usuario: payload
-            },
+            data: { token, usuario: basePayload },
             message: 'Login exitoso'
         });
 
     } catch (error) {
         console.error('Error en login:', error);
         return res.status(500).json({ success: false, message: 'Error en el servidor' });
+    }
+};
+
+/**
+ * POST /api/auth/select-branch
+ *
+ * Recibe el token temporal (scope: 'branch-selection-only') y el branchId elegido.
+ * Valida que el branchId pertenezca al usuario en UsuarioSucursal.
+ * Emite el JWT definitivo con branchId incluido.
+ *
+ * Protegido por verifyTempToken (en auth.routes.js) — no por verifyToken.
+ */
+const selectBranch = async (req, res) => {
+    try {
+        // req.user viene de verifyTempToken — contiene { id, scope }
+        const userId = req.user.id;
+        const branchId = parseInt(req.body?.branchId);
+
+        if (!branchId || isNaN(branchId)) {
+            return res.status(400).json({ success: false, message: 'branchId requerido' });
+        }
+
+        // Validar que ese branchId esté asignado a este usuario Y la sucursal esté activa
+        const asignacion = await prisma.usuarioSucursal.findFirst({
+            where: { usuarioId: userId, branchId },
+            include: { branch: true }
+        });
+
+        if (!asignacion || !asignacion.branch?.activa) {
+            return res.status(403).json({
+                success: false,
+                message: 'No tenés acceso a esa sucursal o la sucursal está inactiva'
+            });
+        }
+
+        // Recuperar datos completos del usuario para armar el payload definitivo
+        const usuario = await prisma.usuario.findUnique({ where: { id: userId } });
+        if (!usuario) {
+            return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+        }
+
+        const payload = {
+            id: usuario.id,
+            nombre: usuario.nombre,
+            esSuperAdmin: usuario.esSuperAdmin,
+            esAdmin: usuario.esAdmin,
+            permisoFinanzas: usuario.permisoFinanzas,
+            permisoTurnos: usuario.permisoTurnos,
+            permisoClientes: usuario.permisoClientes,
+            permisoPlanes: usuario.permisoPlanes,
+            permisoFeriados: usuario.permisoFeriados,
+            branchId: asignacion.branchId  // ← la fuente de verdad
+        };
+
+        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                token,
+                usuario: payload,
+                branch: {
+                    id: asignacion.branch.id,
+                    nombre: asignacion.branch.nombre
+                }
+            },
+            message: 'Sucursal seleccionada correctamente'
+        });
+
+    } catch (error) {
+        console.error('Error en selectBranch:', error);
+        return res.status(500).json({ success: false, message: 'Error al seleccionar sucursal' });
     }
 };
 
@@ -251,6 +364,7 @@ const eliminarUsuario = async (req, res) => {
 
 module.exports = {
     login,
+    selectBranch,
     registrarUsuario,
     getUsuarios,
     editarUsuario,
