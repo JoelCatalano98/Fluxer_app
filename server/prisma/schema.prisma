@@ -7,6 +7,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─── MULTI-SUCURSAL ────────────────────────────────────────────────────────
+// Feature opt-in: solo activo si ParametroSistema.multiSucursalHabilitado = "true"
+// Las instalaciones existentes (Krebs, Fitlates, Herafitnes) no se ven afectadas.
+
+model Branch {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  direccion String?
+  telefono  String?
+  activa    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("branches")
+}
+
+// Tabla puente: un usuario puede pertenecer a más de una sucursal
+model UsuarioSucursal {
+  id        Int     @id @default(autoincrement())
+  usuarioId Int
+  branchId  Int
+  rol       String?
+
+  @@unique([usuarioId, branchId])
+  @@map("usuario_sucursales")
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+
 model Usuario {
   id              Int     @id @default(autoincrement())
   email           String  @unique
@@ -54,6 +82,9 @@ model Plan {
   codigo          String?     @unique
   observaciones   String?     @db.Text
   clientes        Cliente[]
+  // TODO (multi-sucursal): ¿el catálogo de planes es compartido entre sucursales
+  // de la misma instalación o cada sucursal define los suyos?
+  // No agregar branchId hasta resolver esta decisión. Ver PR multi-sucursal.
 
   @@map("planes")
 }
@@ -77,6 +108,11 @@ model Cliente {
   vencimientoCuota DateTime?
   saldo            Float              @default(0)
   origenSolicitud  String?            @default("NUEVO")
+  // TODO (multi-sucursal): DECISIÓN PENDIENTE — confirmar antes de poner NOT NULL.
+  // ¿Un socio que entrena en 2 sucursales es UN registro (necesita tabla puente
+  // ClienteSucursal) o DOS clientes independientes con historial separado?
+  // Por ahora NULLABLE para no forzar la decisión. Ver PR multi-sucursal.
+  branchId         Int?
   categoria        Categoria?         @relation(fields: [categoriaId], references: [id])
   plan             Plan?              @relation(fields: [planId], references: [id])
   movimientocuenta movimientocuenta[]
@@ -87,6 +123,7 @@ model Cliente {
 
   @@index([categoriaId], map: "clientes_categoriaId_fkey")
   @@index([planId], map: "clientes_planId_fkey")
+  @@index([branchId], map: "clientes_branchId_idx")
   @@map("clientes")
 }
 
@@ -118,12 +155,14 @@ model HorarioConfig {
   categoriaId   Int?
   cupo_maximo   Int?
   profesionalId Int?
+  branchId      Int?
   categoria     Categoria?     @relation(fields: [categoriaId], references: [id])
   profesional   Profesional?   @relation(fields: [profesionalId], references: [id])
   turnos        TurnoCliente[]
 
   @@index([categoriaId], map: "horarios_config_categoriaId_fkey")
   @@index([profesionalId], map: "horarios_config_profesionalId_fkey")
+  @@index([branchId], map: "horarios_config_branchId_idx")
   @@map("horarios_config")
 }
 
@@ -134,6 +173,7 @@ model TurnoCliente {
   clienteId     Int
   profesionalId Int?
   estado        String        @default("ACTIVO")
+  branchId      Int?
   cliente       Cliente       @relation(fields: [clienteId], references: [id])
   horario       HorarioConfig @relation(fields: [horarioId], references: [id])
   profesional   Profesional?  @relation(fields: [profesionalId], references: [id])
@@ -142,6 +182,7 @@ model TurnoCliente {
   @@index([clienteId], map: "turnos_clientes_clienteId_fkey")
   @@index([horarioId], map: "turnos_clientes_horarioId_fkey")
   @@index([profesionalId], map: "turnos_clientes_profesionalId_fkey")
+  @@index([branchId], map: "turnos_clientes_branchId_idx")
   @@map("turnos_clientes")
 }
 
@@ -153,11 +194,13 @@ model Categoria {
   activo        Boolean         @default(true)
   cupoMaximo    Int?
   profesionalId Int?
+  branchId      Int?
   profesional   Profesional?    @relation(fields: [profesionalId], references: [id])
   clientes      Cliente[]
   horarios      HorarioConfig[]
 
   @@index([profesionalId], map: "categorias_profesionalId_fkey")
+  @@index([branchId], map: "categorias_branchId_idx")
   @@map("categorias")
 }
 
@@ -194,7 +237,13 @@ model Aviso {
   horaFinBloqueo     String?
   horaInicioBloqueo  String?
   horariosBloqueados String?   @db.LongText
+  // TODO (multi-sucursal): DECISIÓN PENDIENTE — confirmar en reunión antes de poner NOT NULL.
+  // ¿branchId = null significa "aviso global para toda la instalación" (mismo patrón
+  // que ParametroSistema) o es un campo temporal sin semántica hasta la migración?
+  // Ver PR multi-sucursal.
+  branchId           Int?
 
+  @@index([branchId], map: "avisos_branchId_idx")
   @@map("avisos")
 }
 
@@ -213,10 +262,12 @@ model Rutina {
   nombre     String
   clienteId  Int?
   createdAt  DateTime          @default(now())
+  branchId   Int?
   ejercicios RutinaEjercicio[]
   cliente    Cliente?          @relation(fields: [clienteId], references: [id], onDelete: Cascade)
 
   @@index([clienteId], map: "rutinas_clienteId_fkey")
+  @@index([branchId], map: "rutinas_branchId_idx")
   @@map("rutinas")
 }
 
@@ -250,11 +301,18 @@ model Record {
 
 model ParametroSistema {
   id          Int    @id @default(autoincrement())
-  clave       String @unique
+  clave       String
+  // branchId = null  → parámetro global para toda la instalación (fallback)
+  // branchId = X     → aplica solo a esa sucursal (tiene precedencia sobre el global)
+  // Query de lectura: buscar primero por (clave, branchId específico),
+  // si no existe usar (clave, branchId null) como default.
+  branchId    Int?
   descripcion String
   tipo        String @default("boolean")
   valor       String @default("false")
 
+  // El unique ahora es compuesto — permite el mismo clave en global + por sucursal
+  @@unique([clave, branchId])
   @@map("parametros_sistema")
 }
 
@@ -267,10 +325,12 @@ model Liquidacion {
   fechaPago       DateTime            @default(now())
   metodoPago      String
   notas           String?
+  branchId        Int?
   profesional     Profesional         @relation(fields: [profesionalId], references: [id])
   movimientos     MovimientoGeneral[]
 
   @@index([profesionalId], map: "liquidaciones_profesionalId_fkey")
+  @@index([branchId], map: "liquidaciones_branchId_idx")
   @@map("liquidaciones")
 }
 
@@ -283,11 +343,16 @@ model MovimientoGeneral {
   origen        String
   pagoId        Int?
   liquidacionId Int?
+  // ⚠️  HERAFITNES: branchId agregado como NULLABLE — no afecta la lógica de
+  // deduplicación de doble cargo (que opera sobre pagoId). Verificar en /initialize
+  // que COUNT(*) antes == después (el endpoint solo hace UPDATE, nunca INSERT aquí).
+  branchId      Int?
   liquidacion   Liquidacion? @relation(fields: [liquidacionId], references: [id])
   pago          pago?        @relation(fields: [pagoId], references: [id])
 
   @@index([liquidacionId], map: "movimientos_generales_liquidacionId_fkey")
   @@index([pagoId], map: "movimientos_generales_pagoId_fkey")
+  @@index([branchId], map: "movimientos_generales_branchId_idx")
   @@map("movimientos_generales")
 }
 
@@ -299,11 +364,15 @@ model movimientocuenta {
   fecha       DateTime @default(now())
   clienteId   Int
   pagoId      Int?
+  // ⚠️  HERAFITNES: mismo comentario que MovimientoGeneral — branchId NULLABLE,
+  // no interfiere con la lógica existente.
+  branchId    Int?
   cliente     Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade, map: "MovimientoCuenta_clienteId_fkey")
   pago        pago?    @relation(fields: [pagoId], references: [id], map: "MovimientoCuenta_pagoId_fkey")
 
   @@index([clienteId], map: "MovimientoCuenta_clienteId_fkey")
   @@index([pagoId], map: "MovimientoCuenta_pagoId_fkey")
+  @@index([branchId], map: "movimientocuenta_branchId_idx")
 }
 
 model pago {
