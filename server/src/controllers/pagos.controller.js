@@ -219,9 +219,8 @@ const cambiarEstadoPago = async (req, res) => {
                 prisma.cliente.update({
                     where: { id: pagoActual.clienteId },
                     data: {
-                        estado_pago: 'MOROSO',
-                        vencimientoCuota: ayer,
-                        saldo: { decrement: diferenciaOriginal }
+                        // El saldo y estado_pago exactos se recalcularán al llamar asegurarCargosAlDia abajo
+                        estado_pago: 'MOROSO'
                     }
                 }),
                 prisma.movimientocuenta.create({
@@ -235,12 +234,15 @@ const cambiarEstadoPago = async (req, res) => {
                 })
             ]);
 
+            const { asegurarCargosAlDia } = require('../services/cargos.service');
+            const resultCargos = await asegurarCargosAlDia(pagoActual.clienteId);
+
             return res.json({
                 success: true,
                 message: 'Pago anulado. El cliente fue marcado como MOROSO y el saldo fue revertido.',
                 data: {
                     pago: pagoAnulado,
-                    vencimientoCuota: clienteRevertido.vencimientoCuota
+                    vencimientoCuota: resultCargos?.nuevoVencimiento || clienteRevertido.vencimientoCuota
                 }
             });
         }

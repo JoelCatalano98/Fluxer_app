@@ -20,7 +20,8 @@ const Categorias = () => {
   const [formValues, setFormValues] = useState({
     nombre: '',
     profesionalId: '',
-    color: '#888888'
+    color: '#888888',
+    cupoMaximo: ''
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -67,7 +68,8 @@ const Categorias = () => {
     setFormValues({
       nombre: '',
       profesionalId: '',
-      color: '#888888'
+      color: '#888888',
+      cupoMaximo: ''
     });
     setIsFormModalOpen(true);
   };
@@ -77,7 +79,8 @@ const Categorias = () => {
     setFormValues({
       nombre: categoria.nombre,
       profesionalId: categoria.profesionalId ? String(categoria.profesionalId) : '',
-      color: categoria.color || '#888888'
+      color: categoria.color || '#888888',
+      cupoMaximo: categoria.cupoMaximo ? String(categoria.cupoMaximo) : ''
     });
     setIsFormModalOpen(true);
   };
@@ -89,7 +92,8 @@ const Categorias = () => {
       const payload = {
         nombre: formValues.nombre,
         profesionalId: formValues.profesionalId ? parseInt(formValues.profesionalId) : null,
-        color: formValues.color
+        color: formValues.color,
+        cupoMaximo: formValues.cupoMaximo !== '' ? parseInt(formValues.cupoMaximo) : null
       };
 
       if (selectedCategoria) {
@@ -179,6 +183,7 @@ const Categorias = () => {
               <tr>
                 <th style={{ width: '80px' }}>ID</th>
                 <th>Nombre de la Disciplina</th>
+                <th>Cupo</th>
                 <th>Profesional</th>
                 <th style={{ width: '120px', textAlign: 'center' }}>Acciones</th>
               </tr>
@@ -196,7 +201,7 @@ const Categorias = () => {
                   <tr key={cat.id}>
                     <td>{cat.id}</td>
                     <td style={{ fontWeight: '600', color: 'var(--primary-dark)' }}>{cat.nombre}</td>
-
+                    <td>{cat.cupoMaximo ? <span style={{ fontWeight: 'bold' }}>{cat.cupoMaximo}</span> : <span style={{ color: '#888', fontStyle: 'italic', fontSize: '0.85rem' }}>Global</span>}</td>
                     <td>
                       {cat.profesional ? (
                         <span style={{ 
@@ -313,7 +318,21 @@ const Categorias = () => {
               </div>
             </div>
 
-
+            <div className="grupo-entrada" style={{ marginBottom: '20px' }}>
+              <label htmlFor="cupoMaximo" style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Cupo Máximo (Cascada)</label>
+              <input
+                type="number"
+                id="cupoMaximo"
+                placeholder="Ej. 15 (Dejar vacío para usar Global)"
+                value={formValues.cupoMaximo}
+                onChange={handleInputChange}
+                min="1"
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
+              />
+              <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px', lineHeight: '1.2' }}>
+                Si defines un cupo, se aplicará por defecto a todos los horarios de esta disciplina.
+              </p>
+            </div>
 
             <div className="grupo-entrada" style={{ marginBottom: '20px' }}>
               <label htmlFor="profesionalId" style={{ fontWeight: '600', marginBottom: '8px', display: 'block' }}>Profesional Asignado</label>

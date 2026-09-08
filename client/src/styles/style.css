@@ -1444,21 +1444,65 @@ th.columna-fija {
 }
 
 @media print {
-    body * {
-        visibility: hidden;
+    @page {
+        size: A4;
+        margin: 15mm;
     }
-    .comprobante-imprimir, .comprobante-imprimir *,
-    .libro-diario-imprimir, .libro-diario-imprimir * {
-        visibility: visible;
+    body, html, #root {
+        height: auto !important;
+        overflow: visible !important;
+        background: transparent !important;
     }
+    /* Hide the sidebar and standard layout elements */
+    .sidebar, .navbar, .topbar, .header, .menu {
+        display: none !important;
+    }
+    
+    /* Instead of visibility hidden, hide siblings of the main content */
+    body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
     .comprobante-imprimir, .libro-diario-imprimir {
-        position: absolute;
-        left: 0;
-        top: 0;
+        position: relative !important;
+        left: 0 !important;
+        top: 0 !important;
         width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
         box-shadow: none !important;
+        display: block !important;
+        visibility: visible !important;
+    }
+    /* Prevents tables from being cut abruptly */
+    .libro-diario-imprimir table {
+        page-break-inside: auto;
+        width: 100% !important;
+        table-layout: fixed; /* Fuerza a respetar el ancho de las columnas */
+    }
+    .libro-diario-imprimir th, 
+    .libro-diario-imprimir td {
+        word-wrap: break-word;
+        white-space: normal !important;
+        overflow-wrap: break-word;
+        font-size: 11px !important; /* Reduce la fuente para que entren más datos en A4 */
+        padding: 4px !important;
+    }
+    /* Asignar anchos proporcionales a las columnas de la tabla del libro diario */
+    .libro-diario-imprimir th:nth-child(1), .libro-diario-imprimir td:nth-child(1) { width: 18%; }
+    .libro-diario-imprimir th:nth-child(2), .libro-diario-imprimir td:nth-child(2) { width: 34%; }
+    .libro-diario-imprimir th:nth-child(3), .libro-diario-imprimir td:nth-child(3) { width: 16%; }
+    .libro-diario-imprimir th:nth-child(4), .libro-diario-imprimir td:nth-child(4) { width: 16%; }
+    .libro-diario-imprimir th:nth-child(5), .libro-diario-imprimir td:nth-child(5) { width: 16%; }
+
+    .libro-diario-imprimir tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    .libro-diario-imprimir thead {
+        display: table-header-group;
     }
     .no-print {
         display: none !important;

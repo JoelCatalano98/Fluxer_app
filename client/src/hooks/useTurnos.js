@@ -94,7 +94,7 @@ export const useTurnos = (fechaBaseExterna = null) => {
       console.error('Error crearTurno:', err);
       const errMsg = err.response?.data?.message || err.message || 'Error al crear turno';
       setError(errMsg);
-      throw new Error(errMsg);
+      throw err; // Preserve full error to check status codes
     }
   };
 

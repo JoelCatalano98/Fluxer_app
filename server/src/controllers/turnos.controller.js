@@ -71,7 +71,7 @@ const getTurnos = async (req, res) => {
 //   b) Modo legacy (simple):   { fecha, horarioId, clienteId, profesionalId }
 const createTurno = async (req, res) => {
   try {
-    const { clienteId, profesionalId, turnos, horarioId, fecha } = req.body;
+    const { clienteId, profesionalId, turnos, horarioId, fecha, forzarReserva } = req.body;
 
     if (!clienteId) {
       return res.status(400).json({ success: false, message: "El cliente es obligatorio." });
@@ -101,6 +101,19 @@ const createTurno = async (req, res) => {
       return res.status(400).json({ success: false, message: "Datos de turnos incompletos." });
     }
 
+    const configGlobal = await prisma.configuracion.findFirst();
+    const paramCupoEstricto = await prisma.parametroSistema.findFirst({ where: { clave: 'cupoEstricto' } });
+    const isCupoEstricto = paramCupoEstricto ? paramCupoEstricto.valor === 'true' : true;
+    const maxGlobal = configGlobal?.cupoGlobal || 15;
+    const bloqueo = configGlobal?.bloqueoCapacidad;
+
+    // Helper for formatting time in error messages
+    const formatTimeHelper = (date) => {
+      if (!date) return '';
+      const d = new Date(date);
+      return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+    };
+
     // Inserción masiva o múltiple segura
     const createdTurnos = [];
     for (const item of itemsToCreate) {
@@ -118,6 +131,31 @@ const createTurno = async (req, res) => {
       });
 
       if (!existente) {
+        if (bloqueo) {
+          const horario = await prisma.horarioConfig.findUnique({ where: { id: item.horarioId } });
+          const cupo = horario?.cupo_maximo ?? maxGlobal;
+          const ocupados = await prisma.turnoCliente.count({
+            where: {
+              horarioId: item.horarioId,
+              fecha: fechaObj,
+              estado: 'ACTIVO'
+            }
+          });
+
+          if (ocupados >= cupo) {
+            if (isCupoEstricto) {
+              return res.status(400).json({ success: false, message: `El horario de las ${horario ? formatTimeHelper(horario.hora_inicio) : ''} está lleno (Cupo: ${cupo}).` });
+            } else if (!forzarReserva) {
+              return res.status(409).json({
+                success: false, 
+                requiresConfirmation: true,
+                ocupados,
+                cupo,
+                message: `Esta clase ya tiene ${ocupados}/${cupo} cupos ocupados. ¿Anotar igual?`
+              });
+            }
+          }
+        }
         const nuevo = await prisma.turnoCliente.create({
           data: {
             clienteId: item.clienteId,
@@ -340,7 +378,15 @@ const createHorario = async (req, res) => {
             const catIdParsed = config.categoriaId ? parseInt(config.categoriaId) : null;
             const profIdParsed = config.profesionalId ? parseInt(config.profesionalId) : null;
 
-            // Buscar si ya existe uno (activo o inactivo) para ese día y hora
+            let cupo_maximo = null;
+            if (catIdParsed) {
+                const categoria = await prisma.categoria.findUnique({ where: { id: catIdParsed } });
+                if (categoria && categoria.cupoMaximo) {
+                    cupo_maximo = categoria.cupoMaximo;
+                }
+            }
+
+            // Buscar si ya existe uno (activo o inactivo) para ese día y hora y categoría
             const allForDay = await prisma.horarioConfig.findMany({
                 where: { dia_semana: diaInt }
             });
@@ -358,7 +404,8 @@ const createHorario = async (req, res) => {
                     data: { 
                         activo: true, 
                         categoriaId: catIdParsed,
-                        profesionalId: profIdParsed
+                        profesionalId: profIdParsed,
+                        cupo_maximo
                     }
                 });
                 createdHorarios.push(reactivado);
@@ -370,7 +417,8 @@ const createHorario = async (req, res) => {
                         hora_fin: finDate,
                         activo: true,
                         categoriaId: catIdParsed,
-                        profesionalId: profIdParsed
+                        profesionalId: profIdParsed,
+                        cupo_maximo
                     }
                 });
                 createdHorarios.push(nuevoHorario);
@@ -430,11 +478,27 @@ const updateHorario = async (req, res) => {
 
     // Iterar sobre la configuración de los días que el usuario seleccionó
     for (const config of diasConfig) {
+      const configIdParsed = config.id ? parseInt(config.id) : null;
       const diaParsed = parseInt(config.dia_semana);
       const catIdParsed = config.categoriaId ? parseInt(config.categoriaId) : null;
       const profIdParsed = config.profesionalId !== undefined ? (config.profesionalId ? parseInt(config.profesionalId) : null) : null;
       
-      const existente = afectados.find(r => r.dia_semana === diaParsed);
+      let cupo_maximo = null;
+      if (catIdParsed) {
+          const categoria = await prisma.categoria.findUnique({ where: { id: catIdParsed } });
+          if (categoria && categoria.cupoMaximo) {
+              cupo_maximo = categoria.cupoMaximo;
+          }
+      }
+
+      // Buscar por ID si viene, sino fallback por día y categoría
+      let existente = null;
+      if (configIdParsed) {
+        existente = afectados.find(r => r.id === configIdParsed);
+      }
+      if (!existente) {
+        existente = afectados.find(r => r.dia_semana === diaParsed && r.categoriaId === catIdParsed);
+      }
 
       if (existente) {
         idsProcesados.push(existente.id);
@@ -458,7 +522,8 @@ const updateHorario = async (req, res) => {
               hora_fin: horaFinDate,
               activo: true,
               categoriaId: catIdParsed,
-              profesionalId: profIdParsed
+              profesionalId: profIdParsed,
+              cupo_maximo
             }
           });
         } else {
@@ -466,12 +531,13 @@ const updateHorario = async (req, res) => {
           await prisma.horarioConfig.update({
             where: { id: existente.id },
             data: {
-              profesionalId: profIdParsed
+              profesionalId: profIdParsed,
+              cupo_maximo
             }
           });
         }
       } else {
-        // Es un día nuevo que se acaba de configurar
+        // Es un día/disciplina nuevo que se acaba de configurar
         await prisma.horarioConfig.create({
           data: {
             dia_semana: diaParsed,
@@ -479,7 +545,8 @@ const updateHorario = async (req, res) => {
             hora_fin: horaFinDate,
             activo: true,
             categoriaId: catIdParsed,
-            profesionalId: profIdParsed
+            profesionalId: profIdParsed,
+            cupo_maximo
           }
         });
       }

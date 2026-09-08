@@ -63,6 +63,17 @@ async function main() {
         }
     });
 
+    await prisma.parametroSistema.upsert({
+        where: { clave: 'cupoEstricto' },
+        update: {},
+        create: {
+            clave: 'cupoEstricto',
+            descripcion: 'Bloquear reservas si el cupo está lleno (en lugar de solo avisar en backend)',
+            tipo: 'boolean',
+            valor: 'true'
+        }
+    });
+
     // Creación del usuario administrador inicial
     const existeAdmin = await prisma.usuario.findFirst({
         where: { esSuperAdmin: true }

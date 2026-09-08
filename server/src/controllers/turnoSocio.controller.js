@@ -89,7 +89,7 @@ const getClasesDisponibles = async (req, res) => {
                 hora_fin: h.hora_fin,
                 categoriaId: h.categoriaId || h.categoria?.id || null,
                 categoria: h.categoria,
-                cupoMaximo: maxGlobal,
+                cupoMaximo: h.cupo_maximo ?? maxGlobal,
                 turnos: h.turnos
             };
         });
@@ -193,7 +193,7 @@ const reservarTurno = async (req, res) => {
         const configuracion = await prisma.configuracion.findFirst();
         const maxGlobal = configuracion?.cupoGlobal || 15;
         const bloqueo = configuracion?.bloqueoCapacidad;
-        const cupo = maxGlobal;
+        const cupo = horario.cupo_maximo ?? maxGlobal;
 
         if (horario.turnos.length >= cupo && bloqueo) {
             return res.status(400).json({

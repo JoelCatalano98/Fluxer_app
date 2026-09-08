@@ -31,7 +31,7 @@ const getCategorias = async (req, res) => {
 // POST /api/categorias
 const createCategoria = async (req, res) => {
     try {
-        const { nombre, rubro_sector, profesionalId, color } = req.body;
+        const { nombre, rubro_sector, profesionalId, color, cupoMaximo } = req.body;
 
         if (!nombre) {
             return res.status(400).json({
@@ -47,6 +47,7 @@ const createCategoria = async (req, res) => {
                 profesionalId: profesionalId ? parseInt(profesionalId) : null,
                 rubro_sector: rubro_sector || null,
                 color: color || '#888888',
+                cupoMaximo: cupoMaximo ? parseInt(cupoMaximo) : null,
                 activo: true
             },
             include: {
@@ -73,7 +74,7 @@ const createCategoria = async (req, res) => {
 const updateCategoria = async (req, res) => {
     try {
         const id = parseInt(req.params.id);
-        const { nombre, rubro_sector, profesionalId, color } = req.body;
+        const { nombre, rubro_sector, profesionalId, color, cupoMaximo } = req.body;
 
         if (isNaN(id)) {
             return res.status(400).json({
@@ -88,6 +89,7 @@ const updateCategoria = async (req, res) => {
         if (profesionalId !== undefined) dataToUpdate.profesionalId = profesionalId ? parseInt(profesionalId) : null;
         if (rubro_sector !== undefined) dataToUpdate.rubro_sector = rubro_sector;
         if (color !== undefined) dataToUpdate.color = color;
+        if (cupoMaximo !== undefined) dataToUpdate.cupoMaximo = cupoMaximo ? parseInt(cupoMaximo) : null;
 
         const categoriaActualizada = await prisma.categoria.update({
             where: { id },
@@ -96,6 +98,13 @@ const updateCategoria = async (req, res) => {
                 profesional: true
             }
         });
+
+        if (cupoMaximo !== undefined) {
+            await prisma.horarioConfig.updateMany({
+                where: { categoriaId: id },
+                data: { cupo_maximo: cupoMaximo ? parseInt(cupoMaximo) : null }
+            });
+        }
 
         return res.status(200).json({
             success: true,

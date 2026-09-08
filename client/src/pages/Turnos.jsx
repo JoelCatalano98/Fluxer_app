@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Settings, Plus, Eye, CalendarCheck, UserPlus, Loader2, AlertTriangle, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Settings, Plus, Eye, CalendarCheck, UserPlus, Loader2, AlertTriangle, Pencil, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
 import { useForm } from '../hooks/useForm';
@@ -134,6 +134,8 @@ const Turnos = () => {
   const [profesionalesList, setProfesionalesList] = useState([]);
   const [feriadosList, setFeriadosList] = useState([]);
   const [categorias, setCategorias] = useState([]);
+  const [categoriaToDelete, setCategoriaToDelete] = useState(null);
+  const [confirmCupoData, setConfirmCupoData] = useState(null);
   const [diasPermitidos, setDiasPermitidos] = useState([1, 2, 3, 4, 5, 6]);
 
   const TODOS_LOS_DIAS = [
@@ -155,13 +157,10 @@ const Turnos = () => {
   // Edición de Horarios (Días Seleccionados por checkboxes)
   const [selectedHorarioId, setSelectedHorarioId] = useState(null);
   const [selectedRangeSchedules, setSelectedRangeSchedules] = useState([]);
-  const [editHorarioDias, setEditHorarioDias] = useState([]);
   const [editHorarioValues, setEditHorarioValues] = useState({
     hora_inicio: '',
     hora_fin: '',
-    globalCategoriaId: '',
-    globalProfesionalId: '',
-    diasConfig: {}
+    slots: []
   });
 
   // Hook useForm para el modal "Anotar Cliente"
@@ -329,10 +328,6 @@ const Turnos = () => {
         const dName = TODOS_LOS_DIAS.find(x => x.id === Number(d))?.label;
         return setErrorValidacion(`Por favor selecciona la disciplina para el día ${dName}.`);
       }
-      if (configGlobal?.profesoresPorTurno && !nuevoHorario.diasConfig[d]?.profesionalId) {
-        const dName = TODOS_LOS_DIAS.find(x => x.id === Number(d))?.label;
-        return setErrorValidacion(`Gestión Avanzada: Por favor selecciona un profesional para el día ${dName}.`);
-      }
     }
 
     try {
@@ -420,8 +415,40 @@ const Turnos = () => {
       setMessage({ text: "¡Cliente anotado con éxito!", type: 'success' });
       setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     } catch (err) {
-      setMessage({ text: "Error al anotar cliente: " + err.message, type: 'error' });
+      if (err.response && err.response.status === 409 && err.response.data.requiresConfirmation) {
+        setConfirmCupoData({
+          message: err.response.data.message,
+          payload: {
+            turnos: turnosToCreate,
+            clienteId: parseInt(anotarValues.clienteId),
+            profesionalId: anotarValues.profesionalId ? parseInt(anotarValues.profesionalId) : null,
+            forzarReserva: true
+          }
+        });
+        return;
+      }
+      setMessage({ text: "Error al anotar cliente: " + (err.response?.data?.message || err.message), type: 'error' });
       setTimeout(() => setMessage({ text: '', type: '' }), 4000);
+    }
+  };
+
+  const confirmAnotarIgual = async () => {
+    if (!confirmCupoData) return;
+    try {
+      await crearTurno(confirmCupoData.payload);
+      setIsAnotarModalOpen(false);
+      setConfirmCupoData(null);
+      resetAnotarForm();
+      setClienteSearch('');
+      setProfesionalSearch('');
+      setDiasSeleccionados([]);
+      setHorariosSeleccionados([]);
+      setMessage({ text: "¡Cliente anotado con éxito! Capacidad excedida confirmada.", type: 'success' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
+    } catch (err) {
+      setMessage({ text: "Error al anotar cliente: " + (err.response?.data?.message || err.message), type: 'error' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 4000);
+      setConfirmCupoData(null);
     }
   };
 
@@ -437,28 +464,20 @@ const Turnos = () => {
 
     setSelectedRangeSchedules(matching);
     
-    // Marcar por defecto los días que ya tienen configurada esta franja
-    const configuredDays = matching.map(h => Number(h.dia_semana));
-    setEditHorarioDias(configuredDays);
-
     const first = matching[0];
     setSelectedHorarioId(first.id); // Guardamos la id del base para enviar al endpoint
     
-    const initialDiasConfig = {};
-    matching.forEach(h => {
-      initialDiasConfig[h.dia_semana] = {
-        categoriaId: h.categoriaId || '',
-        profesionalId: h.profesionalId || '',
-        id: h.id
-      };
-    });
+    const initialSlots = matching.map(h => ({
+      id: h.id,
+      dia_semana: h.dia_semana,
+      categoriaId: h.categoriaId || '',
+      profesionalId: h.profesionalId || ''
+    }));
 
     setEditHorarioValues({
       hora_inicio: formatTime(first.hora_inicio),
       hora_fin: formatTime(first.hora_fin),
-      globalCategoriaId: '',
-      globalProfesionalId: '',
-      diasConfig: initialDiasConfig
+      slots: initialSlots
     });
     setIsEditHorarioModalOpen(true);
   };
@@ -471,25 +490,21 @@ const Turnos = () => {
     }));
   };
 
-  const toggleEditDia = (diaVal) => {
-    const diaNum = parseInt(diaVal);
-    setEditHorarioDias(prev => {
-      if (prev.includes(diaNum)) {
-        const newDiasConfig = { ...editHorarioValues.diasConfig };
-        delete newDiasConfig[diaNum];
-        setEditHorarioValues(v => ({ ...v, diasConfig: newDiasConfig }));
-        return prev.filter(d => d !== diaNum);
-      } else {
-        setEditHorarioValues(v => ({ 
-          ...v, 
-          diasConfig: { 
-            ...v.diasConfig, 
-            [diaNum]: { categoriaId: v.globalCategoriaId, profesionalId: v.globalProfesionalId } 
-          }
-        }));
-        return [...prev, diaNum];
-      }
-    });
+  const handleAddSlot = () => {
+    setEditHorarioValues(prev => ({
+      ...prev,
+      slots: [
+        ...prev.slots,
+        { id: null, dia_semana: 1, categoriaId: '', profesionalId: '' }
+      ]
+    }));
+  };
+
+  const handleRemoveSlot = (index) => {
+    setEditHorarioValues(prev => ({
+      ...prev,
+      slots: prev.slots.filter((_, i) => i !== index)
+    }));
   };
 
   const handleEditHorarioSubmit = async (e) => {
@@ -497,27 +512,23 @@ const Turnos = () => {
     if (!selectedHorarioId) return;
     setErrorValidacion("");
 
-    if (editHorarioDias.length === 0 || !editHorarioValues.hora_inicio || !editHorarioValues.hora_fin) {
-      return setErrorValidacion("Por favor, completa los días y horarios. Si deseas quitar la franja, haz clic en 'Dar de Baja'.");
+    if (!editHorarioValues.slots || editHorarioValues.slots.length === 0 || !editHorarioValues.hora_inicio || !editHorarioValues.hora_fin) {
+      return setErrorValidacion("Por favor, completa los horarios y añade al menos una disciplina. Si deseas quitar la franja, haz clic en 'Dar de Baja'.");
     }
 
-    for (const d of editHorarioDias) {
-      if (!editHorarioValues.diasConfig[d]?.categoriaId) {
-        const dName = TODOS_LOS_DIAS.find(x => x.id === Number(d))?.label;
+    for (const slot of editHorarioValues.slots) {
+      if (!slot.categoriaId) {
+        const dName = TODOS_LOS_DIAS.find(x => x.id === Number(slot.dia_semana))?.label;
         return setErrorValidacion(`Por favor selecciona la disciplina para el día ${dName}.`);
-      }
-      if (configGlobal?.profesoresPorTurno && !editHorarioValues.diasConfig[d]?.profesionalId) {
-        const dName = TODOS_LOS_DIAS.find(x => x.id === Number(d))?.label;
-        return setErrorValidacion(`Gestión Avanzada: Por favor selecciona un profesional para el día ${dName}.`);
       }
     }
 
     try {
-      const diasConfigPayload = editHorarioDias.map(d => ({
-        dia_semana: parseInt(d),
-        categoriaId: parseInt(editHorarioValues.diasConfig[d].categoriaId),
-        profesionalId: editHorarioValues.diasConfig[d].profesionalId ? parseInt(editHorarioValues.diasConfig[d].profesionalId) : null,
-        id: editHorarioValues.diasConfig[d].id || null
+      const diasConfigPayload = editHorarioValues.slots.map(s => ({
+        dia_semana: parseInt(s.dia_semana),
+        categoriaId: parseInt(s.categoriaId),
+        profesionalId: s.profesionalId ? parseInt(s.profesionalId) : null,
+        id: s.id || null
       }));
 
       await editarHorario(selectedHorarioId, {
@@ -526,7 +537,8 @@ const Turnos = () => {
         diasConfig: diasConfigPayload
       });
       setIsEditHorarioModalOpen(false);
-      alert("¡Franja horaria actualizada con éxito!");
+      setMessage({ text: "¡Franja horaria actualizada con éxito!", type: 'success' });
+      setTimeout(() => setMessage({ text: '', type: '' }), 3000);
     } catch (err) {
       alert("Error al editar horario: " + err.message);
     }
@@ -1107,125 +1119,71 @@ const Turnos = () => {
               Modifica la hora de esta franja o selecciona los días de la semana en los que debe estar activa.
             </p>
 
-            {/* Selector de días de la semana con Checkboxes */}
-            <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
-              <label style={{ fontWeight: '600' }}>Días de la Semana</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginTop: '8px' }}>
-                {TODOS_LOS_DIAS.filter(dia => diasPermitidos.includes(dia.id)).map(d => (
-                  <label key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
-                    <input 
-                      type="checkbox" 
-                      value={d.id}
-                      checked={editHorarioDias.map(Number).includes(Number(d.id))}
-                      onChange={() => toggleEditDia(d.id)}
-                    />
-                    <span>{d.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Configuración Global (Opcional para edición masiva) */}
-            <div className="grupo-entrada" style={{ marginBottom: '15px', backgroundColor: '#f0f9ff', padding: '10px', borderRadius: '6px', border: '1px solid #bae6fd' }}>
-              <label style={{ fontWeight: '600', marginBottom: '8px', display: 'block', color: '#0369a1' }}>Aplicar a todos los días marcados:</label>
-              <select 
-                style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', marginBottom: '10px' }}
-                value={editHorarioValues.globalCategoriaId} 
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setEditHorarioValues(prev => {
-                    const newConfigs = { ...prev.diasConfig };
-                    editHorarioDias.forEach(d => {
-                      if (!newConfigs[d]) newConfigs[d] = {};
-                      newConfigs[d].categoriaId = val;
-                    });
-                    return { ...prev, globalCategoriaId: val, diasConfig: newConfigs };
-                  });
-                }}
-              >
-                <option value="">Selecciona una disciplina global...</option>
-                {categorias.map(cat => (
-                  <option key={cat.id} value={cat.id} style={{ color: cat.color || '#000' }}>
-                    ■ {cat.nombre}
-                  </option>
-                ))}
-              </select>
-
-              {configGlobal.profesoresPorTurno && (
-                <select 
-                  style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
-                  value={editHorarioValues.globalProfesionalId} 
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setEditHorarioValues(prev => {
-                      const newConfigs = { ...prev.diasConfig };
-                      editHorarioDias.forEach(d => {
-                        if (!newConfigs[d]) newConfigs[d] = {};
-                        newConfigs[d].profesionalId = val;
-                      });
-                      return { ...prev, globalProfesionalId: val, diasConfig: newConfigs };
-                    });
-                  }}
-                >
-                  <option value="">-- Sin Asignar Global --</option>
-                  {profesionalesList.map(p => (
-                    <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Configuración Individual por Día */}
-            {editHorarioDias.length > 0 && (
-              <div style={{ marginBottom: '20px' }}>
-                <h4 style={{ fontSize: '0.95rem', color: '#4b5563', marginBottom: '10px' }}>Configuración Individual</h4>
-                {editHorarioDias.map(d => {
-                  const diaLabel = TODOS_LOS_DIAS.find(x => x.id === Number(d))?.label;
-                  return (
-                    <div key={d} style={{ display: 'flex', gap: '10px', marginBottom: '8px', alignItems: 'center', background: '#f9fafb', padding: '8px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
-                      <span style={{ width: '80px', fontWeight: '500', fontSize: '0.9rem' }}>{diaLabel}</span>
+            {/* Editor de Bloques Individuales */}
+            <div style={{ marginBottom: '20px' }}>
+              <h4 style={{ fontSize: '0.95rem', color: '#4b5563', marginBottom: '10px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>Disciplinas Activas</span>
+                <button type="button" onClick={handleAddSlot} style={{ background: 'none', border: 'none', color: 'var(--accent-blue)', cursor: 'pointer', fontWeight: 'bold' }}>
+                  + Añadir
+                </button>
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {editHorarioValues.slots?.map((slot, index) => (
+                  <div key={index} style={{ background: '#f9fafb', padding: '12px', borderRadius: '8px', border: '1px solid #e5e7eb', position: 'relative' }}>
+                    <button type="button" onClick={() => handleRemoveSlot(index)} style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer' }} title="Quitar">
+                      <Trash2 size={16} />
+                    </button>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', paddingRight: '20px' }}>
                       <select 
-                        style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '0.85rem' }}
-                        value={editHorarioValues.diasConfig[d]?.categoriaId || ''}
+                        value={slot.dia_semana} 
                         onChange={(e) => {
-                          const val = e.target.value;
-                          setEditHorarioValues(prev => ({
-                            ...prev,
-                            diasConfig: { ...prev.diasConfig, [d]: { ...prev.diasConfig[d], categoriaId: val } }
-                          }));
+                          const newSlots = [...editHorarioValues.slots];
+                          newSlots[index].dia_semana = e.target.value;
+                          setEditHorarioValues({...editHorarioValues, slots: newSlots});
                         }}
+                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '0.85rem' }}
+                      >
+                        {TODOS_LOS_DIAS.filter(dia => diasPermitidos.includes(dia.id)).map(d => (
+                          <option key={d.id} value={d.id}>{d.label}</option>
+                        ))}
+                      </select>
+
+                      <select 
+                        value={slot.categoriaId} 
+                        onChange={(e) => {
+                          const newSlots = [...editHorarioValues.slots];
+                          newSlots[index].categoriaId = e.target.value;
+                          setEditHorarioValues({...editHorarioValues, slots: newSlots});
+                        }}
+                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '0.85rem' }}
                       >
                         <option value="">Disciplina...</option>
                         {categorias.map(cat => (
-                          <option key={cat.id} value={cat.id} style={{ color: cat.color || '#000' }}>
-                            ■ {cat.nombre}
-                          </option>
+                          <option key={cat.id} value={cat.id}>■ {cat.nombre}</option>
                         ))}
                       </select>
-                      
+
                       {configGlobal.profesoresPorTurno && (
                         <select 
-                          style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '0.85rem' }}
-                          value={editHorarioValues.diasConfig[d]?.profesionalId || ''}
+                          value={slot.profesionalId} 
                           onChange={(e) => {
-                            const val = e.target.value;
-                            setEditHorarioValues(prev => ({
-                              ...prev,
-                              diasConfig: { ...prev.diasConfig, [d]: { ...prev.diasConfig[d], profesionalId: val } }
-                            }));
+                            const newSlots = [...editHorarioValues.slots];
+                            newSlots[index].profesionalId = e.target.value;
+                            setEditHorarioValues({...editHorarioValues, slots: newSlots});
                           }}
+                          style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ddd', fontSize: '0.85rem', gridColumn: '1 / -1' }}
                         >
-                          <option value="">Profesor...</option>
+                          <option value="">Profesor (Opcional)...</option>
                           {profesionalesList.map(p => (
                             <option key={p.id} value={p.id}>{p.nombre} {p.apellido}</option>
                           ))}
                         </select>
                       )}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
 
             <div className="form-row">
               <div className="grupo-entrada">
@@ -1358,6 +1316,32 @@ const Turnos = () => {
           <button type="button" className="btn-cancel" onClick={() => setIsDetallesModalOpen(false)}>
             Cerrar
           </button>
+        </div>
+      </Modal>
+
+      {/* Modal: Confirmación de Cupo Excedido */}
+      <Modal
+        isOpen={!!confirmCupoData}
+        onClose={() => setConfirmCupoData(null)}
+        title={<span><AlertTriangle size={20} className="modal-title-icon" style={{ color: '#f59e0b' }} /> Capacidad Excedida</span>}
+        contentClassName="modal-small"
+      >
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <p style={{ marginBottom: '20px', fontSize: '1.05rem', color: '#444' }}>
+            {confirmCupoData?.message}
+          </p>
+          <div className="pie-formulario" style={{ justifyContent: 'center', gap: '15px' }}>
+            <button type="button" className="btn-cancel" onClick={() => setConfirmCupoData(null)}>
+              Cancelar
+            </button>
+            <button 
+              type="button" 
+              className="btn-save"
+              onClick={confirmAnotarIgual}
+            >
+              Sí, anotar igual
+            </button>
+          </div>
         </div>
       </Modal>
 

@@ -28,6 +28,7 @@ const ClientesTotales = () => {
   const itemsPerPage = 10;
   const [message, setMessage] = useState({ text: '', type: '' });
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, title: '', message: '', onConfirm: () => { } });
+  const [errorModal, setErrorModal] = useState({ isOpen: false, title: '', message: '' });
 
   // Bandeja de Pendientes
   const [pendientes, setPendientes] = useState([]);
@@ -318,7 +319,16 @@ const ClientesTotales = () => {
       setShowForm(false);
     } catch (err) {
       console.error('Error handleSubmit:', err);
-      setMessage({ text: 'Error al guardar: ' + (err.response?.data?.message || err.message), type: 'error' });
+      const errorMessage = err.response?.data?.message || err.message;
+      if (errorMessage.includes('Conflicto de datos duplicados') || errorMessage.includes('DNI')) {
+        setErrorModal({
+          isOpen: true,
+          title: '⚠️ Dato Duplicado',
+          message: 'No se pudo guardar el cliente porque el DNI/CUIT o Email ingresado ya se encuentra registrado en el sistema. Por favor, verificá la información.'
+        });
+      } else {
+        setMessage({ text: 'Error al guardar: ' + errorMessage, type: 'error' });
+      }
     }
   };
 
@@ -394,6 +404,22 @@ const ClientesTotales = () => {
           <div style={{ backgroundColor: '#fff1f1', color: '#e03131', padding: '15px', borderRadius: '8px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <AlertTriangle size={20} />
             <span>{error}</span>
+          </div>
+        )}
+
+        {message.text && (
+          <div style={{ 
+            backgroundColor: message.type === 'error' ? '#fff1f1' : '#ecfdf5', 
+            color: message.type === 'error' ? '#e03131' : '#059669', 
+            padding: '15px', 
+            borderRadius: '8px', 
+            marginBottom: '20px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '10px' 
+          }}>
+            <AlertTriangle size={20} />
+            <span>{message.text}</span>
           </div>
         )}
 
@@ -738,13 +764,13 @@ const ClientesTotales = () => {
                   <div className="estado-cuenta-resumen-item">
                     <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Saldo Deudor Histórico</p>
                     <p style={{ margin: '5px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', color: '#374151', fontFamily: 'monospace' }}>
-                      ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.tipo === 'CARGO' || m.tipo === 'RECARGO' || m.monto < 0).reduce((acc, m) => acc + Math.abs(m.monto), 0).toFixed(2) : '0.00'}
+                      ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.tipo === 'CARGO' || m.tipo === 'RECARGO' || m.tipo === 'EGRESO').reduce((acc, m) => acc + Math.abs(Number(m.monto)), 0).toFixed(2) : '0.00'}
                     </p>
                   </div>
                   <div className="estado-cuenta-resumen-item">
                     <p style={{ margin: 0, fontSize: '0.75rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Pagos (Haber)</p>
                     <p style={{ margin: '5px 0 0 0', fontSize: '1.25rem', fontWeight: 'bold', color: '#374151', fontFamily: 'monospace' }}>
-                      ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.tipo !== 'CARGO' && m.tipo !== 'RECARGO' && m.monto > 0).reduce((acc, m) => acc + m.monto, 0).toFixed(2) : '0.00'}
+                      ${estadoCuentaData.movimientos ? estadoCuentaData.movimientos.filter(m => m.tipo === 'INGRESO' || m.tipo === 'PAGO' || m.tipo === 'ANULACION').reduce((acc, m) => acc + Number(m.monto), 0).toFixed(2) : '0.00'}
                     </p>
                   </div>
                   <div className="estado-cuenta-resumen-item" style={{ borderRight: 'none' }}>
@@ -892,6 +918,24 @@ const ClientesTotales = () => {
           confirmClassName="btn-save"
           confirmStyle={{ backgroundColor: '#1f2937' }}
         />
+
+        <Modal isOpen={errorModal.isOpen} onClose={() => setErrorModal({ isOpen: false, title: '', message: '' })} title={errorModal.title} contentClassName="modal-small">
+          <div style={{ padding: '20px', textAlign: 'center' }}>
+            <AlertCircle size={48} style={{ color: '#e03131', margin: '0 auto 15px' }} />
+            <p style={{ marginBottom: '25px', fontSize: '1.05rem', color: '#444', lineHeight: '1.5' }}>
+              {errorModal.message}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button 
+                type="button" 
+                onClick={() => setErrorModal({ isOpen: false, title: '', message: '' })}
+                style={{ background: '#e03131', color: '#fff', border: 'none', padding: '10px 30px', borderRadius: '6px', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </Modal>
       </div>
     </div>
   );

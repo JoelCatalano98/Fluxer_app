@@ -151,6 +151,7 @@ model Categoria {
   rubro_sector  String?
   color         String?
   activo        Boolean         @default(true)
+  cupoMaximo    Int?
   profesionalId Int?
   profesional   Profesional?    @relation(fields: [profesionalId], references: [id])
   clientes      Cliente[]
