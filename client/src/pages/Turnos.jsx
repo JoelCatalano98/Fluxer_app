@@ -249,6 +249,17 @@ const Turnos = () => {
     ),
   ].sort();
 
+  // Obtener combinaciones de horario + categoría para el modal de anotar cliente
+  const uniqueClassesForModal = [
+    ...new Set(
+      horarios.map((h) => {
+        const inicioStr = formatTime(h.hora_inicio);
+        const finStr = formatTime(h.hora_fin);
+        return `${inicioStr} - ${finStr} (${h.categoria?.nombre || 'General'})`;
+      })
+    ),
+  ].sort();
+
   // Filtrado local de clientes
   const filteredClientes = clientesList.filter(c => {
     const searchStr = `${c.nombre} ${c.apellido} ${c.dni_cuit || ''}`.toLowerCase();
@@ -374,7 +385,9 @@ const Turnos = () => {
       const fecha = getFechaDeDiaSemana(parseInt(diaNum));
       horariosSeleccionados.forEach(range => {
         const match = horarios.find(h => {
-          const hRange = `${formatTime(h.hora_inicio)} - ${formatTime(h.hora_fin)}`;
+          const inicioStr = formatTime(h.hora_inicio);
+          const finStr = formatTime(h.hora_fin);
+          const hRange = `${inicioStr} - ${finStr} (${h.categoria?.nombre || 'General'})`;
           return h.dia_semana === parseInt(diaNum) && hRange === range;
         });
 
@@ -1071,10 +1084,10 @@ const Turnos = () => {
 
           {/* Múltiples Horarios checkboxes */}
           <div className="grupo-entrada" style={{ marginBottom: '15px' }}>
-            <label style={{ fontWeight: '600' }}>Seleccionar Horario(s)</label>
-            {uniqueRanges.length > 0 ? (
+            <label style={{ fontWeight: '600' }}>Seleccionar Horario(s) y Disciplina</label>
+            {uniqueClassesForModal.length > 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '8px', maxHeight: '150px', overflowY: 'auto', padding: '5px', border: '1px solid #ddd', borderRadius: '6px' }}>
-                {uniqueRanges.map(range => (
+                {uniqueClassesForModal.map(range => (
                   <label key={range} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: '#f8f9fa', padding: '8px', borderRadius: '6px', border: '1px solid #ddd' }}>
                     <input 
                       type="checkbox"
