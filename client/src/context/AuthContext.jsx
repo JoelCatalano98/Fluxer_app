@@ -24,6 +24,17 @@ export const AuthProvider = ({ children }) => {
         try {
             const response = await api.post('/api/auth/login', { loginInput, password });
             if (response.data.success) {
+                // Si el backend indica que requiere selección de sucursal (flujo multi-sucursal)
+                if (response.data.needsBranchSelection) {
+                    return {
+                        success: true,
+                        needsBranchSelection: true,
+                        tempToken: response.data.tempToken,
+                        branches: response.data.branches
+                    };
+                }
+
+                // Flujo normal (1 sucursal o feature desactivada)
                 const { token, usuario } = response.data.data;
                 localStorage.setItem('token', token);
                 localStorage.setItem('user', JSON.stringify(usuario));
@@ -34,6 +45,35 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             return { 
                 success: false, 
+                message: error.response?.data?.message || 'Error al conectar con el servidor'
+            };
+        }
+    };
+
+    const selectBranchForLogin = async (branchId, tempToken) => {
+        try {
+            const response = await api.post(
+                '/api/auth/select-branch',
+                { branchId },
+                {
+                    headers: {
+                        Authorization: `Bearer ${tempToken}`
+                    }
+                }
+            );
+
+            if (response.data.success) {
+                const { token, usuario } = response.data.data;
+                localStorage.setItem('token', token);
+                localStorage.setItem('user', JSON.stringify(usuario));
+                setUser(usuario);
+                return { success: true };
+            }
+            return { success: false, message: response.data.message };
+        } catch (error) {
+            return {
+                success: false,
+                status: error.response?.status,
                 message: error.response?.data?.message || 'Error al conectar con el servidor'
             };
         }
@@ -56,7 +96,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, hasPermission, loading }}>
+        <AuthContext.Provider value={{ user, login, selectBranchForLogin, logout, hasPermission, loading }}>
             {children}
         </AuthContext.Provider>
     );

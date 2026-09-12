@@ -9,7 +9,11 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const { login } = useAuth();
+    const [step, setStep] = useState(1);
+    const [tempToken, setTempToken] = useState(null);
+    const [branches, setBranches] = useState([]);
+    
+    const { login, selectBranchForLogin } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -19,10 +23,36 @@ const Login = () => {
         
         const result = await login(loginInput, password);
         if (result.success) {
+            if (result.needsBranchSelection) {
+                setTempToken(result.tempToken);
+                setBranches(result.branches);
+                setStep(2);
+                setLoading(false);
+            } else {
+                navigate('/');
+            }
+        } else {
+            setError(result.message);
+            setLoading(false);
+        }
+    };
+
+    const handleBranchSelect = async (branchId) => {
+        setLoading(true);
+        setError(null);
+        
+        const result = await selectBranchForLogin(branchId, tempToken);
+        if (result.success) {
             navigate('/');
         } else {
             setError(result.message);
             setLoading(false);
+            // Si el error implica expiración o token inválido (401 o 403), volvemos al paso 1
+            if (result.status === 401 || result.status === 403) {
+                setStep(1);
+                setTempToken(null);
+                setBranches([]);
+            }
         }
     };
 
@@ -41,51 +71,113 @@ const Login = () => {
                     </div>
                 )}
                 
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label htmlFor="loginInput" style={{ fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>Usuario o Email</label>
-                        <div style={{ position: 'relative' }}>
-                            <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
-                            <input 
-                                type="text" 
-                                autoComplete="username"
-                                id="loginInput"
-                                value={loginInput}
-                                onChange={(e) => setLoginInput(e.target.value)}
-                                placeholder="tuusuario o tu@email.com"
-                                required
-                                style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }}
-                            />
+                {step === 1 ? (
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <label htmlFor="loginInput" style={{ fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>Usuario o Email</label>
+                            <div style={{ position: 'relative' }}>
+                                <Mail size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
+                                <input 
+                                    type="text" 
+                                    autoComplete="username"
+                                    id="loginInput"
+                                    value={loginInput}
+                                    onChange={(e) => setLoginInput(e.target.value)}
+                                    placeholder="tuusuario o tu@email.com"
+                                    required
+                                    style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }}
+                                />
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label htmlFor="password" style={{ fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>Contraseña</label>
-                        <div style={{ position: 'relative' }}>
-                            <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
-                            <input 
-                                type="password" 
-                                autoComplete="current-password"
-                                id="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
-                                required
-                                style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }}
-                            />
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <label htmlFor="password" style={{ fontSize: '0.9rem', fontWeight: '600', color: '#333' }}>Contraseña</label>
+                            <div style={{ position: 'relative' }}>
+                                <Lock size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#999' }} />
+                                <input 
+                                    type="password" 
+                                    autoComplete="current-password"
+                                    id="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    required
+                                    style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '6px', border: '1px solid #ddd', boxSizing: 'border-box' }}
+                                />
+                            </div>
                         </div>
+                        
+                        <button 
+                            type="submit" 
+                            disabled={loading}
+                            style={{ 
+                                backgroundColor: '#00a8e8', color: 'white', border: 'none', padding: '14px', borderRadius: '6px', fontSize: '1rem', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '10px'
+                            }}
+                        >
+                            {loading ? <Loader2 className="animate-spin" size={20} /> : 'Iniciar Sesión'}
+                        </button>
+                    </form>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                        <p style={{ textAlign: 'center', color: '#444', fontWeight: '500', marginBottom: '10px' }}>
+                            Seleccioná la sucursal a la que querés acceder:
+                        </p>
+                        {branches.map(branch => (
+                            <button
+                                key={branch.id}
+                                onClick={() => handleBranchSelect(branch.id)}
+                                disabled={loading}
+                                style={{
+                                    backgroundColor: '#f8f9fa',
+                                    border: '1px solid #e9ecef',
+                                    padding: '16px',
+                                    borderRadius: '8px',
+                                    cursor: loading ? 'not-allowed' : 'pointer',
+                                    textAlign: 'left',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: '4px'
+                                }}
+                                onMouseOver={(e) => {
+                                    if (!loading) {
+                                        e.currentTarget.style.backgroundColor = '#e9ecef';
+                                        e.currentTarget.style.borderColor = '#dee2e6';
+                                    }
+                                }}
+                                onMouseOut={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#f8f9fa';
+                                    e.currentTarget.style.borderColor = '#e9ecef';
+                                }}
+                            >
+                                <span style={{ fontSize: '1.1rem', fontWeight: '600', color: '#333' }}>{branch.nombre}</span>
+                                {branch.direccion && <span style={{ fontSize: '0.85rem', color: '#666' }}>{branch.direccion}</span>}
+                            </button>
+                        ))}
+                        
+                        <button
+                            onClick={() => {
+                                setStep(1);
+                                setTempToken(null);
+                                setBranches([]);
+                                setError(null);
+                            }}
+                            disabled={loading}
+                            style={{
+                                backgroundColor: 'transparent',
+                                color: '#666',
+                                border: 'none',
+                                padding: '10px',
+                                marginTop: '10px',
+                                cursor: loading ? 'not-allowed' : 'pointer',
+                                textDecoration: 'underline',
+                                fontSize: '0.9rem'
+                            }}
+                        >
+                            Volver
+                        </button>
                     </div>
-                    
-                    <button 
-                        type="submit" 
-                        disabled={loading}
-                        style={{ 
-                            backgroundColor: '#00a8e8', color: 'white', border: 'none', padding: '14px', borderRadius: '6px', fontSize: '1rem', fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '10px'
-                        }}
-                    >
-                        {loading ? <Loader2 className="animate-spin" size={20} /> : 'Iniciar Sesión'}
-                    </button>
-                </form>
+                )}
             </div>
         </div>
     );

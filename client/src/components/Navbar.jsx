@@ -219,17 +219,18 @@ const Navbar = ({ isOpen }) => {
                   </NavLink>
                 </li>
               )}
+
               {isSadmin && (
                 <li>
-                  <NavLink to="/usuarios" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    Personal Autorizado
+                  <NavLink to="/parametros" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Parámetros del Sistema
                   </NavLink>
                 </li>
               )}
               {isSadmin && (
                 <li>
-                  <NavLink to="/parametros" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
-                    Parámetros del Sistema
+                  <NavLink to="/sucursales" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Sucursales
                   </NavLink>
                 </li>
               )}

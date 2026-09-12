@@ -26,6 +26,7 @@ import Calendario from './pages/Calendario';
 import Usuarios from './pages/Usuarios';
 import Parametros from './pages/Parametros';
 import GeneradorQR from './pages/GeneradorQR';
+import Sucursales from './pages/Sucursales';
 import AsignacionMasiva from './pages/AsignacionMasiva';
 import api from './services/api';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -246,6 +247,7 @@ function AppContent() {
             <Route path="/calendario" element={<Calendario />} />
             <Route path="/usuarios" element={<Usuarios />} />
             <Route path="/parametros" element={<Parametros />} />
+            <Route path="/sucursales" element={<Sucursales />} />
             <Route path="/demo-qr" element={<GeneradorQR />} />
           </Routes>
         </main>

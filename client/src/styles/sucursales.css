@@ -1,0 +1,186 @@
+.sucursales-container {
+    padding: 20px 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.sucursales-init-card {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    padding: 40px;
+    max-width: 600px;
+    margin: 40px auto;
+    text-align: center;
+}
+
+.sucursales-init-icon {
+    width: 64px;
+    height: 64px;
+    background-color: #ebf5ff;
+    color: #00a8e8;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.sucursales-init-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.sucursales-init-text {
+    color: #666;
+    margin-bottom: 30px;
+    line-height: 1.5;
+}
+
+.sucursales-form-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.sucursales-form-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 8px;
+}
+
+.sucursales-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.sucursales-input:focus {
+    border-color: #00a8e8;
+}
+
+.btn-primary {
+    background-color: #00a8e8;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: background-color 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #0086bc;
+}
+
+.btn-primary:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background-color: #f8f9fa;
+    color: #333;
+    border: 1px solid #ddd;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: #e9ecef;
+}
+
+.sucursales-actions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.sucursales-actions-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 1.2rem;
+}
+
+.btn-new-sucursal {
+    background-color: #00a8e8;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+}
+
+.btn-new-sucursal:hover {
+    background-color: #0086bc;
+}
+
+.sucursales-table-container {
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    margin-top: 20px;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    color: #666;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.action-btn.edit:hover {
+    background-color: #ebf5ff;
+    color: #00a8e8;
+}
+
+.action-btn.delete:hover {
+    background-color: #ffe3e3;
+    color: #e03131;
+}
+
+.migration-success-box {
+    background-color: #ebfbee;
+    border: 1px solid #b2f2bb;
+    color: #2b8a3e;
+    padding: 15px 20px;
+    border-radius: 12px;
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.migration-success-box ul {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
