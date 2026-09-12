@@ -170,7 +170,7 @@ const Usuarios = () => {
             <div style={{ padding: '5px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '25px', alignItems: 'center' }}>
                     <div>
-                        <h1 style={{ color: '#333639', margin: 0, fontSize: '2rem' }}>Personal Autorizado</h1>
+                        <h1 style={{ color: '#333639', margin: 0, fontSize: '2rem' }}>Gestión de Usuarios</h1>
                         <p style={{ color: '#666', margin: '5px 0 0 0' }}>Crea accesos con permisos granulares.</p>
                     </div>
                     <button 
