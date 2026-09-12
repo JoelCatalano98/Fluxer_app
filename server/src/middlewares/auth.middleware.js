@@ -87,6 +87,14 @@ const requireAdmin = (req, res, next) => {
     }
 };
 
+const requireSuperAdmin = (req, res, next) => {
+    if (req.user && req.user.esSuperAdmin) {
+        next();
+    } else {
+        return res.status(403).json({ success: false, message: 'Requiere permisos de super administrador' });
+    }
+};
+
 const requirePermiso = (permiso) => {
     return (req, res, next) => {
         if (req.user && (req.user.esSuperAdmin || req.user.esAdmin || req.user[permiso])) {
@@ -101,6 +109,7 @@ module.exports = {
     verifyToken,
     verifyTempToken,
     requireAdmin,
+    requireSuperAdmin,
     requirePermiso,
     JWT_SECRET,       // exportado para que auth.controller.js lo use sin re-importar process.env
     BRANCH_SELECTION_SCOPE

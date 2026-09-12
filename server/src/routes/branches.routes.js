@@ -6,11 +6,17 @@ const {
     createBranch,
     updateBranch,
     deactivateBranch,
+    getPublicBranches
 } = require('../controllers/branches.controller');
-const { verifyToken } = require('../middlewares/auth.middleware');
+const { verifyToken, requireSuperAdmin } = require('../middlewares/auth.middleware');
 
-// Todas las rutas requieren token válido (no branch-selection-only)
+// Ruta pública (no requiere autenticación)
+router.get('/public', getPublicBranches);
+
+// Todas las rutas siguientes requieren token válido
 router.use(verifyToken);
+// Todas las rutas de sucursales son exclusivas para super admins
+router.use(requireSuperAdmin);
 
 // Inicialización única de la feature — solo superAdmin
 router.post('/initialize', initializeBranches);

@@ -13,7 +13,7 @@ const getClasesDisponibles = async (req, res) => {
         }
 
         // Buscar bloqueos activos para la fecha consultada
-        const bloqueos = await prisma.aviso.findMany({
+        const bloqueos = await req.db.aviso.findMany({
             where: {
                 activo: true,
                 esBloqueo: true,
@@ -36,7 +36,7 @@ const getClasesDisponibles = async (req, res) => {
             where.dia_semana = parseInt(dia_semana);
         }
 
-        const horarios = await prisma.horarioConfig.findMany({
+        const horarios = await req.db.horarioConfig.findMany({
             where,
             include: { 
                 categoria: true,
@@ -77,7 +77,7 @@ const getClasesDisponibles = async (req, res) => {
         });
 
         // Obtener configuración global para cupo máximo
-        const configuracion = await prisma.configuracion.findFirst();
+        const configuracion = await req.db.configuracion.findFirst();
         const maxGlobal = configuracion?.cupoGlobal || 15;
 
         // Formatear para facilitar uso en el front
@@ -119,11 +119,15 @@ const reservarTurno = async (req, res) => {
             });
         }
 
+        if (req.user && req.user.id !== parseInt(clienteId)) {
+            return res.status(403).json({ success: false, message: 'No puedes reservar un turno para otro usuario' });
+        }
+
         // 1. Asegurar que los cargos y la deuda estén actualizados
         await asegurarCargosAlDia(clienteId);
 
         // Validar estado del cliente
-        const clienteActual = await prisma.cliente.findUnique({
+        const clienteActual = await req.db.cliente.findUnique({
             where: { id: parseInt(clienteId) },
             include: {
                 plan: true
@@ -145,7 +149,7 @@ const reservarTurno = async (req, res) => {
         }
 
         // Obtener parámetro de sistema para mora (fallback a true)
-        const paramBloquearMora = await prisma.parametroSistema.findUnique({
+        const paramBloquearMora = await req.db.parametroSistema.findFirst({
             where: { clave: 'bloquearReservaPorMora' }
         });
         const bloquearPorMora = paramBloquearMora ? paramBloquearMora.valor === 'true' : true;
@@ -171,7 +175,7 @@ const reservarTurno = async (req, res) => {
         const d = new Date(fechaExacta);
         d.setUTCHours(0,0,0,0);
 
-        const horario = await prisma.horarioConfig.findUnique({
+        const horario = await req.db.horarioConfig.findUnique({
             where: { id: parseInt(horarioId) },
             include: { 
                 turnos: {
@@ -190,7 +194,7 @@ const reservarTurno = async (req, res) => {
             });
         }
 
-        const configuracion = await prisma.configuracion.findFirst();
+        const configuracion = await req.db.configuracion.findFirst();
         const maxGlobal = configuracion?.cupoGlobal || 15;
         const bloqueo = configuracion?.bloqueoCapacidad;
         const cupo = horario.cupo_maximo ?? maxGlobal;
@@ -236,7 +240,7 @@ const reservarTurno = async (req, res) => {
             domingo.setDate(lunes.getDate() + 6);
             domingo.setUTCHours(23, 59, 59, 999);
 
-            const turnosSemana = await prisma.turnoCliente.count({
+            const turnosSemana = await req.db.turnoCliente.count({
                 where: {
                     clienteId: parseInt(clienteId),
                     fecha: {
@@ -271,7 +275,7 @@ const reservarTurno = async (req, res) => {
                 domingo.setDate(lunes.getDate() + 6);
                 domingo.setUTCHours(23, 59, 59, 999);
 
-                const count = await prisma.turnoCliente.count({
+                const count = await req.db.turnoCliente.count({
                     where: { clienteId: parseInt(clienteId), fecha: { gte: lunes, lte: domingo } }
                 });
 
@@ -292,7 +296,7 @@ const reservarTurno = async (req, res) => {
                 // El fin del ciclo (vencimiento) se considera el inicio del próximo, así que usamos lt: finUTC
                 finUTC.setUTCHours(0,0,0,0);
 
-                const count = await prisma.turnoCliente.count({
+                const count = await req.db.turnoCliente.count({
                     where: { 
                         clienteId: parseInt(clienteId), 
                         fecha: { 
@@ -327,7 +331,7 @@ const reservarTurno = async (req, res) => {
         }
 
         // Crear reserva TurnoCliente
-        const nuevoTurno = await prisma.turnoCliente.create({
+        const nuevoTurno = await req.db.turnoCliente.create({
             data: {
                 horarioId: parseInt(horarioId),
                 clienteId: parseInt(clienteId),
@@ -360,7 +364,7 @@ const cancelarTurno = async (req, res) => {
             return res.status(400).json({ success: false, message: 'ID de turno inválido' });
         }
 
-        const turno = await prisma.turnoCliente.findUnique({
+        const turno = await req.db.turnoCliente.findUnique({
             where: { id: turnoId },
             include: { horario: true }
         });
@@ -369,7 +373,11 @@ const cancelarTurno = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Turno no encontrado' });
         }
 
-        const configuracion = await prisma.configuracion.findFirst();
+        if (req.user && req.user.id !== turno.clienteId) {
+            return res.status(403).json({ success: false, message: 'No puedes cancelar un turno que no es tuyo' });
+        }
+
+        const configuracion = await req.db.configuracion.findFirst();
         const margenMinutos = configuracion?.limiteCancelacionMinutos || 60;
 
         const fechaIso = new Date(turno.fecha).toISOString().split('T')[0];
@@ -389,7 +397,7 @@ const cancelarTurno = async (req, res) => {
             });
         }
 
-        await prisma.turnoCliente.delete({
+        await req.db.turnoCliente.delete({
             where: { id: turnoId }
         });
 
@@ -401,7 +409,7 @@ const cancelarTurno = async (req, res) => {
         console.error('Error al cancelar turno:', error);
         if (error.code === 'P2002') {
             try {
-                await prisma.turnoCliente.delete({ where: { id: parseInt(id) } });
+                await req.db.turnoCliente.delete({ where: { id: parseInt(id) } });
                 return res.status(200).json({
                     success: true,
                     message: 'Reserva cancelada con éxito (penalidad previa ya registrada)'

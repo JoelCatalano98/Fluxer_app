@@ -15,3 +15,13 @@ instruccionesCLI.md
 # Archivos temporales
 *.tmp
 *.cache
+
+# Backups y volcados SQL
+*.sql
+
+# Scripts de prueba locales y capturas
+test_*.js
+scripts/test_*.js
+server/scripts/test_*.js
+server/test_*.js
+test/

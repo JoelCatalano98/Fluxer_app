@@ -36,7 +36,7 @@ const getDashboardMetrics = async (req, res) => {
     // Schema: estado_cliente es Enum EstadoCliente { ACTIVO, INACTIVO }
     // Schema: es_socio es Boolean
     // Schema: Plan.precio es Decimal @db.Decimal(10,2) → Prisma lo devuelve como Prisma.Decimal
-    const clientes = await prisma.cliente.findMany({
+    const clientes = await req.db.cliente.findMany({
       where: {
         estado_cliente: 'ACTIVO'
       },
@@ -46,7 +46,7 @@ const getDashboardMetrics = async (req, res) => {
       }
     });
 
-    const totalSocios = await prisma.cliente.count({
+    const totalSocios = await req.db.cliente.count({
       where: { estado_cliente: 'ACTIVO' }
     });
 
@@ -95,7 +95,7 @@ const getDashboardMetrics = async (req, res) => {
     // ─── 3. Turnos en el rango (Horarios Populares) ──────────
     // Schema: TurnoCliente.fecha es DateTime @db.Date → Prisma acepta Date objects para gte/lte
     // Schema: TurnoCliente NO tiene campo "estado" ni "activo" → todos los registros son agendados
-    const turnosEnRango = await prisma.turnoCliente.findMany({
+    const turnosEnRango = await req.db.turnoCliente.findMany({
       where: {
         fecha: {
           gte: startOfRange,

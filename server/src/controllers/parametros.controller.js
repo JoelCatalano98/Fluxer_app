@@ -21,13 +21,13 @@ const updateParametro = async (req, res) => {
         const { clave } = req.params;
         const { valor } = req.body;
         
-        const parametro = await prisma.parametroSistema.findUnique({ where: { clave } });
+        const parametro = await prisma.parametroSistema.findFirst({ where: { clave, branchId: null } });
         if (!parametro) {
             return res.status(404).json({ success: false, message: 'Parámetro no encontrado' });
         }
 
         const updated = await prisma.parametroSistema.update({
-            where: { clave },
+            where: { id: parametro.id },
             data: { valor }
         });
 

@@ -1,5 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../config/prisma');
 
 const crearMovimientoManual = async (req, res) => {
     try {
@@ -20,7 +19,7 @@ const crearMovimientoManual = async (req, res) => {
             data.fecha = new Date(fecha);
         }
 
-        const movimiento = await prisma.movimientoGeneral.create({
+        const movimiento = await req.db.movimientoGeneral.create({
             data
         });
 
@@ -48,7 +47,7 @@ const obtenerMovimientos = async (req, res) => {
             }
         }
 
-        const movimientos = await prisma.movimientoGeneral.findMany({
+        const movimientos = await req.db.movimientoGeneral.findMany({
             where,
             orderBy: {
                 fecha: 'desc'

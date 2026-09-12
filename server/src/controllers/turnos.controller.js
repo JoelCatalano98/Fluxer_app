@@ -40,7 +40,7 @@ const getTurnos = async (req, res) => {
 
         where.estado = 'ACTIVO'; // Solo traer turnos que no están cancelados penalizados
 
-        const turnos = await prisma.turnoCliente.findMany({
+        const turnos = await req.db.turnoCliente.findMany({
             where,
             include: {
                 cliente: true,
@@ -101,8 +101,8 @@ const createTurno = async (req, res) => {
       return res.status(400).json({ success: false, message: "Datos de turnos incompletos." });
     }
 
-    const configGlobal = await prisma.configuracion.findFirst();
-    const paramCupoEstricto = await prisma.parametroSistema.findFirst({ where: { clave: 'cupoEstricto' } });
+    const configGlobal = await req.db.configuracion.findFirst();
+    const paramCupoEstricto = await req.db.parametroSistema.findFirst({ where: { clave: 'cupoEstricto' } });
     const isCupoEstricto = paramCupoEstricto ? paramCupoEstricto.valor === 'true' : true;
     const maxGlobal = configGlobal?.cupoGlobal || 15;
     const bloqueo = configGlobal?.bloqueoCapacidad;
@@ -121,7 +121,7 @@ const createTurno = async (req, res) => {
       const fechaObj = new Date(item.fecha + 'T00:00:00.000Z');
       
       // Verificar si ya existe para evitar duplicar exactamente el mismo turno al mismo cliente
-      const existente = await prisma.turnoCliente.findFirst({
+      const existente = await req.db.turnoCliente.findFirst({
         where: {
           clienteId: item.clienteId,
           horarioId: item.horarioId,
@@ -132,9 +132,9 @@ const createTurno = async (req, res) => {
 
       if (!existente) {
         if (bloqueo) {
-          const horario = await prisma.horarioConfig.findUnique({ where: { id: item.horarioId } });
+          const horario = await req.db.horarioConfig.findUnique({ where: { id: item.horarioId } });
           const cupo = horario?.cupo_maximo ?? maxGlobal;
-          const ocupados = await prisma.turnoCliente.count({
+          const ocupados = await req.db.turnoCliente.count({
             where: {
               horarioId: item.horarioId,
               fecha: fechaObj,
@@ -156,7 +156,7 @@ const createTurno = async (req, res) => {
             }
           }
         }
-        const nuevo = await prisma.turnoCliente.create({
+        const nuevo = await req.db.turnoCliente.create({
           data: {
             clienteId: item.clienteId,
             profesionalId: item.profesionalId,
@@ -194,7 +194,7 @@ const createTurnosMasivos = async (req, res) => {
       return res.status(400).json({ success: false, message: "Faltan parámetros obligatorios." });
     }
 
-    const horarios = await prisma.horarioConfig.findMany({
+    const horarios = await req.db.horarioConfig.findMany({
       where: { id: { in: horarioIds } }
     });
 
@@ -244,11 +244,11 @@ const createTurnosMasivos = async (req, res) => {
 
     let creados = 0;
     for (const item of itemsToCreate) {
-      const existe = await prisma.turnoCliente.findFirst({
+      const existe = await req.db.turnoCliente.findFirst({
         where: { clienteId: item.clienteId, horarioId: item.horarioId, fecha: item.fecha, estado: 'ACTIVO' }
       });
       if (!existe) {
-        await prisma.turnoCliente.create({ data: item });
+        await req.db.turnoCliente.create({ data: item });
         creados++;
       }
     }
@@ -271,13 +271,13 @@ const deleteTurno = async (req, res) => {
         const penalizar = req.query.penalidad === 'true';
 
         if (penalizar) {
-            await prisma.turnoCliente.update({
+            await req.db.turnoCliente.update({
                 where: { id },
                 data: { estado: 'CANCELADO_PENALIZADO' }
             });
             return res.status(200).json({ success: true, data: null, message: 'Turno cancelado (se cobró la clase al cliente)' });
         } else {
-            await prisma.turnoCliente.delete({ where: { id } });
+            await req.db.turnoCliente.delete({ where: { id } });
             return res.status(200).json({ success: true, data: null, message: 'Turno cancelado con éxito (cupo devuelto al cliente)' });
         }
     } catch (error) {
@@ -286,7 +286,7 @@ const deleteTurno = async (req, res) => {
             // Ya existe un turno CANCELADO_PENALIZADO, por lo que no podemos actualizar este.
             // Para resolverlo de forma silenciosa y liberar el cupo, lo borramos.
             try {
-                await prisma.turnoCliente.delete({ where: { id: parseInt(req.params.id) } });
+                await req.db.turnoCliente.delete({ where: { id: parseInt(req.params.id) } });
                 return res.status(200).json({ success: true, data: null, message: 'Turno cancelado (ya poseías una penalidad en esta clase)' });
             } catch (delErr) {
                 console.error("Error al borrar el turno de reserva duplicada:", delErr);
@@ -311,14 +311,20 @@ const cancelarTurnosMasivo = async (req, res) => {
         const penalizar = penalidad === true || penalidad === 'true';
 
         if (penalizar) {
-            await prisma.turnoCliente.updateMany({
-                where: { id: { in: turnoIds } },
+            await req.db.turnoCliente.updateMany({
+                where: { 
+                    id: { in: turnoIds },
+                    ...(req.branchId && { branchId: req.branchId })
+                },
                 data: { estado: 'CANCELADO_PENALIZADO' }
             });
             return res.status(200).json({ success: true, data: null, message: `${turnoIds.length} turnos cancelados (con penalidad)` });
         } else {
-            await prisma.turnoCliente.deleteMany({
-                where: { id: { in: turnoIds } }
+            await req.db.turnoCliente.deleteMany({
+                where: { 
+                    id: { in: turnoIds },
+                    ...(req.branchId && { branchId: req.branchId })
+                }
             });
             return res.status(200).json({ success: true, data: null, message: `${turnoIds.length} turnos eliminados (cupos devueltos)` });
         }
@@ -331,7 +337,7 @@ const cancelarTurnosMasivo = async (req, res) => {
 // GET /api/turnos/horarios
 const getHorarios = async (req, res) => {
     try {
-        const horarios = await prisma.horarioConfig.findMany({
+        const horarios = await req.db.horarioConfig.findMany({
             where: { activo: true },
             include: { categoria: true, profesional: true },
             orderBy: [
@@ -380,14 +386,14 @@ const createHorario = async (req, res) => {
 
             let cupo_maximo = null;
             if (catIdParsed) {
-                const categoria = await prisma.categoria.findUnique({ where: { id: catIdParsed } });
+                const categoria = await req.db.categoria.findUnique({ where: { id: catIdParsed } });
                 if (categoria && categoria.cupoMaximo) {
                     cupo_maximo = categoria.cupoMaximo;
                 }
             }
 
             // Buscar si ya existe uno (activo o inactivo) para ese día y hora y categoría
-            const allForDay = await prisma.horarioConfig.findMany({
+            const allForDay = await req.db.horarioConfig.findMany({
                 where: { dia_semana: diaInt }
             });
             const existing = allForDay.find(h =>
@@ -399,7 +405,7 @@ const createHorario = async (req, res) => {
 
             if (existing) {
                 // Reactivar si estaba inactivo, o actualizar si ya activo
-                const reactivado = await prisma.horarioConfig.update({
+                const reactivado = await req.db.horarioConfig.update({
                     where: { id: existing.id },
                     data: { 
                         activo: true, 
@@ -410,7 +416,7 @@ const createHorario = async (req, res) => {
                 });
                 createdHorarios.push(reactivado);
             } else {
-                const nuevoHorario = await prisma.horarioConfig.create({
+                const nuevoHorario = await req.db.horarioConfig.create({
                     data: {
                         dia_semana: diaInt,
                         hora_inicio: inicioDate,
@@ -454,7 +460,7 @@ const updateHorario = async (req, res) => {
     const horaFinDate = new Date(`1970-01-01T${hora_fin}:00Z`);
 
     const idParsed = parseInt(id);
-    const horarioBase = await prisma.horarioConfig.findUnique({
+    const horarioBase = await req.db.horarioConfig.findUnique({
       where: { id: idParsed }
     });
 
@@ -466,7 +472,7 @@ const updateHorario = async (req, res) => {
     const baseFinStr = formatTime(horarioBase.hora_fin);
 
     // Buscar TODOS los registros activos actuales de esta franja transversal
-    const registrosActuales = await prisma.horarioConfig.findMany({
+    const registrosActuales = await req.db.horarioConfig.findMany({
       where: { activo: true }
     });
     
@@ -485,7 +491,7 @@ const updateHorario = async (req, res) => {
       
       let cupo_maximo = null;
       if (catIdParsed) {
-          const categoria = await prisma.categoria.findUnique({ where: { id: catIdParsed } });
+          const categoria = await req.db.categoria.findUnique({ where: { id: catIdParsed } });
           if (categoria && categoria.cupoMaximo) {
               cupo_maximo = categoria.cupoMaximo;
           }
@@ -510,12 +516,12 @@ const updateHorario = async (req, res) => {
 
         if (cambioCategoria || cambioHora) {
           // Hard-rule: Soft-delete del viejo y crear uno nuevo para no alterar el historial de turnos
-          await prisma.horarioConfig.update({
+          await req.db.horarioConfig.update({
             where: { id: existente.id },
             data: { activo: false }
           });
           
-          await prisma.horarioConfig.create({
+          await req.db.horarioConfig.create({
             data: {
               dia_semana: diaParsed,
               hora_inicio: horaInicioDate,
@@ -528,7 +534,7 @@ const updateHorario = async (req, res) => {
           });
         } else {
           // Solo cambió el profesional (o nada), podemos actualizar in-place
-          await prisma.horarioConfig.update({
+          await req.db.horarioConfig.update({
             where: { id: existente.id },
             data: {
               profesionalId: profIdParsed,
@@ -538,7 +544,7 @@ const updateHorario = async (req, res) => {
         }
       } else {
         // Es un día/disciplina nuevo que se acaba de configurar
-        await prisma.horarioConfig.create({
+        await req.db.horarioConfig.create({
           data: {
             dia_semana: diaParsed,
             hora_inicio: horaInicioDate,
@@ -555,7 +561,7 @@ const updateHorario = async (req, res) => {
     // Los registros actuales de esta franja que NO vinieron en diasConfig se desactivan
     for (const reg of afectados) {
       if (!idsProcesados.includes(reg.id)) {
-        await prisma.horarioConfig.update({
+        await req.db.horarioConfig.update({
           where: { id: reg.id },
           data: { activo: false }
         });
@@ -578,7 +584,7 @@ const deleteHorario = async (req, res) => {
             return res.status(400).json({ success: false, data: null, message: 'ID de horario no válido' });
         }
 
-        const horario = await prisma.horarioConfig.findUnique({ where: { id } });
+        const horario = await req.db.horarioConfig.findUnique({ where: { id } });
         if (!horario) {
             return res.status(404).json({ success: false, data: null, message: 'Horario no encontrado' });
         }
@@ -587,14 +593,17 @@ const deleteHorario = async (req, res) => {
         const baseInicioStr = formatTime(horario.hora_inicio);
         const baseFinStr = formatTime(horario.hora_fin);
 
-        const allActive = await prisma.horarioConfig.findMany({ where: { activo: true } });
+        const allActive = await req.db.horarioConfig.findMany({ where: { activo: true } });
         const siblingIds = allActive
             .filter(h => formatTime(h.hora_inicio) === baseInicioStr && formatTime(h.hora_fin) === baseFinStr)
             .map(h => h.id);
 
         if (siblingIds.length > 0) {
-            await prisma.horarioConfig.updateMany({
-                where: { id: { in: siblingIds } },
+            await req.db.horarioConfig.updateMany({
+                where: { 
+                    id: { in: siblingIds },
+                    ...(req.branchId && { branchId: req.branchId })
+                },
                 data: { activo: false }
             });
         }

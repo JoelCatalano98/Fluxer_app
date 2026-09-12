@@ -15,10 +15,14 @@ const obtenerPerfil = async (req, res) => {
             });
         }
 
+        if (req.user && req.user.id !== id) {
+            return res.status(403).json({ success: false, message: 'No puedes acceder a un perfil que no es tuyo' });
+        }
+
         const { asegurarCargosAlDia } = require('../services/cargos.service');
         const resultCargos = await asegurarCargosAlDia(id);
 
-        const cliente = await prisma.cliente.findUnique({
+        const cliente = await req.db.cliente.findUnique({
             where: { id },
             include: {
                 categoria: true,
@@ -65,9 +69,13 @@ const actualizarPerfil = async (req, res) => {
             });
         }
 
+        if (req.user && req.user.id !== id) {
+            return res.status(403).json({ success: false, message: 'No puedes modificar un perfil que no es tuyo' });
+        }
+
         const { nombre, apellido, dni_cuit, email, telefono } = req.body;
 
-        const clienteActualizado = await prisma.cliente.update({
+        const clienteActualizado = await req.db.cliente.update({
             where: { id },
             data: {
                 ...(nombre !== undefined && { nombre }),
@@ -124,6 +132,10 @@ const cambiarPassword = async (req, res) => {
             });
         }
 
+        if (req.user && req.user.id !== id) {
+            return res.status(403).json({ success: false, message: 'No puedes cambiar el password de otro usuario' });
+        }
+
         const { passwordActual, nuevoPassword } = req.body;
 
         if (!passwordActual || !nuevoPassword) {
@@ -134,7 +146,7 @@ const cambiarPassword = async (req, res) => {
         }
 
         // Buscar al cliente
-        const cliente = await prisma.cliente.findUnique({
+        const cliente = await req.db.cliente.findUnique({
             where: { id }
         });
 
@@ -164,7 +176,7 @@ const cambiarPassword = async (req, res) => {
         // Encriptar y guardar la nueva contraseña
         const hashedPassword = await bcrypt.hash(nuevoPassword, 10);
 
-        await prisma.cliente.update({
+        await req.db.cliente.update({
             where: { id },
             data: { password: hashedPassword }
         });

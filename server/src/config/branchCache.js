@@ -33,7 +33,26 @@ const getMultiSucursalEnabled = async () => {
         where: { clave: 'multiSucursalHabilitado', branchId: null }
     });
 
-    _cachedValue = param?.valor === 'true';
+    if (!param) {
+        console.warn('⚠️ [BranchCache] Parámetro multiSucursalHabilitado no encontrado en DB. Se asume false por seguridad. Corra el seed.');
+    }
+
+    let isEnabled = param?.valor === 'true';
+
+    // -------------------------------------------------------------
+    // SALVAGUARDA DE INTEGRIDAD
+    // Si el flag está activo, confirmar que exista al menos 1 sucursal activa.
+    // Si no hay ninguna, forzar fallback a false para evitar rotura sistémica.
+    // -------------------------------------------------------------
+    if (isEnabled) {
+        const branchCount = await prisma.branch.count({ where: { activa: true } });
+        if (branchCount === 0) {
+            console.error('CRITICAL [BranchCache] Flag multiSucursalHabilitado está en true PERO no hay sucursales activas en la base. Actuando como false (fallback) para evitar rotura total.');
+            isEnabled = false;
+        }
+    }
+
+    _cachedValue = isEnabled;
     _loadedAt = now;
     return _cachedValue;
 };

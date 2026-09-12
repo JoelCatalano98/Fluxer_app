@@ -2,7 +2,7 @@ const prisma = require('../config/prisma');
 
 const obtenerPagos = async (req, res) => {
     try {
-        const pagos = await prisma.pago.findMany({
+        const pagos = await req.db.pago.findMany({
             orderBy: { fecha: 'desc' },
             include: {
                 cliente: {
@@ -19,7 +19,7 @@ const obtenerPagos = async (req, res) => {
 
 const obtenerPagosPendientesCount = async (req, res) => {
     try {
-        const count = await prisma.pago.count({
+        const count = await req.db.pago.count({
             where: { estado: 'PENDIENTE' }
         });
         res.json({ success: true, count });
@@ -41,7 +41,7 @@ const registrarPago = async (req, res) => {
         const saldoUsadoFloat = parseFloat(saldoUsado) || 0;
 
         // Consultar cliente actual
-        const cliente = await prisma.cliente.findUnique({
+        const cliente = await req.db.cliente.findUnique({
             where: { id: clienteIdInt },
             include: {
                 plan: true
@@ -65,7 +65,7 @@ const registrarPago = async (req, res) => {
             await asegurarCargosAlDia(clienteIdInt);
 
             // Obtener saldo actualizado después de asegurarCargosAlDia
-            const clienteActualizado = await prisma.cliente.findUnique({ where: { id: clienteIdInt } });
+            const clienteActualizado = await req.db.cliente.findUnique({ where: { id: clienteIdInt } });
 
             const montoEfectivo = montoAbonado !== undefined ? parseFloat(montoAbonado) : parseFloat(monto);
             const montoTotalPago = montoEfectivo + saldoUsadoFloat;
@@ -76,7 +76,7 @@ const registrarPago = async (req, res) => {
             // Construir operaciones de la transacción
             const transactionOps = [
                 // 1. Crear el Pago con el monto total
-                prisma.pago.create({
+                req.db.pago.create({
                     data: {
                         clienteId: clienteIdInt,
                         monto: montoTotalPago,
@@ -107,7 +107,7 @@ const registrarPago = async (req, res) => {
                     }
                 }),
                 // 2. Actualizar estado del cliente
-                prisma.cliente.update({
+                req.db.cliente.update({
                     where: { id: clienteIdInt },
                     data: {
                         estado_pago: nuevoEstadoPago,
@@ -119,7 +119,7 @@ const registrarPago = async (req, res) => {
             // 3. Si se usó saldo, crear movimiento EGRESO adicional
             if (saldoUsadoFloat > 0) {
                 transactionOps.push(
-                    prisma.movimientocuenta.create({
+                    req.db.movimientocuenta.create({
                         data: {
                             monto: -saldoUsadoFloat,
                             tipo: 'EGRESO',
@@ -130,7 +130,7 @@ const registrarPago = async (req, res) => {
                 );
             }
 
-            const resultados = await prisma.$transaction(transactionOps);
+            const resultados = await req.db.$transaction(transactionOps);
             const nuevoPago = resultados[0];
 
             // Recalcular el saldo llamando nuevamente al servicio (actualizará el saldo sumando todo)
@@ -147,7 +147,7 @@ const registrarPago = async (req, res) => {
                 } 
             });
         } else if (estado === 'PENDIENTE') {
-            const nuevoPago = await prisma.pago.create({
+            const nuevoPago = await req.db.pago.create({
                 data: {
                     clienteId: clienteIdInt,
                     monto: parseFloat(monto),
@@ -184,7 +184,7 @@ const cambiarEstadoPago = async (req, res) => {
 
         const pagoId = parseInt(id);
 
-        const pagoActual = await prisma.pago.findUnique({
+        const pagoActual = await req.db.pago.findUnique({
             where: { id: pagoId },
             include: { 
                 cliente: {
@@ -211,28 +211,61 @@ const cambiarEstadoPago = async (req, res) => {
             const montoPlanOriginal = pagoActual.cliente.plan?.precio ? parseFloat(pagoActual.cliente.plan.precio) : 0;
             const diferenciaOriginal = montoPagadoOriginal - montoPlanOriginal;
 
-            const [pagoAnulado, clienteRevertido] = await prisma.$transaction([
-                prisma.pago.update({
-                    where: { id: pagoId },
-                    data: { estado: 'ANULADO' }
-                }),
-                prisma.cliente.update({
-                    where: { id: pagoActual.clienteId },
-                    data: {
-                        // El saldo y estado_pago exactos se recalcularán al llamar asegurarCargosAlDia abajo
-                        estado_pago: 'MOROSO'
+            const branchId = req.branchId || null;
+            let pagoAnulado, clienteRevertido;
+            
+            try {
+                const resTx = await req.db.$transaction(async (tx) => {
+                    const updatedPago = await tx.pago.update({
+                        where: { id: pagoId },
+                        data: { estado: 'ANULADO' }
+                    });
+
+                    const updatedCliente = await tx.cliente.update({
+                        where: { id: pagoActual.clienteId },
+                        data: {
+                            estado_pago: 'MOROSO'
+                        }
+                    });
+
+                    await tx.movimientocuenta.create({
+                        data: {
+                            monto: -montoPagadoOriginal,
+                            tipo: 'ANULACION',
+                            descripcion: `Anulación de Pago #${pagoId}`,
+                            clienteId: pagoActual.clienteId,
+                            pagoId: pagoId,
+                            ...(branchId && { branchId })
+                        }
+                    });
+
+                    // También se debe anular el movimiento general asociado
+                    const movsGen = await tx.movimientoGeneral.findMany({
+                        where: { pagoId: pagoId }
+                    });
+
+                    for (const mov of movsGen) {
+                        await tx.movimientoGeneral.create({
+                            data: {
+                                tipo: 'EGRESO',
+                                monto: mov.monto,
+                                descripcion: `Anulación Cuota ${pagoActual.cliente.nombre} ${pagoActual.cliente.apellido}`,
+                                origen: 'PAGO_CLIENTE',
+                                pagoId: pagoId,
+                                ...(branchId && { branchId })
+                            }
+                        });
                     }
-                }),
-                prisma.movimientocuenta.create({
-                    data: {
-                        monto: -montoPagadoOriginal,
-                        tipo: 'ANULACION',
-                        descripcion: `Anulación de Pago #${pagoId}`,
-                        clienteId: pagoActual.clienteId,
-                        pagoId: pagoId
-                    }
-                })
-            ]);
+
+                    return [updatedPago, updatedCliente];
+                });
+                
+                pagoAnulado = resTx[0];
+                clienteRevertido = resTx[1];
+            } catch (txError) {
+                console.error('ERROR EN TRANSACTION DE ANULACION:', txError);
+                throw txError;
+            }
 
             const { asegurarCargosAlDia } = require('../services/cargos.service');
             const resultCargos = await asegurarCargosAlDia(pagoActual.clienteId);
@@ -247,10 +280,7 @@ const cambiarEstadoPago = async (req, res) => {
             });
         }
 
-        // --- Flujo original: solo permitir cambios desde PENDIENTE ---
-        if (pagoActual.estado === 'APROBADO') {
-            return res.status(400).json({ success: false, message: 'El pago ya se encuentra aprobado, no se pueden sumar días duplicados.' });
-        }
+        // --- Flujo original: permitir cambios ---
 
         if (estado === 'APROBADO') {
             const cliente = pagoActual.cliente;
@@ -258,44 +288,59 @@ const cambiarEstadoPago = async (req, res) => {
             await asegurarCargosAlDia(cliente.id);
 
             // Obtener saldo actualizado después de asegurarCargosAlDia
-            const clienteActualizado = await prisma.cliente.findUnique({ where: { id: cliente.id } });
+            const clienteActualizado = await req.db.cliente.findUnique({ where: { id: cliente.id } });
 
             const montoPagado = parseFloat(pagoActual.monto);
             
             const saldoProyectado = parseFloat(clienteActualizado.saldo) + montoPagado;
             const nuevoEstadoPago = saldoProyectado >= 0 ? 'ALDIA' : 'MOROSO';
+            const branchId = req.branchId || null;
 
-            const [pagoActualizado] = await prisma.$transaction([
-                prisma.pago.update({
-                    where: { id: pagoId },
-                    data: { estado: 'APROBADO' }
-                }),
-                prisma.cliente.update({
-                    where: { id: cliente.id },
-                    data: {
-                        estado_pago: nuevoEstadoPago,
-                        ...(cliente.estado_cliente === 'INACTIVO' ? { estado_cliente: 'ACTIVO' } : {})
-                    }
-                }),
-                prisma.movimientocuenta.create({
-                    data: {
-                        monto: montoPagado,
-                        tipo: 'INGRESO',
-                        descripcion: 'Aprobación de Pago / Cuota',
-                        clienteId: cliente.id,
-                        pagoId: pagoId
-                    }
-                }),
-                prisma.movimientoGeneral.create({
-                    data: {
-                        tipo: 'INGRESO',
-                        monto: montoPagado,
-                        descripcion: `Aprobación Cuota ${cliente.nombre} ${cliente.apellido}`,
-                        origen: 'PAGO_CLIENTE',
-                        pagoId: pagoId
-                    }
-                })
-            ]);
+            let pagoActualizado;
+            try {
+                pagoActualizado = await req.db.$transaction(async (tx) => {
+                    const updatedPago = await tx.pago.update({
+                        where: { id: pagoId },
+                        data: { estado: 'APROBADO' }
+                    });
+
+                    await tx.cliente.update({
+                        where: { id: cliente.id },
+                        data: {
+                            saldo: saldoProyectado,
+                            estado_pago: nuevoEstadoPago,
+                            ...(cliente.estado_cliente === 'INACTIVO' ? { estado_cliente: 'ACTIVO' } : {})
+                        }
+                    });
+
+                    await tx.movimientocuenta.create({
+                        data: {
+                            monto: montoPagado,
+                            tipo: 'INGRESO',
+                            descripcion: 'Aprobación de Pago / Cuota',
+                            clienteId: cliente.id,
+                            pagoId: pagoId,
+                            ...(branchId && { branchId })
+                        }
+                    });
+
+                    await tx.movimientoGeneral.create({
+                        data: {
+                            tipo: 'INGRESO',
+                            monto: montoPagado,
+                            descripcion: `Aprobación Cuota ${cliente.nombre} ${cliente.apellido}`,
+                            origen: 'PAGO_CLIENTE',
+                            pagoId: pagoId,
+                            ...(branchId && { branchId })
+                        }
+                    });
+
+                    return updatedPago;
+                });
+            } catch (txError) {
+                console.error('ERROR EN TRANSACTION:', txError);
+                throw txError;
+            }
 
             const resultCargos = await asegurarCargosAlDia(cliente.id);
 
@@ -308,7 +353,7 @@ const cambiarEstadoPago = async (req, res) => {
                 }
             });
         } else if (estado === 'RECHAZADO') {
-            const pagoActualizado = await prisma.pago.update({
+            const pagoActualizado = await req.db.pago.update({
                 where: { id: pagoId },
                 data: { estado: 'RECHAZADO' }
             });

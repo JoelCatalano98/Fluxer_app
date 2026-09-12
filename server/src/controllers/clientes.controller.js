@@ -27,7 +27,7 @@ const getClientes = async (req, res) => {
         } else if (filtro === 'morosos') {
             const { asegurarCargosAlDia } = require('../services/cargos.service');
             const hoy = new Date();
-            const clientesAtrasados = await prisma.cliente.findMany({
+            const clientesAtrasados = await req.db.cliente.findMany({
                 where: { 
                     estado_cliente: 'ACTIVO',
                     vencimientoCuota: { lt: hoy } 
@@ -46,9 +46,9 @@ const getClientes = async (req, res) => {
         }
 
         // Obtener cantidad total y registros paginados con su plan
-        const [total, clientes] = await prisma.$transaction([
-            prisma.cliente.count({ where }),
-            prisma.cliente.findMany({
+        const [total, clientes] = await req.db.$transaction([
+            req.db.cliente.count({ where }),
+            req.db.cliente.findMany({
                 where,
                 skip,
                 take,
@@ -144,7 +144,7 @@ const createCliente = async (req, res) => {
         }
 
         // Crear registro en la base de datos
-        let nuevoCliente = await prisma.cliente.create({
+        let nuevoCliente = await req.db.cliente.create({
             data: {
                 nombre,
                 apellido,
@@ -169,7 +169,7 @@ const createCliente = async (req, res) => {
 
         // Si es socio, autogeneramos el código basado en su nuevo ID
         if (isSocio) {
-            nuevoCliente = await prisma.cliente.update({
+            nuevoCliente = await req.db.cliente.update({
                 where: { id: nuevoCliente.id },
                 data: { codigo_socio: String(nuevoCliente.id).padStart(4, '0') },
                 include: {
@@ -237,7 +237,7 @@ const updateCliente = async (req, res) => {
         const isSocio = es_socio === true || es_socio === 'true';
 
         // Obtener el cliente actual para verificar si ya tiene código u otros datos
-        const clienteActual = await prisma.cliente.findUnique({ where: { id } });
+        const clienteActual = await req.db.cliente.findUnique({ where: { id } });
         if (!clienteActual) {
             return res.status(404).json({
                 success: false,
@@ -308,7 +308,7 @@ const updateCliente = async (req, res) => {
             updateData.planId = planId ? parseInt(planId) : null;
         }
 
-        const clienteActualizado = await prisma.cliente.update({
+        const clienteActualizado = await req.db.cliente.update({
             where: { id },
             data: updateData,
             include: {
@@ -365,7 +365,7 @@ const deleteCliente = async (req, res) => {
             });
         }
 
-        const clienteDesactivado = await prisma.cliente.update({
+        const clienteDesactivado = await req.db.cliente.update({
             where: { id },
             data: {
                 estado_cliente: 'INACTIVO'
@@ -424,7 +424,7 @@ const updateEstadoPago = async (req, res) => {
             });
         }
 
-        const clienteActualizado = await prisma.cliente.update({
+        const clienteActualizado = await req.db.cliente.update({
             where: { id },
             data: {
                 estado_pago
@@ -474,7 +474,7 @@ const resetPasswordCliente = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash('123456', 10);
 
-        await prisma.cliente.update({
+        await req.db.cliente.update({
             where: { id },
             data: { password: hashedPassword }
         });
@@ -519,7 +519,7 @@ const getMovimientosCliente = async (req, res) => {
         const { asegurarCargosAlDia } = require('../services/cargos.service');
         const resultCargos = await asegurarCargosAlDia(id);
 
-        const cliente = await prisma.cliente.findUnique({
+        const cliente = await req.db.cliente.findUnique({
             where: { id },
             select: {
                 id: true,
@@ -579,7 +579,7 @@ const resetFinanzasCliente = async (req, res) => {
         }
 
         // Verificar que el cliente existe antes de proceder
-        const clienteExiste = await prisma.cliente.findUnique({ where: { id } });
+        const clienteExiste = await req.db.cliente.findUnique({ where: { id } });
         if (!clienteExiste) {
             return res.status(404).json({
                 success: false,
@@ -588,11 +588,39 @@ const resetFinanzasCliente = async (req, res) => {
             });
         }
 
-        // Transacción atómica: eliminar movimientos, pagos y resetear saldo
-        await prisma.$transaction([
-            prisma.movimientocuenta.deleteMany({ where: { clienteId: id } }),
-            prisma.pago.deleteMany({ where: { clienteId: id } }),
-            prisma.cliente.update({
+        // Transacción interactiva: eliminar movimientos, pagos y resetear saldo
+        await req.db.$transaction(async (tx) => {
+            // Obtener todos los pagos del cliente para borrar movimientos generales asociados
+            const pagos = await tx.pago.findMany({
+                where: {
+                    clienteId: id,
+                    ...(req.branchId && { branchId: req.branchId })
+                },
+                select: { id: true }
+            });
+            const pagoIds = pagos.map(p => p.id);
+
+            if (pagoIds.length > 0) {
+                await tx.movimientoGeneral.deleteMany({
+                    where: { pagoId: { in: pagoIds } }
+                });
+            }
+
+            await tx.movimientocuenta.deleteMany({ 
+                where: { 
+                    clienteId: id,
+                    ...(req.branchId && { branchId: req.branchId })
+                } 
+            });
+
+            await tx.pago.deleteMany({ 
+                where: { 
+                    clienteId: id,
+                    ...(req.branchId && { branchId: req.branchId })
+                } 
+            });
+
+            await tx.cliente.update({
                 where: { id },
                 data: {
                     saldo: 0,
@@ -600,8 +628,8 @@ const resetFinanzasCliente = async (req, res) => {
                     estado_cliente: 'INACTIVO',
                     vencimientoCuota: new Date(new Date().setHours(0, 0, 0, 0))
                 }
-            })
-        ]);
+            });
+        });
 
         return res.status(200).json({
             success: true,
@@ -621,7 +649,7 @@ const resetFinanzasCliente = async (req, res) => {
 // GET /api/clientes/pendientes
 const getPendientes = async (req, res) => {
     try {
-        const pendientes = await prisma.cliente.findMany({
+        const pendientes = await req.db.cliente.findMany({
             where: { estado_cliente: 'PENDIENTE' },
             select: {
                 id: true,
@@ -669,7 +697,7 @@ const aprobarCliente = async (req, res) => {
 
         const { categoriaId, planId } = req.body;
         
-        const clienteActualizado = await prisma.cliente.update({
+        const clienteActualizado = await req.db.cliente.update({
             where: { id },
             data: {
                 estado_cliente: 'ACTIVO',
@@ -706,7 +734,7 @@ const rechazarCliente = async (req, res) => {
         const { id } = req.params;
         const clienteId = parseInt(id);
 
-        const cliente = await prisma.cliente.findUnique({
+        const cliente = await req.db.cliente.findUnique({
             where: { id: clienteId }
         });
 
@@ -718,14 +746,14 @@ const rechazarCliente = async (req, res) => {
 
         if (!esActualizacion) {
             // Es un cliente completamente nuevo
-            const pagosCount = await prisma.pago.count({ where: { clienteId } });
+            const pagosCount = await req.db.pago.count({ where: { clienteId } });
             if (pagosCount > 0) {
-                await prisma.cliente.update({
+                await req.db.cliente.update({
                     where: { id: clienteId },
                     data: { estado_cliente: 'INACTIVO', password: null }
                 });
             } else {
-                await prisma.cliente.delete({ where: { id: clienteId } });
+                await req.db.cliente.delete({ where: { id: clienteId } });
             }
         } else {
             // Era un cliente existente que actualizó datos
@@ -736,7 +764,7 @@ const rechazarCliente = async (req, res) => {
             
             if (nuevasObservaciones === '') nuevasObservaciones = null;
 
-            await prisma.cliente.update({
+            await req.db.cliente.update({
                 where: { id: clienteId },
                 data: {
                     estado_cliente: 'INACTIVO',

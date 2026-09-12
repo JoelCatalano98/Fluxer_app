@@ -7,14 +7,14 @@ const normalizeText = (text) => {
 
 const getSueldos = async (req, res) => {
     try {
-        const config = await prisma.configuracion.findFirst();
+        const config = await req.db.configuracion.findFirst();
         const profesoresPorTurno = config ? config.profesoresPorTurno : false;
 
-        const profesionales = await prisma.profesional.findMany({
+        const profesionales = await req.db.profesional.findMany({
             where: { activo: true }
         });
 
-        const horariosActivos = await prisma.horarioConfig.findMany({
+        const horariosActivos = await req.db.horarioConfig.findMany({
             where: { activo: true },
             include: { 
                 categoria: true, 

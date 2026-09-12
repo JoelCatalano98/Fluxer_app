@@ -2,7 +2,7 @@ const prisma = require('../config/prisma');
 
 const getAvisosAdmin = async (req, res) => {
     try {
-        const avisos = await prisma.aviso.findMany({
+        const avisos = await req.db.aviso.findMany({
             orderBy: { fechaDesde: 'desc' }
         });
         res.json(avisos);
@@ -35,7 +35,7 @@ const getAvisosSocio = async (req, res) => {
 const createAviso = async (req, res) => {
     const { titulo, mensaje, tipo, fechaDesde, fechaHasta, esBloqueo, bloquearTodoElDia, horaInicioBloqueo, horaFinBloqueo, horariosBloqueados } = req.body;
     try {
-        const nuevoAviso = await prisma.aviso.create({
+        const nuevoAviso = await req.db.aviso.create({
             data: {
                 titulo,
                 mensaje,
@@ -60,7 +60,7 @@ const updateAviso = async (req, res) => {
     const { id } = req.params;
     const { titulo, mensaje, tipo, fechaDesde, fechaHasta, activo, esBloqueo, bloquearTodoElDia, horaInicioBloqueo, horaFinBloqueo, horariosBloqueados } = req.body;
     try {
-        const avisoActualizado = await prisma.aviso.update({
+        const avisoActualizado = await req.db.aviso.update({
             where: { id: parseInt(id) },
             data: {
                 titulo,
@@ -86,7 +86,7 @@ const updateAviso = async (req, res) => {
 const deleteAviso = async (req, res) => {
     const { id } = req.params;
     try {
-        await prisma.aviso.delete({
+        await req.db.aviso.delete({
             where: { id: parseInt(id) }
         });
         res.json({ message: 'Aviso eliminado exitosamente' });

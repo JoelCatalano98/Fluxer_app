@@ -19,7 +19,7 @@ if (!JWT_SECRET) {
  */
 const registerSocio = async (req, res) => {
     try {
-        const { nombre, apellido, dni_cuit, email, password, telefono } = req.body;
+        const { nombre, apellido, dni_cuit, email, password, telefono, branchId } = req.body;
 
         // Validar campos requeridos
         if (!nombre || !apellido || !dni_cuit || !email || !password || !telefono) {
@@ -51,6 +51,7 @@ const registerSocio = async (req, res) => {
             }
 
             // Completar datos, vincular contraseña y marcar como PENDIENTE
+            // IMPORTANTE: NO sobreescribimos el branchId, conservamos el que el admin le asignó
             const hashedPassword = await bcrypt.hash(password, 10);
             const notasAnteriores = dniExistente.observaciones ? `${dniExistente.observaciones} | ` : '';
             
@@ -89,7 +90,8 @@ const registerSocio = async (req, res) => {
                 password: hashedPassword,
                 es_socio: true,
                 estado_cliente: 'PENDIENTE',
-                origenSolicitud: 'NUEVO'
+                origenSolicitud: 'NUEVO',
+                branchId: branchId ? parseInt(branchId) : null
             }
         });
 
@@ -177,7 +179,8 @@ const loginSocio = async (req, res) => {
             id: clienteActualizado.id,
             nombre: clienteActualizado.nombre,
             apellido: clienteActualizado.apellido,
-            role: 'SOCIO'
+            role: 'SOCIO',
+            branchId: clienteActualizado.branchId
         };
 
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });

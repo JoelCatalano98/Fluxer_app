@@ -8,7 +8,7 @@ const crearLiquidacion = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Faltan datos obligatorios' });
         }
 
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await req.db.$transaction(async (tx) => {
             const existe = await tx.liquidacion.findFirst({
                 where: { profesionalId: parseInt(profesionalId), periodo }
             });
@@ -68,7 +68,7 @@ const obtenerLiquidaciones = async (req, res) => {
             where.profesionalId = parseInt(profesionalId);
         }
 
-        const liquidaciones = await prisma.liquidacion.findMany({
+        const liquidaciones = await req.db.liquidacion.findMany({
             where,
             include: {
                 profesional: {

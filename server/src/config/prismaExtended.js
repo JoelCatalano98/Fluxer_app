@@ -5,7 +5,7 @@ const { getMultiSucursalEnabled } = require('./branchCache');
 // Usados por la Client Extension para interceptar operaciones de lectura y escritura.
 const BRANCH_SCOPED_MODELS = [
     'cliente', 'categoria', 'horarioConfig', 'turnoCliente',
-    'movimientocuenta', 'movimientoGeneral', 'liquidacion', 'aviso', 'rutina'
+    'movimientocuenta', 'movimientoGeneral', 'liquidacion', 'aviso', 'rutina', 'pago'
 ];
 
 // ─── Instancia base (sin filtrado) ───────────────────────────────────────────
@@ -48,6 +48,13 @@ const createPrismaWithBranch = (branchId) => {
                 // Si el registro existe pero pertenece a otra sucursal → retorna null.
                 async findUnique({ args, query }) {
                     if (branchId) args.where = { ...args.where, branchId };
+                    return query(args);
+                },
+                async count({ args, query }) {
+                    if (branchId) {
+                        args = args || {};
+                        args.where = { ...args.where, branchId };
+                    }
                     return query(args);
                 },
 

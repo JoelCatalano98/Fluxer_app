@@ -1,78 +1,25 @@
 const prisma = require('../src/config/prisma');
 
+async function upsertParam(clave, descripcion, tipo, valor) {
+    const exists = await prisma.parametroSistema.findFirst({
+        where: { clave, branchId: null }
+    });
+    if (!exists) {
+        await prisma.parametroSistema.create({
+            data: { clave, descripcion, tipo, valor }
+        });
+    }
+}
+
 async function main() {
-    await prisma.parametroSistema.upsert({
-        where: { clave: 'sueldosHabilitado' },
-        update: {},
-        create: {
-            clave: 'sueldosHabilitado',
-            descripcion: 'Habilitar el módulo de Liquidación de Sueldos',
-            tipo: 'boolean',
-            valor: 'true'
-        }
-    });
-    await prisma.parametroSistema.upsert({
-        where: { clave: 'libroDiarioHabilitado' },
-        update: {},
-        create: {
-            clave: 'libroDiarioHabilitado',
-            descripcion: 'Habilitar el módulo de Libro Diario',
-            tipo: 'boolean',
-            valor: 'true'
-        }
-    });
-    await prisma.parametroSistema.upsert({
-        where: { clave: 'sociosHabilitado' },
-        update: {},
-        create: {
-            clave: 'sociosHabilitado',
-            descripcion: 'Habilitar el módulo de Socios (bonificaciones)',
-            tipo: 'boolean',
-            valor: 'false'
-        }
-    });
-    await prisma.parametroSistema.upsert({
-        where: { clave: 'qrHabilitado' },
-        update: {},
-        create: {
-            clave: 'qrHabilitado',
-            descripcion: 'Habilitar el módulo de QR (cobros/descarga app)',
-            tipo: 'boolean',
-            valor: 'false'
-        }
-    });
-    await prisma.parametroSistema.upsert({
-        where: { clave: 'bloquearReservaPorMora' },
-        update: {},
-        create: {
-            clave: 'bloquearReservaPorMora',
-            descripcion: 'Bloquear reservas de turnos a clientes morosos (no solo inactivos)',
-            tipo: 'boolean',
-            valor: 'true'
-        }
-    });
-
-    await prisma.parametroSistema.upsert({
-        where: { clave: 'asignacionMasivaHabilitado' },
-        update: {},
-        create: {
-            clave: 'asignacionMasivaHabilitado',
-            descripcion: 'Habilitar asignación masiva (pádel/Pilates)',
-            tipo: 'boolean',
-            valor: 'true'
-        }
-    });
-
-    await prisma.parametroSistema.upsert({
-        where: { clave: 'cupoEstricto' },
-        update: {},
-        create: {
-            clave: 'cupoEstricto',
-            descripcion: 'Bloquear reservas si el cupo está lleno (en lugar de solo avisar en backend)',
-            tipo: 'boolean',
-            valor: 'true'
-        }
-    });
+    await upsertParam('sueldosHabilitado', 'Habilitar el módulo de Liquidación de Sueldos', 'boolean', 'true');
+    await upsertParam('libroDiarioHabilitado', 'Habilitar el módulo de Libro Diario', 'boolean', 'true');
+    await upsertParam('sociosHabilitado', 'Habilitar el módulo de Socios (bonificaciones)', 'boolean', 'false');
+    await upsertParam('qrHabilitado', 'Habilitar el módulo de QR (cobros/descarga app)', 'boolean', 'false');
+    await upsertParam('bloquearReservaPorMora', 'Bloquear reservas de turnos a clientes morosos (no solo inactivos)', 'boolean', 'true');
+    await upsertParam('asignacionMasivaHabilitado', 'Habilitar asignación masiva (pádel/Pilates)', 'boolean', 'true');
+    await upsertParam('cupoEstricto', 'Bloquear reservas si el cupo está lleno (en lugar de solo avisar en backend)', 'boolean', 'true');
+    await upsertParam('multiSucursalHabilitado', 'Habilitar el módulo multi-sucursal', 'boolean', 'false');
 
     // Creación del usuario administrador inicial
     const existeAdmin = await prisma.usuario.findFirst({

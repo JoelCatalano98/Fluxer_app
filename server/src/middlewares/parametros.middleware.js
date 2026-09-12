@@ -3,8 +3,8 @@ const prisma = require('../config/prisma');
 const requireParametro = (clave) => {
     return async (req, res, next) => {
         try {
-            const param = await prisma.parametroSistema.findUnique({
-                where: { clave }
+            const param = await prisma.parametroSistema.findFirst({
+                where: { clave, branchId: null }
             });
             if (!param || param.valor !== 'true') {
                 return res.status(403).json({

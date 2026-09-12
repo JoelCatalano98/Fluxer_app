@@ -47,14 +47,25 @@ const login = async (req, res) => {
         const isMultiEnabled = await getMultiSucursalEnabled();
 
         if (isMultiEnabled) {
-            // Buscar sucursales activas asignadas al usuario
-            const asignaciones = await prisma.usuarioSucursal.findMany({
-                where: { usuarioId: usuario.id },
-                include: { branch: { where: { activa: true } } }
-            });
-            const branches = asignaciones
-                .filter(a => a.branch !== null)
-                .map(a => ({ id: a.branch.id, nombre: a.branch.nombre, direccion: a.branch.direccion }));
+            let branches = [];
+
+            if (usuario.esSuperAdmin) {
+                // SuperAdmin ve TODAS las sucursales activas
+                branches = await prisma.branch.findMany({
+                    where: { activa: true }
+                });
+                branches = branches.map(b => ({ id: b.id, nombre: b.nombre, direccion: b.direccion }));
+            } else {
+                // Usuarios normales: solo las asignadas
+                const asignaciones = await prisma.usuarioSucursal.findMany({
+                    where: { 
+                        usuarioId: usuario.id,
+                        branch: { activa: true }
+                    },
+                    include: { branch: true }
+                });
+                branches = asignaciones.map(a => ({ id: a.branch.id, nombre: a.branch.nombre, direccion: a.branch.direccion }));
+            }
 
             if (branches.length === 0) {
                 // Usuario sin sucursales asignadas — error de configuración
@@ -125,23 +136,33 @@ const selectBranch = async (req, res) => {
             return res.status(400).json({ success: false, message: 'branchId requerido' });
         }
 
-        // Validar que ese branchId esté asignado a este usuario Y la sucursal esté activa
-        const asignacion = await prisma.usuarioSucursal.findFirst({
-            where: { usuarioId: userId, branchId },
-            include: { branch: true }
-        });
-
-        if (!asignacion || !asignacion.branch?.activa) {
-            return res.status(403).json({
-                success: false,
-                message: 'No tenés acceso a esa sucursal o la sucursal está inactiva'
-            });
-        }
-
         // Recuperar datos completos del usuario para armar el payload definitivo
         const usuario = await prisma.usuario.findUnique({ where: { id: userId } });
         if (!usuario) {
             return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
+        }
+
+        let branch = null;
+
+        if (usuario.esSuperAdmin) {
+            branch = await prisma.branch.findFirst({
+                where: { id: branchId, activa: true }
+            });
+        } else {
+            const asignacion = await prisma.usuarioSucursal.findFirst({
+                where: { usuarioId: userId, branchId },
+                include: { branch: true }
+            });
+            if (asignacion) {
+                branch = asignacion.branch;
+            }
+        }
+
+        if (!branch || !branch.activa) {
+            return res.status(403).json({
+                success: false,
+                message: 'No tenés acceso a esa sucursal o la sucursal está inactiva'
+            });
         }
 
         const payload = {
@@ -154,7 +175,8 @@ const selectBranch = async (req, res) => {
             permisoClientes: usuario.permisoClientes,
             permisoPlanes: usuario.permisoPlanes,
             permisoFeriados: usuario.permisoFeriados,
-            branchId: asignacion.branchId  // ← la fuente de verdad
+            branchId: branch.id,  // ← la fuente de verdad
+            branchNombre: branch.nombre // ← se evita fetch extra
         };
 
         const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });
@@ -165,8 +187,8 @@ const selectBranch = async (req, res) => {
                 token,
                 usuario: payload,
                 branch: {
-                    id: asignacion.branch.id,
-                    nombre: asignacion.branch.nombre
+                    id: branch.id,
+                    nombre: branch.nombre
                 }
             },
             message: 'Sucursal seleccionada correctamente'

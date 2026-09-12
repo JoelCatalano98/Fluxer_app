@@ -9,7 +9,11 @@ const obtenerRutinasSocio = async (req, res) => {
             return res.status(400).json({ success: false, message: 'ID de cliente inválido' });
         }
 
-        const rutinas = await prisma.rutina.findMany({
+        if (req.user && req.user.id !== clienteId) {
+            return res.status(403).json({ success: false, message: 'No puedes ver las rutinas de otro usuario' });
+        }
+
+        const rutinas = await req.db.rutina.findMany({
             where: {
                 OR: [
                     { clienteId: null },
@@ -50,7 +54,7 @@ const actualizarPesoEjercicio = async (req, res) => {
         }
 
         // Obtener el ejercicio junto con su rutina para validar propiedad
-        const ejercicioExistente = await prisma.rutinaEjercicio.findUnique({
+        const ejercicioExistente = await req.db.rutinaEjercicio.findUnique({
             where: { id: ejercicioId },
             include: { rutina: true }
         });
@@ -67,7 +71,7 @@ const actualizarPesoEjercicio = async (req, res) => {
             return res.status(403).json({ success: false, message: 'No tienes permiso para editar esta rutina' });
         }
 
-        const actualizado = await prisma.rutinaEjercicio.update({
+        const actualizado = await req.db.rutinaEjercicio.update({
             where: { id: ejercicioId },
             data: { 
                 pesoReal: String(pesoReal),

@@ -12,12 +12,13 @@ datasource db {
 // Las instalaciones existentes (Krebs, Fitlates, Herafitnes) no se ven afectadas.
 
 model Branch {
-  id        Int      @id @default(autoincrement())
-  nombre    String
-  direccion String?
-  telefono  String?
-  activa    Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  nombre        String
+  direccion     String?
+  telefono      String?
+  personaACargo String?
+  activa        Boolean  @default(true)
+  createdAt     DateTime @default(now())
 
   @@map("branches")
 }
@@ -384,11 +385,13 @@ model pago {
   fecha                DateTime            @default(now())
   notas                String?
   estado               String              @default("APROBADO")
+  branchId             Int?
   movimientocuenta     movimientocuenta[]
   movimientosGenerales MovimientoGeneral[]
   cliente              Cliente             @relation(fields: [clienteId], references: [id], map: "Pago_clienteId_fkey")
 
   @@index([clienteId], map: "Pago_clienteId_fkey")
+  @@index([branchId], map: "pago_branchId_idx")
 }
 
 enum EstadoPago {

@@ -3,7 +3,7 @@ const prisma = require('../config/prisma');
 // GET /api/categorias
 const getCategorias = async (req, res) => {
     try {
-        const categorias = await prisma.categoria.findMany({
+        const categorias = await req.db.categoria.findMany({
             where: { activo: true },
             include: {
                 profesional: true
@@ -41,7 +41,7 @@ const createCategoria = async (req, res) => {
             });
         }
 
-        const nuevaCategoria = await prisma.categoria.create({
+        const nuevaCategoria = await req.db.categoria.create({
             data: {
                 nombre,
                 profesionalId: profesionalId ? parseInt(profesionalId) : null,
@@ -91,7 +91,7 @@ const updateCategoria = async (req, res) => {
         if (color !== undefined) dataToUpdate.color = color;
         if (cupoMaximo !== undefined) dataToUpdate.cupoMaximo = cupoMaximo ? parseInt(cupoMaximo) : null;
 
-        const categoriaActualizada = await prisma.categoria.update({
+        const categoriaActualizada = await req.db.categoria.update({
             where: { id },
             data: dataToUpdate,
             include: {
@@ -100,8 +100,11 @@ const updateCategoria = async (req, res) => {
         });
 
         if (cupoMaximo !== undefined) {
-            await prisma.horarioConfig.updateMany({
-                where: { categoriaId: id },
+            await req.db.horarioConfig.updateMany({
+                where: { 
+                    categoriaId: id,
+                    ...(req.branchId && { branchId: req.branchId })
+                },
                 data: { cupo_maximo: cupoMaximo ? parseInt(cupoMaximo) : null }
             });
         }
@@ -142,7 +145,7 @@ const deleteCategoria = async (req, res) => {
         }
 
         // Baja lógica: seteamos activo a false
-        await prisma.categoria.update({
+        await req.db.categoria.update({
             where: { id },
             data: { activo: false }
         });

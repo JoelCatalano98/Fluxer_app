@@ -41,7 +41,8 @@ const initializeBranches = async (req, res) => {
         // ── Conteos ANTES (para verificación post-initialize) ──────────────
         const [
             clientesAntes, turnosAntes, movGenAntes, movCtaAntes,
-            avisosAntes, categoriasAntes, rutinasAntes, liquidacionesAntes
+            avisosAntes, categoriasAntes, rutinasAntes, liquidacionesAntes,
+            pagosAntes, horariosAntes
         ] = await Promise.all([
             prisma.cliente.count(),
             prisma.turnoCliente.count(),
@@ -51,6 +52,8 @@ const initializeBranches = async (req, res) => {
             prisma.categoria.count(),
             prisma.rutina.count(),
             prisma.liquidacion.count(),
+            prisma.pago.count(),
+            prisma.horarioConfig.count(),
         ]);
 
         // ── Transacción principal ──────────────────────────────────────────
@@ -65,7 +68,7 @@ const initializeBranches = async (req, res) => {
             //    Solo registros donde branchId IS NULL (no pisar si ya tienen valor)
             const [
                 rClientes, rTurnos, rMovGen, rMovCta,
-                rAvisos, rCategorias, rRutinas, rLiquidaciones, rHorarios
+                rAvisos, rCategorias, rRutinas, rLiquidaciones, rHorarios, rPagos
             ] = await Promise.all([
                 tx.cliente.updateMany({ where: { branchId: null }, data: { branchId: bId } }),
                 tx.turnoCliente.updateMany({ where: { branchId: null }, data: { branchId: bId } }),
@@ -76,6 +79,7 @@ const initializeBranches = async (req, res) => {
                 tx.rutina.updateMany({ where: { branchId: null }, data: { branchId: bId } }),
                 tx.liquidacion.updateMany({ where: { branchId: null }, data: { branchId: bId } }),
                 tx.horarioConfig.updateMany({ where: { branchId: null }, data: { branchId: bId } }),
+                tx.pago.updateMany({ where: { branchId: null }, data: { branchId: bId } }),
             ]);
 
             // 3. Crear UsuarioSucursal para todos los usuarios existentes
@@ -86,8 +90,8 @@ const initializeBranches = async (req, res) => {
             });
 
             // 4. Activar el flag en DB
-            await tx.parametroSistema.update({
-                where: { clave_branchId: { clave: 'multiSucursalHabilitado', branchId: null } },
+            await tx.parametroSistema.updateMany({
+                where: { clave: 'multiSucursalHabilitado', branchId: null },
                 data: { valor: 'true' }
             });
 
@@ -99,6 +103,7 @@ const initializeBranches = async (req, res) => {
                     turnosCliente: rTurnos.count,
                     movimientosGenerales: rMovGen.count,
                     movimientosCuenta: rMovCta.count,
+                    pagos: rPagos.count,
                     avisos: rAvisos.count,
                     categorias: rCategorias.count,
                     rutinas: rRutinas.count,
@@ -115,12 +120,20 @@ const initializeBranches = async (req, res) => {
 
         // ── Conteos DESPUÉS (verificación de no-interferencia) ────────────
         const [
-            clientesDespues, turnosDespues, movGenDespues, movCtaDespues
+            clientesDespues, turnosDespues, movGenDespues, movCtaDespues,
+            avisosDespues, categoriasDespues, rutinasDespues, liquidacionesDespues,
+            pagosDespues, horariosDespues
         ] = await Promise.all([
             prisma.cliente.count(),
             prisma.turnoCliente.count(),
             prisma.movimientoGeneral.count(),
             prisma.movimientocuenta.count(),
+            prisma.aviso.count(),
+            prisma.categoria.count(),
+            prisma.rutina.count(),
+            prisma.liquidacion.count(),
+            prisma.pago.count(),
+            prisma.horarioConfig.count(),
         ]);
 
         console.log('[INITIALIZE] Verificación de integridad:');
@@ -135,6 +148,12 @@ const initializeBranches = async (req, res) => {
             turnos: turnosDespues - turnosAntes,
             movimientosGenerales: movGenDespues - movGenAntes,
             movimientosCuenta: movCtaDespues - movCtaAntes,
+            avisos: avisosDespues - avisosAntes,
+            categorias: categoriasDespues - categoriasAntes,
+            rutinas: rutinasDespues - rutinasAntes,
+            liquidaciones: liquidacionesDespues - liquidacionesAntes,
+            pagos: pagosDespues - pagosAntes,
+            horariosConfig: horariosDespues - horariosAntes,
         };
         const filasInEsperadas = Object.entries(deltas).filter(([, d]) => d !== 0);
         if (filasInEsperadas.length > 0) {
@@ -156,6 +175,35 @@ const initializeBranches = async (req, res) => {
     } catch (error) {
         console.error('[INITIALIZE] Error:', error);
         return res.status(500).json({ success: false, message: 'Error al inicializar multi-sucursal', error: error.message });
+    }
+};
+
+/**
+ * GET /api/branches/public
+ * Lista todas las sucursales activas si el modo multi-sucursal está habilitado.
+ * Ruta pública (no requiere token).
+ */
+const getPublicBranches = async (req, res) => {
+    try {
+        const param = await prisma.parametroSistema.findFirst({
+            where: { clave: 'multiSucursalHabilitado', branchId: null }
+        });
+        const habilitado = param && param.valor === 'true';
+
+        if (!habilitado) {
+            return res.status(200).json({ success: true, habilitado: false, branches: [] });
+        }
+
+        const branches = await prisma.branch.findMany({
+            where: { activa: true },
+            select: { id: true, nombre: true },
+            orderBy: { id: 'asc' }
+        });
+
+        return res.status(200).json({ success: true, habilitado: true, branches });
+    } catch (error) {
+        console.error('Error en getPublicBranches:', error);
+        return res.status(500).json({ success: false, message: 'Error al obtener sucursales públicas' });
     }
 };
 
@@ -275,6 +323,8 @@ const deactivateBranch = async (req, res) => {
 
         await prisma.branch.update({ where: { id }, data: { activa: false } });
 
+        invalidateBranchCache();
+
         return res.status(200).json({ success: true, message: 'Sucursal desactivada correctamente' });
     } catch (error) {
         console.error('Error en deactivateBranch:', error);
@@ -288,4 +338,5 @@ module.exports = {
     createBranch,
     updateBranch,
     deactivateBranch,
+    getPublicBranches
 };

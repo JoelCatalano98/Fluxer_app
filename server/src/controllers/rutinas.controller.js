@@ -12,7 +12,7 @@ const crearRutina = async (req, res) => {
             });
         }
 
-        const nuevaRutina = await prisma.rutina.create({
+        const nuevaRutina = await req.db.rutina.create({
             data: {
                 nombre,
                 clienteId: parseInt(clienteId),
@@ -51,7 +51,7 @@ const obtenerRutinasPorCliente = async (req, res) => {
     try {
         const { clienteId } = req.params;
 
-        const rutinas = await prisma.rutina.findMany({
+        const rutinas = await req.db.rutina.findMany({
             where: {
                 clienteId: parseInt(clienteId)
             },
@@ -91,7 +91,7 @@ const actualizarRutina = async (req, res) => {
         }
 
         // Usamos transacción para asegurar consistencia
-        const rutinaActualizada = await prisma.$transaction(async (tx) => {
+        const rutinaActualizada = await req.db.$transaction(async (tx) => {
             // Eliminar ejercicios anteriores
             await tx.rutinaEjercicio.deleteMany({
                 where: { rutinaId: parseInt(id) }
@@ -154,7 +154,7 @@ const eliminarRutina = async (req, res) => {
     try {
         const { id } = req.params;
 
-        await prisma.rutina.delete({
+        await req.db.rutina.delete({
             where: {
                 id: parseInt(id)
             }
@@ -176,7 +176,7 @@ const eliminarRutina = async (req, res) => {
 // Obtener la rutina general (clienteId = null)
 const obtenerRutinaGeneral = async (req, res) => {
     try {
-        const rutina = await prisma.rutina.findFirst({
+        const rutina = await req.db.rutina.findFirst({
             where: { clienteId: null },
             include: { ejercicios: true }
         });
@@ -203,7 +203,7 @@ const crearOActualizarRutinaGeneral = async (req, res) => {
         }
 
         // 1. Garantizar que exista una sola fila con clienteId = null mediante raw query atómica
-        await prisma.$executeRaw`
+        await req.db.$executeRaw`
             INSERT INTO rutinas (nombre, clienteId, createdAt)
             SELECT ${nombre}, NULL, NOW()
             FROM DUAL
@@ -211,7 +211,7 @@ const crearOActualizarRutinaGeneral = async (req, res) => {
         `;
 
         // 2. Traer la rutina general asegurada
-        const rutinaGeneral = await prisma.rutina.findFirst({
+        const rutinaGeneral = await req.db.rutina.findFirst({
             where: { clienteId: null }
         });
 
@@ -220,7 +220,7 @@ const crearOActualizarRutinaGeneral = async (req, res) => {
         }
 
         // 3. Actualizar la rutina en transacción (borramos ejercicios viejos y ponemos los nuevos)
-        const rutinaActualizada = await prisma.$transaction(async (tx) => {
+        const rutinaActualizada = await req.db.$transaction(async (tx) => {
             // Eliminar ejercicios viejos
             await tx.rutinaEjercicio.deleteMany({
                 where: { rutinaId: rutinaGeneral.id }
