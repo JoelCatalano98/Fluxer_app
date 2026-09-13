@@ -1,6 +1,17 @@
 const prisma = require('../config/prisma');
 const bcrypt = require('bcryptjs');
 
+// Helper para mapear disciplinas garantizando que la categoría principal (categoriaId) esté en la posición [0]
+const mapCategoriasCliente = (c) => {
+    let list = c.clienteCategorias && c.clienteCategorias.length > 0
+        ? c.clienteCategorias.map(cc => cc.categoria).filter(Boolean)
+        : (c.categoria ? [c.categoria] : []);
+    if (c.categoriaId && list.length > 1) {
+        list.sort((a, b) => (a.id === c.categoriaId ? -1 : b.id === c.categoriaId ? 1 : 0));
+    }
+    return list;
+};
+
 // GET /api/clientes
 // Lista todos los clientes con paginación básica (query params: page, limit)
 // e incluye el plan relacionado. Admite filtrar por:
@@ -45,29 +56,67 @@ const getClientes = async (req, res) => {
             where.estado_cliente = { not: 'PENDIENTE' };
         }
 
-        // Obtener cantidad total y registros paginados con su plan
-        const [total, clientes] = await req.db.$transaction([
-            req.db.cliente.count({ where }),
-            req.db.cliente.findMany({
-                where,
-                skip,
-                take,
-                include: {
-                    categoria: true,
-                    plan: true
-                },
-                orderBy: {
-                    id: 'desc'
+        const { getMultiDisciplinaEnabled } = require('../config/multiDisciplinaCache');
+        const isMulti = await getMultiDisciplinaEnabled(req.db);
+
+        const includeConfig = {
+            categoria: true,
+            plan: true,
+            ...(isMulti && {
+                clienteCategorias: {
+                    include: {
+                        categoria: true
+                    }
                 }
             })
-        ]);
+        };
+
+        // Obtener cantidad total y registros paginados con su plan
+        let total, clientes;
+        try {
+            [total, clientes] = await req.db.$transaction([
+                req.db.cliente.count({ where }),
+                req.db.cliente.findMany({
+                    where,
+                    skip,
+                    take,
+                    include: includeConfig,
+                    orderBy: {
+                        id: 'desc'
+                    }
+                })
+            ]);
+        } catch (dbErr) {
+            // Fallback de seguridad si la tabla puente aún no existe en la base (ej: migraciones pendientes)
+            if (dbErr.code === 'P2021' || dbErr.message?.includes('cliente_categorias')) {
+                console.warn('⚠️ [getClientes] Tabla cliente_categorias no disponible en base. Usando consulta simple.');
+                [total, clientes] = await req.db.$transaction([
+                    req.db.cliente.count({ where }),
+                    req.db.cliente.findMany({
+                        where,
+                        skip,
+                        take,
+                        include: {
+                            categoria: true,
+                            plan: true
+                        },
+                        orderBy: {
+                            id: 'desc'
+                        }
+                    })
+                ]);
+            } else {
+                throw dbErr;
+            }
+        }
 
         return res.status(200).json({
             success: true,
             data: {
                 clientes: clientes.map(c => ({
                     ...c,
-                    plan: c.plan || null
+                    plan: c.plan || null,
+                    categorias: mapCategoriasCliente(c)
                 })),
                 total,
                 page: p,
@@ -103,6 +152,7 @@ const createCliente = async (req, res) => {
             estado_cliente,
             es_socio,
             categoriaId,
+            categoriaIds,
             planId
         } = req.body;
 
@@ -143,45 +193,106 @@ const createCliente = async (req, res) => {
             defaultPassword = await bcrypt.hash('123456', 10);
         }
 
-        // Crear registro en la base de datos
-        let nuevoCliente = await req.db.cliente.create({
-            data: {
-                nombre,
-                apellido,
-                dni_cuit,
-                email: email || null,
-                telefono: telefono || null,
-                fecha_inicio: isSocio && fecha_inicio ? new Date(fecha_inicio) : null,
-                observaciones: observaciones || null,
-                estado_pago: estado_pago || 'ALDIA',
-                estado_cliente: estado_cliente || 'INACTIVO',
-                es_socio: isSocio,
-                categoriaId: categoriaId ? parseInt(categoriaId) : null,
-                planId: planId ? parseInt(planId) : null,
-                vencimientoCuota: initialVencimiento,
-                password: defaultPassword
-            },
-            include: {
-                categoria: true,
-                plan: true
+        // Normalizar disciplinas recibidas (preservando orden de selección del admin)
+        let normalizedCatIds = [];
+        if (Array.isArray(categoriaIds)) {
+            normalizedCatIds = categoriaIds.map(id => parseInt(id)).filter(id => !isNaN(id) && id > 0);
+        } else if (categoriaId) {
+            const parsed = parseInt(categoriaId);
+            if (!isNaN(parsed) && parsed > 0) normalizedCatIds.push(parsed);
+        }
+
+        // La categoría [0] es la principal y sincroniza con el campo legacy categoriaId
+        const finalCategoriaId = normalizedCatIds.length > 0
+            ? normalizedCatIds[0]
+            : (categoriaId ? parseInt(categoriaId) : null);
+
+        const { getMultiDisciplinaEnabled } = require('../config/multiDisciplinaCache');
+        const isMulti = await getMultiDisciplinaEnabled(req.db);
+
+        const includeConfig = {
+            categoria: true,
+            plan: true,
+            ...(isMulti && {
+                clienteCategorias: {
+                    include: {
+                        categoria: true
+                    }
+                }
+            })
+        };
+
+        const createData = {
+            nombre,
+            apellido,
+            dni_cuit,
+            email: email || null,
+            telefono: telefono || null,
+            fecha_inicio: isSocio && fecha_inicio ? new Date(fecha_inicio) : null,
+            observaciones: observaciones || null,
+            estado_pago: estado_pago || 'ALDIA',
+            estado_cliente: estado_cliente || 'INACTIVO',
+            es_socio: isSocio,
+            categoriaId: finalCategoriaId,
+            planId: planId ? parseInt(planId) : null,
+            vencimientoCuota: initialVencimiento,
+            password: defaultPassword,
+            ...(isMulti && normalizedCatIds.length > 0 && {
+                clienteCategorias: {
+                    create: normalizedCatIds.map(catId => ({
+                        categoriaId: catId
+                    }))
+                }
+            })
+        };
+
+        let nuevoCliente;
+        try {
+            nuevoCliente = await req.db.cliente.create({
+                data: createData,
+                include: includeConfig
+            });
+        } catch (dbErr) {
+            if (dbErr.code === 'P2021' || dbErr.message?.includes('cliente_categorias')) {
+                delete createData.clienteCategorias;
+                nuevoCliente = await req.db.cliente.create({
+                    data: createData,
+                    include: { categoria: true, plan: true }
+                });
+            } else {
+                throw dbErr;
             }
-        });
+        }
 
         // Si es socio, autogeneramos el código basado en su nuevo ID
         if (isSocio) {
-            nuevoCliente = await req.db.cliente.update({
-                where: { id: nuevoCliente.id },
-                data: { codigo_socio: String(nuevoCliente.id).padStart(4, '0') },
-                include: {
-                    categoria: true,
-                    plan: true
+            try {
+                nuevoCliente = await req.db.cliente.update({
+                    where: { id: nuevoCliente.id },
+                    data: { codigo_socio: String(nuevoCliente.id).padStart(4, '0') },
+                    include: includeConfig
+                });
+            } catch (dbErr) {
+                if (dbErr.code === 'P2021' || dbErr.message?.includes('cliente_categorias')) {
+                    nuevoCliente = await req.db.cliente.update({
+                        where: { id: nuevoCliente.id },
+                        data: { codigo_socio: String(nuevoCliente.id).padStart(4, '0') },
+                        include: { categoria: true, plan: true }
+                    });
+                } else {
+                    throw dbErr;
                 }
-            });
+            }
         }
+
+        const clienteResponse = {
+            ...nuevoCliente,
+            categorias: mapCategoriasCliente(nuevoCliente)
+        };
 
         return res.status(201).json({
             success: true,
-            data: nuevoCliente,
+            data: clienteResponse,
             message: 'Cliente creado con éxito'
         });
     } catch (error) {
@@ -231,6 +342,7 @@ const updateCliente = async (req, res) => {
             estado_cliente,
             es_socio,
             categoriaId,
+            categoriaIds,
             planId
         } = req.body;
 
@@ -300,26 +412,90 @@ const updateCliente = async (req, res) => {
             if (fecha_inicio !== undefined) updateData.fecha_inicio = fecha_inicio ? new Date(fecha_inicio) : null;
         }
 
-        if (categoriaId !== undefined) {
-            updateData.categoriaId = categoriaId ? parseInt(categoriaId) : null;
+        // Manejo de disciplinas (sincronizando categoriaId con la posición [0] según orden de selección)
+        let normalizedCatIds = null;
+        if (categoriaIds !== undefined) {
+            normalizedCatIds = Array.isArray(categoriaIds)
+                ? categoriaIds.map(cat => parseInt(cat)).filter(cat => !isNaN(cat) && cat > 0)
+                : [];
+            updateData.categoriaId = normalizedCatIds.length > 0 ? normalizedCatIds[0] : null;
+        } else if (categoriaId !== undefined) {
+            const parsed = categoriaId ? parseInt(categoriaId) : null;
+            updateData.categoriaId = parsed;
+            normalizedCatIds = parsed ? [parsed] : [];
         }
 
         if (planId !== undefined) {
             updateData.planId = planId ? parseInt(planId) : null;
         }
 
-        const clienteActualizado = await req.db.cliente.update({
-            where: { id },
-            data: updateData,
-            include: {
-                categoria: true,
-                plan: true
+        const { getMultiDisciplinaEnabled } = require('../config/multiDisciplinaCache');
+        const isMulti = await getMultiDisciplinaEnabled(req.db);
+
+        const includeConfig = {
+            categoria: true,
+            plan: true,
+            ...(isMulti && {
+                clienteCategorias: {
+                    include: {
+                        categoria: true
+                    }
+                }
+            })
+        };
+
+        let clienteActualizado;
+        if (isMulti && normalizedCatIds !== null) {
+            try {
+                clienteActualizado = await req.db.$transaction(async (tx) => {
+                    // Sincronizar tabla puente cliente_categorias
+                    await tx.clienteCategoria.deleteMany({
+                        where: { clienteId: id }
+                    });
+                    if (normalizedCatIds.length > 0) {
+                        await tx.clienteCategoria.createMany({
+                            data: normalizedCatIds.map(catId => ({
+                                clienteId: id,
+                                categoriaId: catId
+                            }))
+                        });
+                    }
+                    return await tx.cliente.update({
+                        where: { id },
+                        data: updateData,
+                        include: includeConfig
+                    });
+                });
+            } catch (dbErr) {
+                if (dbErr.code === 'P2021' || dbErr.message?.includes('cliente_categorias')) {
+                    clienteActualizado = await req.db.cliente.update({
+                        where: { id },
+                        data: updateData,
+                        include: { categoria: true, plan: true }
+                    });
+                } else {
+                    throw dbErr;
+                }
             }
-        });
+        } else {
+            clienteActualizado = await req.db.cliente.update({
+                where: { id },
+                data: updateData,
+                include: {
+                    categoria: true,
+                    plan: true
+                }
+            });
+        }
+
+        const clienteResponse = {
+            ...clienteActualizado,
+            categorias: mapCategoriasCliente(clienteActualizado)
+        };
 
         return res.status(200).json({
             success: true,
-            data: clienteActualizado,
+            data: clienteResponse,
             message: 'Cliente actualizado con éxito'
         });
     } catch (error) {
@@ -649,28 +825,50 @@ const resetFinanzasCliente = async (req, res) => {
 // GET /api/clientes/pendientes
 const getPendientes = async (req, res) => {
     try {
-        const pendientes = await req.db.cliente.findMany({
-            where: { estado_cliente: 'PENDIENTE' },
-            select: {
-                id: true,
-                nombre: true,
-                apellido: true,
-                dni_cuit: true,
-                email: true,
-                telefono: true,
-                fecha_inicio: true,
-                observaciones: true,
-                es_socio: true,
-                estado_cliente: true,
-                estado_pago: true,
-                origenSolicitud: true
-            },
-            orderBy: { id: 'desc' }
-        });
+        const { getMultiDisciplinaEnabled } = require('../config/multiDisciplinaCache');
+        const isMulti = await getMultiDisciplinaEnabled(req.db);
+
+        const includeConfig = {
+            categoria: true,
+            plan: true,
+            ...(isMulti && {
+                clienteCategorias: {
+                    include: {
+                        categoria: true
+                    }
+                }
+            })
+        };
+
+        let pendientes;
+        try {
+            pendientes = await req.db.cliente.findMany({
+                where: { estado_cliente: 'PENDIENTE' },
+                include: includeConfig,
+                orderBy: { id: 'desc' }
+            });
+        } catch (dbErr) {
+            if (dbErr.code === 'P2021' || dbErr.message?.includes('cliente_categorias')) {
+                console.warn('⚠️ [getPendientes] Tabla cliente_categorias no disponible en base. Fallback.');
+                pendientes = await req.db.cliente.findMany({
+                    where: { estado_cliente: 'PENDIENTE' },
+                    include: {
+                        categoria: true,
+                        plan: true
+                    },
+                    orderBy: { id: 'desc' }
+                });
+            } else {
+                throw dbErr;
+            }
+        }
         
         return res.status(200).json({
             success: true,
-            data: pendientes,
+            data: pendientes.map(p => ({
+                ...p,
+                categorias: mapCategoriasCliente(p)
+            })),
             message: 'Clientes pendientes obtenidos con éxito'
         });
     } catch (error) {
@@ -695,20 +893,99 @@ const aprobarCliente = async (req, res) => {
             });
         }
 
-        const { categoriaId, planId } = req.body;
-        
-        const clienteActualizado = await req.db.cliente.update({
-            where: { id },
-            data: {
-                estado_cliente: 'ACTIVO',
-                categoriaId: categoriaId ? parseInt(categoriaId) : null,
-                planId: planId ? parseInt(planId) : null
+        const { categoriaId, categoriaIds, planId } = req.body;
+
+        // Normalizar disciplinas recibidas
+        let normalizedCatIds = null;
+        if (categoriaIds !== undefined) {
+            normalizedCatIds = Array.isArray(categoriaIds)
+                ? categoriaIds.map(cat => parseInt(cat)).filter(cat => !isNaN(cat) && cat > 0)
+                : [];
+        } else if (categoriaId !== undefined) {
+            const parsed = categoriaId ? parseInt(categoriaId) : null;
+            normalizedCatIds = parsed ? [parsed] : [];
+        }
+
+        const finalCategoriaId = normalizedCatIds !== null
+            ? (normalizedCatIds.length > 0 ? normalizedCatIds[0] : null)
+            : (categoriaId ? parseInt(categoriaId) : null);
+
+        const { getMultiDisciplinaEnabled } = require('../config/multiDisciplinaCache');
+        const isMulti = await getMultiDisciplinaEnabled(req.db);
+
+        const includeConfig = {
+            categoria: true,
+            plan: true,
+            ...(isMulti && {
+                clienteCategorias: {
+                    include: {
+                        categoria: true
+                    }
+                }
+            })
+        };
+
+        let clienteActualizado;
+        if (isMulti && normalizedCatIds !== null) {
+            try {
+                clienteActualizado = await req.db.$transaction(async (tx) => {
+                    await tx.clienteCategoria.deleteMany({ where: { clienteId: id } });
+                    if (normalizedCatIds.length > 0) {
+                        await tx.clienteCategoria.createMany({
+                            data: normalizedCatIds.map(catId => ({
+                                clienteId: id,
+                                categoriaId: catId
+                            }))
+                        });
+                    }
+                    return await tx.cliente.update({
+                        where: { id },
+                        data: {
+                            estado_cliente: 'ACTIVO',
+                            categoriaId: finalCategoriaId,
+                            planId: planId ? parseInt(planId) : null
+                        },
+                        include: includeConfig
+                    });
+                });
+            } catch (dbErr) {
+                if (dbErr.code === 'P2021' || dbErr.message?.includes('cliente_categorias')) {
+                    clienteActualizado = await req.db.cliente.update({
+                        where: { id },
+                        data: {
+                            estado_cliente: 'ACTIVO',
+                            categoriaId: finalCategoriaId,
+                            planId: planId ? parseInt(planId) : null
+                        },
+                        include: { categoria: true, plan: true }
+                    });
+                } else {
+                    throw dbErr;
+                }
             }
-        });
+        } else {
+            clienteActualizado = await req.db.cliente.update({
+                where: { id },
+                data: {
+                    estado_cliente: 'ACTIVO',
+                    categoriaId: finalCategoriaId,
+                    planId: planId ? parseInt(planId) : null
+                },
+                include: {
+                    categoria: true,
+                    plan: true
+                }
+            });
+        }
+
+        const clienteResponse = {
+            ...clienteActualizado,
+            categorias: mapCategoriasCliente(clienteActualizado)
+        };
 
         return res.status(200).json({
             success: true,
-            data: clienteActualizado,
+            data: clienteResponse,
             message: 'Cliente aprobado con éxito'
         });
     } catch (error) {

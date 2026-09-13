@@ -1,6 +1,26 @@
 const prisma = require('../config/prisma');
 const { asegurarCargosAlDia, calcularCicloActual } = require('../services/cargos.service');
 
+// Helper para calcular Lunes 00:00:00 UTC y Domingo 23:59:59 UTC de la semana de cualquier fecha
+// sin sufrir distorsiones por zona horaria local del servidor
+function calcularRangoSemanaUTC(fechaStr) {
+    const isoStr = typeof fechaStr === 'string' ? fechaStr.split('T')[0] : new Date(fechaStr).toISOString().split('T')[0];
+    const [y, m, d] = isoStr.split('-').map(Number);
+    const targetUTC = new Date(Date.UTC(y, m - 1, d, 0, 0, 0, 0));
+    const dayOfWeek = targetUTC.getUTCDay(); // 0 = Dom, 1 = Lun, ..., 6 = Sab
+    const diffToMonday = dayOfWeek === 0 ? -6 : (1 - dayOfWeek);
+    
+    const lunes = new Date(targetUTC);
+    lunes.setUTCDate(targetUTC.getUTCDate() + diffToMonday);
+    lunes.setUTCHours(0, 0, 0, 0);
+    
+    const domingo = new Date(lunes);
+    domingo.setUTCDate(lunes.getUTCDate() + 6);
+    domingo.setUTCHours(23, 59, 59, 999);
+    
+    return { lunes, domingo };
+}
+
 // Obtener horarios disponibles para el socio
 const getClasesDisponibles = async (req, res) => {
     try {
@@ -228,17 +248,7 @@ const reservarTurno = async (req, res) => {
 
         // Validar límite dinámico global por configuración
         if (configuracion?.maxReservasSemana > 0) {
-            // Calcular Lunes y Domingo de la semana de la fecha solicitada
-            const diaSemana = d.getDay(); // 0 = Domingo, 1 = Lunes, etc.
-            const diffLunes = d.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
-            
-            const lunes = new Date(d);
-            lunes.setDate(diffLunes);
-            lunes.setUTCHours(0, 0, 0, 0);
-
-            const domingo = new Date(lunes);
-            domingo.setDate(lunes.getDate() + 6);
-            domingo.setUTCHours(23, 59, 59, 999);
+            const { lunes, domingo } = calcularRangoSemanaUTC(fechaExacta);
 
             const turnosSemana = await req.db.turnoCliente.count({
                 where: {
@@ -266,14 +276,7 @@ const reservarTurno = async (req, res) => {
             let rangoMsg = '';
 
             if (tipoFrec === 'SEMANAL') {
-                const diaSemana = d.getDay();
-                const diffLunes = d.getDate() - diaSemana + (diaSemana === 0 ? -6 : 1);
-                const lunes = new Date(d);
-                lunes.setDate(diffLunes);
-                lunes.setUTCHours(0, 0, 0, 0);
-                const domingo = new Date(lunes);
-                domingo.setDate(lunes.getDate() + 6);
-                domingo.setUTCHours(23, 59, 59, 999);
+                const { lunes, domingo } = calcularRangoSemanaUTC(fechaExacta);
 
                 const count = await req.db.turnoCliente.count({
                     where: { clienteId: parseInt(clienteId), fecha: { gte: lunes, lte: domingo } }

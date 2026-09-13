@@ -19,22 +19,29 @@ const Socios = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoriasList, setCategoriasList] = useState([]);
   const [planesList, setPlanesList] = useState([]);
+  const [multiDisciplinaHabilitado, setMultiDisciplinaHabilitado] = useState(false);
+  const [selectedCategoriaIds, setSelectedCategoriaIds] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Cargar categorías y planes
+  // Cargar categorías, planes y parámetros
   useEffect(() => {
     const fetchDatos = async () => {
       try {
-        const [resCat, resPlan] = await Promise.all([
+        const [resCat, resPlan, resParam] = await Promise.all([
           api.get('/api/categorias'),
-          api.get('/api/planes')
+          api.get('/api/planes'),
+          api.get('/api/parametros').catch(() => ({ data: { success: false } }))
         ]);
         if (resCat.data.success) {
           setCategoriasList(resCat.data.data);
         }
         if (resPlan.data.success) {
           setPlanesList(resPlan.data.data);
+        }
+        if (resParam.data?.success) {
+          const p = resParam.data.data.find(x => x.clave === 'multiDisciplinaHabilitado');
+          setMultiDisciplinaHabilitado(p?.valor === 'true');
         }
       } catch (err) {
         console.error('Error fetching datos:', err);
@@ -89,6 +96,16 @@ const Socios = () => {
   };
 
   const handleOpenEdit = (cliente) => {
+    const existingCatIds = [];
+    if (cliente.categoriaId) existingCatIds.push(Number(cliente.categoriaId));
+    if (cliente.categorias && Array.isArray(cliente.categorias)) {
+      cliente.categorias.forEach(c => {
+        const cid = Number(c.id || c);
+        if (!existingCatIds.includes(cid)) existingCatIds.push(cid);
+      });
+    }
+    setSelectedCategoriaIds(existingCatIds);
+
     setFormSocio({
       id: cliente.id,
       codigo_socio: cliente.codigo_socio,
@@ -98,7 +115,7 @@ const Socios = () => {
       email: cliente.email || '',
       telefono: cliente.telefono || '',
       fecha_inicio: cliente.fecha_inicio ? new Date(cliente.fecha_inicio).toISOString().split('T')[0] : '',
-      categoriaId: cliente.categoriaId || '',
+      categoriaId: existingCatIds.length > 0 ? existingCatIds[0] : (cliente.categoriaId || ''),
       planId: cliente.planId || '',
       observaciones: cliente.observaciones || ''
     });
@@ -106,10 +123,33 @@ const Socios = () => {
     setShowForm(true);
   };
 
+  const handleToggleCategoria = (catId) => {
+    const id = Number(catId);
+    setSelectedCategoriaIds(prev => {
+      let next;
+      if (prev.includes(id)) {
+        next = prev.filter(x => x !== id);
+      } else {
+        next = [...prev, id];
+      }
+      setFormSocio(f => ({ ...f, categoriaId: next.length > 0 ? next[0] : '' }));
+      return next;
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.put(`/api/clientes/${formSocio.id}`, formSocio);
+      const dataToSend = { ...formSocio };
+      if (multiDisciplinaHabilitado) {
+        dataToSend.categoriaIds = selectedCategoriaIds;
+        dataToSend.categoriaId = selectedCategoriaIds.length > 0 ? selectedCategoriaIds[0] : null;
+      } else {
+        dataToSend.categoriaId = formSocio.categoriaId ? parseInt(formSocio.categoriaId) : null;
+        dataToSend.categoriaIds = dataToSend.categoriaId ? [dataToSend.categoriaId] : [];
+      }
+
+      const res = await api.put(`/api/clientes/${formSocio.id}`, dataToSend);
       if (res.data.success) {
         setClientes(clientes.map(c => c.id === formSocio.id ? res.data.data : c));
         alert('¡Socio actualizado con éxito!');
@@ -214,9 +254,24 @@ const Socios = () => {
                     <td>{cliente.nombre}</td>
                     <td>{cliente.apellido}</td>
                     <td>
-                      <span className="etiqueta-plan-socio">
-                        {cliente.categoria?.nombre || 'Sin Categoría'}
-                      </span>
+                      {multiDisciplinaHabilitado && cliente.categorias && cliente.categorias.length > 0 ? (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          {cliente.categorias.map(cat => (
+                            <span key={cat.id} className="etiqueta-plan-socio" style={{
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontWeight: '600',
+                              fontSize: '0.8rem'
+                            }}>
+                              {cat.nombre}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="etiqueta-plan-socio">
+                          {cliente.categoria?.nombre || 'Sin Categoría'}
+                        </span>
+                      )}
                     </td>
                     <td>
                       <span className="etiqueta-plan-socio" style={{ backgroundColor: '#e6fcf5', color: '#0ca678' }}>
@@ -296,21 +351,91 @@ const Socios = () => {
                 <label htmlFor="dni_cuit">DNI / CUIT *</label>
                 <input type="text" id="dni_cuit" value={formSocio.dni_cuit} onChange={handleInputChange} required />
               </div>
-              <div className="grupo-entrada-socio">
-                <label htmlFor="categoriaId">Asignar Categoría / Actividad</label>
-                <select 
-                  id="categoriaId" 
-                  value={formSocio.categoriaId} 
-                  onChange={handleInputChange}
-                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
-                >
-                  <option value="">-- Sin Categoría (Selecciona una) --</option>
-                  {categoriasList.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.nombre}
-                    </option>
-                  ))}
-                </select>
+              <div className="grupo-entrada-socio" style={multiDisciplinaHabilitado ? { gridColumn: 'span 2' } : {}}>
+                <label htmlFor="categoriaId">
+                  {multiDisciplinaHabilitado ? "Disciplinas / Actividades (Multi-selección)" : "Asignar Categoría / Actividad"}
+                </label>
+                {multiDisciplinaHabilitado ? (
+                  <div style={{ marginTop: '6px' }}>
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                      gap: '8px',
+                      maxHeight: '160px',
+                      overflowY: 'auto',
+                      padding: '8px',
+                      border: '1px solid #ddd',
+                      borderRadius: '8px',
+                      backgroundColor: '#fafafa'
+                    }}>
+                      {categoriasList.map(c => {
+                        const isSelected = selectedCategoriaIds.includes(c.id);
+                        const isPrimary = selectedCategoriaIds.length > 0 && selectedCategoriaIds[0] === c.id;
+                        return (
+                          <label
+                            key={c.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              padding: '6px 8px',
+                              borderRadius: '6px',
+                              border: isSelected ? '1px solid var(--accent-blue, #00a8e8)' : '1px solid #e0e0e0',
+                              backgroundColor: isSelected ? '#f0f9ff' : '#fff',
+                              cursor: 'pointer',
+                              fontSize: '0.85rem'
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleCategoria(c.id)}
+                              style={{ accentColor: 'var(--accent-blue, #00a8e8)', cursor: 'pointer' }}
+                            />
+                            <span style={{ fontWeight: isSelected ? '600' : '400', color: isSelected ? '#0369a1' : '#333' }}>
+                              {c.nombre}
+                            </span>
+                            {isPrimary && (
+                              <span style={{
+                                marginLeft: 'auto',
+                                fontSize: '0.65rem',
+                                backgroundColor: 'var(--accent-blue, #00a8e8)',
+                                color: '#fff',
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                                fontWeight: '600'
+                              }}>
+                                Principal
+                              </span>
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {selectedCategoriaIds.length > 0 && (
+                      <small style={{ color: '#666', marginTop: '4px', display: 'block', fontSize: '0.78rem' }}>
+                        * La primera seleccionada (<strong>{categoriasList.find(c => c.id === selectedCategoriaIds[0])?.nombre}</strong>) se guarda como disciplina principal para Dashboard y Asignaciones.
+                      </small>
+                    )}
+                  </div>
+                ) : (
+                  <select 
+                    id="categoriaId" 
+                    value={formSocio.categoriaId} 
+                    onChange={(e) => {
+                      handleInputChange(e);
+                      setSelectedCategoriaIds(e.target.value ? [Number(e.target.value)] : []);
+                    }}
+                    style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
+                  >
+                    <option value="">-- Sin Categoría (Selecciona una) --</option>
+                    {categoriasList.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.nombre}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div className="grupo-entrada-socio">
                 <label htmlFor="fecha_inicio">Fecha Inicio</label>

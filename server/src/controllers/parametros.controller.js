@@ -31,6 +31,11 @@ const updateParametro = async (req, res) => {
             data: { valor }
         });
 
+        if (clave === 'multiDisciplinaHabilitado') {
+            const { invalidateMultiDisciplinaCache } = require('../config/multiDisciplinaCache');
+            invalidateMultiDisciplinaCache();
+        }
+
         return res.status(200).json({
             success: true,
             data: updated,

@@ -23,6 +23,8 @@ const ClientesTotales = () => {
   const [showRutinaGeneral, setShowRutinaGeneral] = useState(false);
   const [categoriasList, setCategoriasList] = useState([]);
   const [planesList, setPlanesList] = useState([]);
+  const [multiDisciplinaHabilitado, setMultiDisciplinaHabilitado] = useState(false);
+  const [selectedCategoriaIds, setSelectedCategoriaIds] = useState([]);
   const [busqueda, setBusqueda] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -40,19 +42,24 @@ const ClientesTotales = () => {
   const [estadoCuentaData, setEstadoCuentaData] = useState(null);
   const [loadingEstadoCuenta, setLoadingEstadoCuenta] = useState(false);
 
-  // Cargar categorías y planes
+  // Cargar categorías, planes y parámetros
   useEffect(() => {
     const fetchDatos = async () => {
       try {
-        const [resCat, resPlan] = await Promise.all([
+        const [resCat, resPlan, resParam] = await Promise.all([
           api.get('/api/categorias'),
-          api.get('/api/planes')
+          api.get('/api/planes'),
+          api.get('/api/parametros').catch(() => ({ data: { success: false } }))
         ]);
         if (resCat.data.success) {
           setCategoriasList(resCat.data.data);
         }
         if (resPlan.data.success) {
           setPlanesList(resPlan.data.data);
+        }
+        if (resParam.data?.success) {
+          const p = resParam.data.data.find(x => x.clave === 'multiDisciplinaHabilitado');
+          setMultiDisciplinaHabilitado(p?.valor === 'true');
         }
       } catch (err) {
         console.error('Error fetching datos:', err);
@@ -121,6 +128,16 @@ const ClientesTotales = () => {
 
   const handleAprobarPendiente = (cliente) => {
     setIsEditing(true);
+    const existingCatIds = [];
+    if (cliente.categoriaId) existingCatIds.push(Number(cliente.categoriaId));
+    if (cliente.categorias && Array.isArray(cliente.categorias)) {
+      cliente.categorias.forEach(c => {
+        const cid = Number(c.id || c);
+        if (!existingCatIds.includes(cid)) existingCatIds.push(cid);
+      });
+    }
+    setSelectedCategoriaIds(existingCatIds);
+
     setFormValues({
       id: cliente.id,
       nombre: cliente.nombre,
@@ -130,7 +147,7 @@ const ClientesTotales = () => {
       telefono: cliente.telefono || '',
       es_socio: cliente.es_socio || false,
       codigo_socio: cliente.codigo_socio || '',
-      categoriaId: cliente.categoriaId || '',
+      categoriaId: existingCatIds.length > 0 ? existingCatIds[0] : (cliente.categoriaId || ''),
       planId: cliente.planId || '',
       fecha_inicio: cliente.fecha_inicio ? new Date(cliente.fecha_inicio).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       observaciones: cliente.observaciones || '',
@@ -168,11 +185,22 @@ const ClientesTotales = () => {
   const handleNewCliente = () => {
     setIsEditing(false);
     resetForm();
+    setSelectedCategoriaIds([]);
     setShowForm(true);
   };
 
   const handleEdit = (cliente) => {
     setIsEditing(true);
+    const existingCatIds = [];
+    if (cliente.categoriaId) existingCatIds.push(Number(cliente.categoriaId));
+    if (cliente.categorias && Array.isArray(cliente.categorias)) {
+      cliente.categorias.forEach(c => {
+        const cid = Number(c.id || c);
+        if (!existingCatIds.includes(cid)) existingCatIds.push(cid);
+      });
+    }
+    setSelectedCategoriaIds(existingCatIds);
+
     setFormValues({
       id: cliente.id,
       nombre: cliente.nombre,
@@ -182,7 +210,7 @@ const ClientesTotales = () => {
       telefono: cliente.telefono || '',
       es_socio: cliente.es_socio || false,
       codigo_socio: cliente.codigo_socio || '',
-      categoriaId: cliente.categoriaId || '',
+      categoriaId: existingCatIds.length > 0 ? existingCatIds[0] : (cliente.categoriaId || ''),
       planId: cliente.planId || '',
       fecha_inicio: cliente.fecha_inicio ? new Date(cliente.fecha_inicio).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       observaciones: cliente.observaciones || '',
@@ -274,7 +302,22 @@ const ClientesTotales = () => {
   const handleCloseForm = () => {
     setShowForm(false);
     setIsEditing(false);
+    setSelectedCategoriaIds([]);
     resetForm();
+  };
+
+  const handleToggleCategoria = (catId) => {
+    const id = Number(catId);
+    setSelectedCategoriaIds(prev => {
+      let next;
+      if (prev.includes(id)) {
+        next = prev.filter(x => x !== id);
+      } else {
+        next = [...prev, id];
+      }
+      setFormValues(f => ({ ...f, categoriaId: next.length > 0 ? next[0] : '' }));
+      return next;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -293,6 +336,14 @@ const ClientesTotales = () => {
         dataToSave.codigo_socio = null;
         dataToSave.fecha_inicio = null;
         dataToSave.planId = null;
+      }
+
+      if (multiDisciplinaHabilitado) {
+        dataToSave.categoriaIds = selectedCategoriaIds;
+        dataToSave.categoriaId = selectedCategoriaIds.length > 0 ? selectedCategoriaIds[0] : null;
+      } else {
+        dataToSave.categoriaId = formValues.categoriaId ? parseInt(formValues.categoriaId) : null;
+        dataToSave.categoriaIds = dataToSave.categoriaId ? [dataToSave.categoriaId] : [];
       }
 
       if (isEditing) {
@@ -454,7 +505,22 @@ const ClientesTotales = () => {
                     <td>{cliente.apellido}</td>
                     <td>{cliente.dni_cuit}</td>
                     <td>
-                      {cliente.categoria ? (
+                      {multiDisciplinaHabilitado && cliente.categorias && cliente.categorias.length > 0 ? (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                          {cliente.categorias.map(cat => (
+                            <span key={cat.id} className="etiqueta-plan-socio" style={{
+                              backgroundColor: '#e1f0ff',
+                              color: 'var(--accent-blue)',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontWeight: '600',
+                              fontSize: '0.8rem'
+                            }}>
+                              {cat.nombre}
+                            </span>
+                          ))}
+                        </div>
+                      ) : cliente.categoria ? (
                         <span className="etiqueta-plan-socio" style={{
                           backgroundColor: '#e1f0ff',
                           color: 'var(--accent-blue)',
@@ -682,22 +748,92 @@ const ClientesTotales = () => {
                   </>
                 )}
 
-                <div className="grupo-campo">
-                  <label htmlFor="categoriaId">Asignar Categoría / Actividad</label>
-                  <select
-                    id="categoriaId"
-                    name="categoriaId"
-                    value={formValues.categoriaId}
-                    onChange={handleInputChange}
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
-                  >
-                    <option value="">-- Sin Categoría (Selecciona una) --</option>
-                    {categoriasList.map(c => (
-                      <option key={c.id} value={c.id}>
-                        {c.nombre}
-                      </option>
-                    ))}
-                  </select>
+                <div className="grupo-campo" style={multiDisciplinaHabilitado ? { gridColumn: 'span 2' } : {}}>
+                  <label htmlFor="categoriaId">
+                    {multiDisciplinaHabilitado ? "Disciplinas / Actividades (Multi-selección)" : "Asignar Categoría / Actividad"}
+                  </label>
+                  {multiDisciplinaHabilitado ? (
+                    <div style={{ marginTop: '6px' }}>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+                        gap: '8px',
+                        maxHeight: '160px',
+                        overflowY: 'auto',
+                        padding: '8px',
+                        border: '1px solid #ddd',
+                        borderRadius: '6px',
+                        backgroundColor: '#fafafa'
+                      }}>
+                        {categoriasList.map(c => {
+                          const isSelected = selectedCategoriaIds.includes(c.id);
+                          const isPrimary = selectedCategoriaIds.length > 0 && selectedCategoriaIds[0] === c.id;
+                          return (
+                            <label
+                              key={c.id}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '6px 8px',
+                                borderRadius: '6px',
+                                border: isSelected ? '1px solid var(--accent-blue, #00a8e8)' : '1px solid #e0e0e0',
+                                backgroundColor: isSelected ? '#f0f9ff' : '#fff',
+                                cursor: 'pointer',
+                                fontSize: '0.85rem'
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => handleToggleCategoria(c.id)}
+                                style={{ accentColor: 'var(--accent-blue, #00a8e8)', cursor: 'pointer' }}
+                              />
+                              <span style={{ fontWeight: isSelected ? '600' : '400', color: isSelected ? '#0369a1' : '#333' }}>
+                                {c.nombre}
+                              </span>
+                              {isPrimary && (
+                                <span style={{
+                                  marginLeft: 'auto',
+                                  fontSize: '0.65rem',
+                                  backgroundColor: 'var(--accent-blue, #00a8e8)',
+                                  color: '#fff',
+                                  padding: '1px 5px',
+                                  borderRadius: '4px',
+                                  fontWeight: '600'
+                                }}>
+                                  Principal
+                                </span>
+                              )}
+                            </label>
+                          );
+                        })}
+                      </div>
+                      {selectedCategoriaIds.length > 0 && (
+                        <small style={{ color: '#666', marginTop: '4px', display: 'block', fontSize: '0.78rem' }}>
+                          * La primera seleccionada (<strong>{categoriasList.find(c => c.id === selectedCategoriaIds[0])?.nombre}</strong>) se guarda como disciplina principal para Dashboard y Asignaciones.
+                        </small>
+                      )}
+                    </div>
+                  ) : (
+                    <select
+                      id="categoriaId"
+                      name="categoriaId"
+                      value={formValues.categoriaId}
+                      onChange={(e) => {
+                        handleInputChange(e);
+                        setSelectedCategoriaIds(e.target.value ? [Number(e.target.value)] : []);
+                      }}
+                      style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                    >
+                      <option value="">-- Sin Categoría (Selecciona una) --</option>
+                      {categoriasList.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
 

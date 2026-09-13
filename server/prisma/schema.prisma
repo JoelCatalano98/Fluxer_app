@@ -121,6 +121,7 @@ model Cliente {
   records          Record[]
   rutinas          Rutina[]
   turnosCliente    TurnoCliente[]
+  clienteCategorias ClienteCategoria[]
 
   @@index([categoriaId], map: "clientes_categoriaId_fkey")
   @@index([planId], map: "clientes_planId_fkey")
@@ -188,21 +189,37 @@ model TurnoCliente {
 }
 
 model Categoria {
-  id            Int             @id @default(autoincrement())
-  nombre        String
-  rubro_sector  String?
-  color         String?
-  activo        Boolean         @default(true)
-  cupoMaximo    Int?
-  profesionalId Int?
-  branchId      Int?
-  profesional   Profesional?    @relation(fields: [profesionalId], references: [id])
-  clientes      Cliente[]
-  horarios      HorarioConfig[]
+  id                Int                @id @default(autoincrement())
+  nombre            String
+  rubro_sector      String?
+  color             String?
+  activo            Boolean            @default(true)
+  cupoMaximo        Int?
+  profesionalId     Int?
+  branchId          Int?
+  profesional       Profesional?       @relation(fields: [profesionalId], references: [id])
+  clientes          Cliente[]
+  horarios          HorarioConfig[]
+  clienteCategorias ClienteCategoria[]
 
   @@index([profesionalId], map: "categorias_profesionalId_fkey")
   @@index([branchId], map: "categorias_branchId_idx")
   @@map("categorias")
+}
+
+model ClienteCategoria {
+  id          Int       @id @default(autoincrement())
+  clienteId   Int
+  categoriaId Int
+  createdAt   DateTime  @default(now())
+
+  cliente     Cliente   @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  categoria   Categoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+
+  @@unique([clienteId, categoriaId])
+  @@index([clienteId])
+  @@index([categoriaId])
+  @@map("cliente_categorias")
 }
 
 model Configuracion {

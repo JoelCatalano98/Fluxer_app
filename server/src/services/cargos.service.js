@@ -7,8 +7,8 @@ async function asegurarCargosAlDia(clienteId) {
     return await prisma.$transaction(async (tx) => {
         // Obtener la configuración financiera
         const config = await tx.configuracion.findFirst();
-        const diaMaximoCobro = config?.diaMaximoCobro || 10;
-        const recargoPorcentaje = config?.recargoPorcentaje || 10.0;
+        const diaMaximoCobro = config?.diaMaximoCobro ?? 10;
+        const recargoPorcentaje = config?.recargoPorcentaje ?? 10.0;
 
         // 1. Bloqueo pesimista: Obtiene lock exclusivo en InnoDB
         const clientesLock = await tx.$queryRaw`SELECT * FROM clientes WHERE id = ${idInt} FOR UPDATE`;

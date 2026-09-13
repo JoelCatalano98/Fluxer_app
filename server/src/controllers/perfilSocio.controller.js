@@ -22,13 +22,41 @@ const obtenerPerfil = async (req, res) => {
         const { asegurarCargosAlDia } = require('../services/cargos.service');
         const resultCargos = await asegurarCargosAlDia(id);
 
-        const cliente = await req.db.cliente.findUnique({
-            where: { id },
-            include: {
-                categoria: true,
-                plan: true
+        const { getMultiDisciplinaEnabled } = require('../config/multiDisciplinaCache');
+        const isMulti = await getMultiDisciplinaEnabled(req.db);
+
+        const includeConfig = {
+            categoria: true,
+            plan: true,
+            ...(isMulti && {
+                clienteCategorias: {
+                    include: {
+                        categoria: true
+                    }
+                }
+            })
+        };
+
+        let cliente;
+        try {
+            cliente = await req.db.cliente.findUnique({
+                where: { id },
+                include: includeConfig
+            });
+        } catch (dbErr) {
+            if (dbErr.code === 'P2021' || dbErr.message?.includes('cliente_categorias')) {
+                console.warn('⚠️ [obtenerPerfil] Tabla cliente_categorias no disponible en base. Fallback.');
+                cliente = await req.db.cliente.findUnique({
+                    where: { id },
+                    include: {
+                        categoria: true,
+                        plan: true
+                    }
+                });
+            } else {
+                throw dbErr;
             }
-        });
+        }
 
         if (!cliente) {
             return res.status(404).json({
@@ -37,8 +65,15 @@ const obtenerPerfil = async (req, res) => {
             });
         }
 
-        // Omitir el password de la respuesta
+        // Omitir el password de la respuesta y mapear lista de categorías
         const { password, ...clienteData } = cliente;
+        let listaCategorias = cliente.clienteCategorias && cliente.clienteCategorias.length > 0
+            ? cliente.clienteCategorias.map(cc => cc.categoria).filter(Boolean)
+            : (cliente.categoria ? [cliente.categoria] : []);
+        if (cliente.categoriaId && listaCategorias.length > 1) {
+            listaCategorias.sort((a, b) => (a.id === cliente.categoriaId ? -1 : b.id === cliente.categoriaId ? 1 : 0));
+        }
+        clienteData.categorias = listaCategorias;
 
         return res.status(200).json({
             success: true,
