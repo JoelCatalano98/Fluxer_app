@@ -21,6 +21,7 @@ async function main() {
     await upsertParam('cupoEstricto', 'Bloquear reservas si el cupo está lleno (en lugar de solo avisar en backend)', 'boolean', 'true');
     await upsertParam('multiSucursalHabilitado', 'Habilitar el módulo multi-sucursal', 'boolean', 'false');
     await upsertParam('multiDisciplinaHabilitado', 'Habilitar asignación de múltiples disciplinas por cliente', 'boolean', 'false');
+    await upsertParam('libroRutinasHabilitado', 'Habilitar el módulo de Libro de Rutinas', 'boolean', 'false');
 
     // Creación del usuario administrador inicial
     const existeAdmin = await prisma.usuario.findFirst({

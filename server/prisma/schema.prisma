@@ -122,6 +122,7 @@ model Cliente {
   rutinas          Rutina[]
   turnosCliente    TurnoCliente[]
   clienteCategorias ClienteCategoria[]
+  asignacionesRutina AsignacionRutinaLibro[]
 
   @@index([categoriaId], map: "clientes_categoriaId_fkey")
   @@index([planId], map: "clientes_planId_fkey")
@@ -420,4 +421,64 @@ enum EstadoCliente {
   ACTIVO
   INACTIVO
   PENDIENTE
+}
+
+// ─── LIBRO DE RUTINAS ────────────────────────────────────────────────────────
+
+model RutinaLibro {
+  id            Int      @id @default(autoincrement())
+  nombre        String
+  branchId      Int?
+  createdAt     DateTime @default(now())
+  activa        Boolean  @default(true)
+
+  fases         FaseLibro[]
+  asignaciones  AsignacionRutinaLibro[]
+}
+
+model FaseLibro {
+  id             Int         @id @default(autoincrement())
+  rutinaLibroId  Int
+  nombre         String
+  orden          Int
+
+  rutinaLibro    RutinaLibro @relation(fields: [rutinaLibroId], references: [id], onDelete: Cascade)
+  ejercicios     EjercicioLibro[]
+}
+
+model EjercicioLibro {
+  id              Int       @id @default(autoincrement())
+  faseLibroId     Int
+  nombreEjercicio String
+  series          Int
+  repeticiones    String
+  descanso        String?
+  pesoSugerido    String?
+  videoUrl        String?
+  notas           String?   @db.Text
+
+  fase            FaseLibro @relation(fields: [faseLibroId], references: [id], onDelete: Cascade)
+}
+
+model AsignacionRutinaLibro {
+  id              Int         @id @default(autoincrement())
+  clienteId       Int
+  rutinaLibroId   Int
+  faseActualId    Int?
+  estado          String      @default("activa") // "activa" | "completada"
+  fechaInicio     DateTime    @default(now())
+  fechaCompletada DateTime?
+
+  cliente         Cliente     @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  rutinaLibro     RutinaLibro @relation(fields: [rutinaLibroId], references: [id])
+  historialFases  HistorialFaseCompletada[]
+}
+
+model HistorialFaseCompletada {
+  id            Int                    @id @default(autoincrement())
+  asignacionId  Int
+  faseLibroId   Int
+  fechaCierre   DateTime               @default(now())
+
+  asignacion    AsignacionRutinaLibro  @relation(fields: [asignacionId], references: [id], onDelete: Cascade)
 }

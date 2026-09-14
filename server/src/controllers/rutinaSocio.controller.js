@@ -13,16 +13,21 @@ const obtenerRutinasSocio = async (req, res) => {
             return res.status(403).json({ success: false, message: 'No puedes ver las rutinas de otro usuario' });
         }
 
-        const rutinas = await req.db.rutina.findMany({
-            where: {
-                OR: [
-                    { clienteId: null },
-                    { clienteId: clienteId }
-                ]
-            },
+        // 1. Obtener rutinas viejas específicas
+        const rutinasViejasEspecificas = await req.db.rutina.findMany({
+            where: { clienteId: clienteId },
             include: { ejercicios: true },
             orderBy: { createdAt: 'desc' }
         });
+
+        // 2. Siempre traemos la rutina global general como acordado
+        const rutinasGlobales = await req.db.rutina.findMany({
+            where: { clienteId: null },
+            include: { ejercicios: true },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        const rutinas = [...rutinasViejasEspecificas, ...rutinasGlobales];
 
         return res.status(200).json({
             success: true,

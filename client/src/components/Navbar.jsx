@@ -29,6 +29,7 @@ const Navbar = ({ isOpen }) => {
   const [sociosHabilitado, setSociosHabilitado] = useState(false);
   const [qrHabilitado, setQrHabilitado] = useState(false);
   const [asignacionMasivaHabilitado, setAsignacionMasivaHabilitado] = useState(true);
+  const [libroRutinasHabilitado, setLibroRutinasHabilitado] = useState(false);
 
   const loadConfig = async () => {
     try {
@@ -54,6 +55,9 @@ const Navbar = ({ isOpen }) => {
 
         const paramAsignacion = resParams.data.data.find(p => p.clave === 'asignacionMasivaHabilitado');
         setAsignacionMasivaHabilitado(paramAsignacion ? paramAsignacion.valor === 'true' : true);
+
+        const paramLibroRutinas = resParams.data.data.find(p => p.clave === 'libroRutinasHabilitado');
+        setLibroRutinasHabilitado(paramLibroRutinas ? paramLibroRutinas.valor === 'true' : false);
       }
     } catch (err) {
       console.error('Error al cargar config en Navbar:', err);
@@ -107,6 +111,13 @@ const Navbar = ({ isOpen }) => {
                 <li>
                   <NavLink to="/turnos" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
                     Turnos / Horarios
+                  </NavLink>
+                </li>
+              )}
+              {libroRutinasHabilitado && (
+                <li>
+                  <NavLink to="/libro-rutinas" className={({ isActive }) => isActive ? 'active-link' : ''} style={{ textDecoration: 'none', color: 'inherit' }}>
+                    Libro de Rutinas
                   </NavLink>
                 </li>
               )}

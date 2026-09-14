@@ -21,6 +21,7 @@ import RankingAdmin from './pages/RankingAdmin';
 import Pagos from './pages/Pagos';
 import PagosYSueldos from './pages/PagosYSueldos';
 import LibroDiario from './pages/LibroDiario';
+import LibroRutinas from './pages/LibroRutinas';
 import Login from './pages/Login';
 import Calendario from './pages/Calendario';
 import Usuarios from './pages/Usuarios';
@@ -244,6 +245,7 @@ function AppContent() {
             <Route path="/pagos" element={<Pagos />} />
             <Route path="/sueldos" element={<PagosYSueldos />} />
             <Route path="/libro-diario" element={<LibroDiario />} />
+            <Route path="/libro-rutinas" element={<LibroRutinas />} />
             <Route path="/calendario" element={<Calendario />} />
             <Route path="/usuarios" element={<Usuarios />} />
             <Route path="/parametros" element={<Parametros />} />
