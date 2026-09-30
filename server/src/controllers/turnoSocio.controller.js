@@ -1,5 +1,6 @@
 const prisma = require('../config/prisma');
 const { asegurarCargosAlDia, calcularCicloActual } = require('../services/cargos.service');
+const { getOcultarInscriptosEnabled } = require('../config/ocultarInscriptosCache');
 
 // Helper para calcular Lunes 00:00:00 UTC y Domingo 23:59:59 UTC de la semana de cualquier fecha
 // sin sufrir distorsiones por zona horaria local del servidor
@@ -63,7 +64,11 @@ const getClasesDisponibles = async (req, res) => {
                 profesional: true,
                 turnos: {
                     where: { estado: 'ACTIVO' },
-                    include: { cliente: true }
+                    include: { 
+                        cliente: { 
+                            select: { nombre: true, apellido: true } 
+                        } 
+                    }
                 } // Solo trae turnos activos para el contador visual
             },
             orderBy: { hora_inicio: 'asc' }
@@ -99,9 +104,17 @@ const getClasesDisponibles = async (req, res) => {
         // Obtener configuración global para cupo máximo
         const configuracion = await req.db.configuracion.findFirst();
         const maxGlobal = configuracion?.cupoGlobal || 15;
+        
+        const ocultarInscriptos = await getOcultarInscriptosEnabled();
 
         // Formatear para facilitar uso en el front
         const horariosFormateados = horariosFiltradosPorBloqueo.map(h => {
+            const turnosProcesados = ocultarInscriptos ? h.turnos.map(t => {
+                const esPropio = req.user && req.user.id === t.clienteId;
+                const { cliente, clienteId, ...restoTurno } = t;
+                return { ...restoTurno, clienteId: esPropio ? t.clienteId : null };
+            }) : h.turnos;
+
             return {
                 id: h.id,
                 dia_semana: h.dia_semana,
@@ -110,12 +123,13 @@ const getClasesDisponibles = async (req, res) => {
                 categoriaId: h.categoriaId || h.categoria?.id || null,
                 categoria: h.categoria,
                 cupoMaximo: h.cupo_maximo ?? maxGlobal,
-                turnos: h.turnos
+                turnos: turnosProcesados
             };
         });
         
         return res.status(200).json({
             success: true,
+            ocultarInscriptos,
             data: horariosFormateados
         });
     } catch (error) {

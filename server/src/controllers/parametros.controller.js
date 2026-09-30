@@ -35,6 +35,10 @@ const updateParametro = async (req, res) => {
             const { invalidateMultiDisciplinaCache } = require('../config/multiDisciplinaCache');
             invalidateMultiDisciplinaCache();
         }
+        if (clave === 'ocultarInscriptosHabilitado') {
+            const { invalidateOcultarInscriptosCache } = require('../config/ocultarInscriptosCache');
+            invalidateOcultarInscriptosCache();
+        }
 
         return res.status(200).json({
             success: true,
