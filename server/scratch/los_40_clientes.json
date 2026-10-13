@@ -1,0 +1,362 @@
+[
+  {
+    "id": 6,
+    "alumno": "Patricia Carina Lluis",
+    "cuota": 35000,
+    "saldoAlCorteOriginal": 35000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $30000 (Cuota mensual - 09/2026); INGRESO $30000 (Aprobación de Pago / Cuota); INGRESO $35000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 7,
+    "alumno": "Jorgelina  Paz",
+    "cuota": 30000,
+    "saldoAlCorteOriginal": 55000,
+    "saldoAlCorteContaminada": 25000,
+    "movsCount": 4,
+    "movsResumen": "CARGO $30000 (Cuota mensual - 09/2026); INGRESO $25000 (Aprobación de Pago / Cuota); INGRESO $30000 (Aprobación de Pago / Cuota); INGRESO $30000 (Registro de Pago / Cuota)"
+  },
+  {
+    "id": 10,
+    "alumno": "Ruben Gómez",
+    "cuota": 30000,
+    "saldoAlCorteOriginal": 30000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $30000 (Cuota mensual - 09/2026); INGRESO $30000 (Registro de Pago / Cuota); INGRESO $30000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 14,
+    "alumno": "Anabela Gonzalez",
+    "cuota": 35000,
+    "saldoAlCorteOriginal": 35000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $50000 (Cuota mensual - 09/2026); INGRESO $50000 (Aprobación de Pago / Cuota); INGRESO $35000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 26,
+    "alumno": "Marisa Cotugno",
+    "cuota": 45000,
+    "saldoAlCorteOriginal": 70000,
+    "saldoAlCorteContaminada": 25000,
+    "movsCount": 4,
+    "movsResumen": "CARGO $40000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 32,
+    "alumno": "Susana Benitez",
+    "cuota": 60000,
+    "saldoAlCorteOriginal": 117000,
+    "saldoAlCorteContaminada": 57000,
+    "movsCount": 5,
+    "movsResumen": "CARGO $50000 (Cuota mensual - 09/2026); INGRESO $117000 (Aprobación de Pago / Cuota); INGRESO $80000 (Aprobación de Pago / Cuota); ANULACION $-80000 (Anulación de Pago #257); INGRESO $50000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 41,
+    "alumno": "Thiago Insaurralde",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 70000,
+    "saldoAlCorteContaminada": 30000,
+    "movsCount": 4,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $35000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 44,
+    "alumno": "Juan Diez",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 70000,
+    "saldoAlCorteContaminada": 30000,
+    "movsCount": 4,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $35000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 47,
+    "alumno": "brisa diez",
+    "cuota": 30000,
+    "saldoAlCorteOriginal": 30000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $30000 (Cuota mensual - 09/2026); INGRESO $30000 (Aprobación de Pago / Cuota); INGRESO $30000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 50,
+    "alumno": "María del Valle Granitto",
+    "cuota": 30000,
+    "saldoAlCorteOriginal": 35000,
+    "saldoAlCorteContaminada": 5000,
+    "movsCount": 4,
+    "movsResumen": "CARGO $30000 (Cuota mensual - 09/2026); INGRESO $30000 (Aprobación de Pago / Cuota); INGRESO $25000 (Aprobación de Pago / Cuota); INGRESO $10000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 51,
+    "alumno": "Jaqui Sánchez",
+    "cuota": 60000,
+    "saldoAlCorteOriginal": 62000,
+    "saldoAlCorteContaminada": 2000,
+    "movsCount": 3,
+    "movsResumen": "CARGO $50000 (Cuota mensual - 09/2026); INGRESO $52000 (Aprobación de Pago / Cuota); INGRESO $60000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 57,
+    "alumno": "Tomas Allione",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 58,
+    "alumno": "analia  vega",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Registro de Pago / Cuota)"
+  },
+  {
+    "id": 63,
+    "alumno": "Leonel Ferrari",
+    "cuota": 35000,
+    "saldoAlCorteOriginal": 35000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $30000 (Cuota mensual - 09/2026); INGRESO $30000 (Aprobación de Pago / Cuota); INGRESO $35000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 64,
+    "alumno": "Noelia Villafañe",
+    "cuota": 35000,
+    "saldoAlCorteOriginal": 35000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $30000 (Cuota mensual - 09/2026); INGRESO $30000 (Aprobación de Pago / Cuota); INGRESO $35000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 65,
+    "alumno": "Javier  Solis",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 67,
+    "alumno": "Veronica  Vazquez",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 75,
+    "alumno": "Mariana Azcarate",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $30000 (Cuota mensual - 09/2026); INGRESO $30000 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 79,
+    "alumno": "Mario pascual Dipente",
+    "cuota": 60000,
+    "saldoAlCorteOriginal": 60000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $55000 (Cuota mensual - 09/2026); INGRESO $55000 (Registro de Pago / Cuota); INGRESO $60000 (Registro de Pago / Cuota)"
+  },
+  {
+    "id": 84,
+    "alumno": "Mabel Garelli",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 85,
+    "alumno": "Miguel Gabella",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Registro de Pago / Cuota); INGRESO $40000 (Registro de Pago / Cuota)"
+  },
+  {
+    "id": 86,
+    "alumno": "Jose Luis Barrinat",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 95,
+    "alumno": "Georgina Maltomini",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 43000,
+    "saldoAlCorteContaminada": 3000,
+    "movsCount": 3,
+    "movsResumen": "CARGO $50000 (Cuota mensual - 09/2026); INGRESO $53000 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 97,
+    "alumno": "Norma Lenarduzzi",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Registro de Pago / Cuota)"
+  },
+  {
+    "id": 99,
+    "alumno": "Lucia Marquez",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Registro de Pago / Cuota)"
+  },
+  {
+    "id": 106,
+    "alumno": "Gabriela Bussutti",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 120,
+    "alumno": "Javier  Silvi",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 127,
+    "alumno": "Maria jose  Bertero",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 75000,
+    "saldoAlCorteContaminada": 35000,
+    "movsCount": 4,
+    "movsResumen": "CARGO $40000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 131,
+    "alumno": "ELISA BERTOSSI",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 138,
+    "alumno": "Sebastián  Zarate",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 4,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); RECARGO $5250 (Recargo por mora (15%) - 09/2026); INGRESO $40250 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 141,
+    "alumno": "Omar Barberis",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Registro de Pago / Cuota); INGRESO $40000 (Registro de Pago / Cuota)"
+  },
+  {
+    "id": 149,
+    "alumno": "andres barrinat",
+    "cuota": 30000,
+    "saldoAlCorteOriginal": 30000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $30000 (Cuota mensual - 09/2026); INGRESO $30000 (Aprobación de Pago / Cuota); INGRESO $30000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 153,
+    "alumno": "Omar Mangiaterra",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Registro de Pago / Cuota)"
+  },
+  {
+    "id": 156,
+    "alumno": "Laura Vergara",
+    "cuota": 60000,
+    "saldoAlCorteOriginal": 60000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $55000 (Cuota mensual - 09/2026); INGRESO $55000 (Registro de Pago / Cuota); INGRESO $60000 (Registro de Pago / Cuota)"
+  },
+  {
+    "id": 159,
+    "alumno": "Ezequiel  Galindez",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $40000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 164,
+    "alumno": "Yoli Maria Ada Cabrera (pascuale)",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 40000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Registro de Pago / Cuota); INGRESO $40000 (Registro de Pago / Cuota)"
+  },
+  {
+    "id": 165,
+    "alumno": "Hugo Santa cruz",
+    "cuota": 40000,
+    "saldoAlCorteOriginal": 70000,
+    "saldoAlCorteContaminada": 30000,
+    "movsCount": 4,
+    "movsResumen": "CARGO $35000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $35000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 169,
+    "alumno": "moio caetano",
+    "cuota": 30000,
+    "saldoAlCorteOriginal": 30000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $30000 (Cuota mensual - 09/2026); INGRESO $30000 (Aprobación de Pago / Cuota); INGRESO $30000 (Registro de Pago / Cuota)"
+  },
+  {
+    "id": 178,
+    "alumno": "delfina castaño",
+    "cuota": 8000,
+    "saldoAlCorteOriginal": 8000,
+    "saldoAlCorteContaminada": 0,
+    "movsCount": 3,
+    "movsResumen": "CARGO $8000 (Cuota mensual - 09/2026); INGRESO $8000 (Aprobación de Pago / Cuota); INGRESO $8000 (Aprobación de Pago / Cuota)"
+  },
+  {
+    "id": 181,
+    "alumno": "Facundo  carbajal",
+    "cuota": 30000,
+    "saldoAlCorteOriginal": 35000,
+    "saldoAlCorteContaminada": 5000,
+    "movsCount": 3,
+    "movsResumen": "CARGO $30000 (Cuota mensual - 09/2026); INGRESO $35000 (Aprobación de Pago / Cuota); INGRESO $30000 (Aprobación de Pago / Cuota)"
+  }
+]

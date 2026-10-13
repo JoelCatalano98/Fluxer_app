@@ -1,0 +1,17 @@
+clienteId,alumno,recargoId,categoria,motivo,cuota,saldo_al_corte,tolerancia,pagos_octubre,recargo,saldo_antes,saldo_post_recargo,bonificacion,saldo_despues,estado_antes,estado_despues,bloqueado_antes,bloqueado_despues,fecha_aprobacion_confiable
+114,"Dulce Cardozo",570,NO TOCAR,"Sin pagos registrados en octubre",35000,6000,5000,0,5250,-34250,-29000,0,-34250,MOROSO,MOROSO,true,true,NO
+49,"Florencia  Muñoz",574,NO TOCAR,"Sin pagos registrados en octubre",45000,0,5000,0,6750,-51750,-45000,0,-51750,MOROSO,MOROSO,true,true,NO
+133,"Brenda aimé  Zanabria",581,NO TOCAR,"Sin pagos registrados en octubre",40000,0,5000,0,6000,-46000,-40000,0,-46000,MOROSO,MOROSO,true,true,NO
+163,"Gabriela Garcia",585,NO TOCAR,"Sin pagos registrados en octubre",40000,0,5000,0,6000,-46000,-40000,0,-46000,MOROSO,MOROSO,true,true,NO
+23,"Donatella Zacconi",650,REVERTIR,"saldo_al_corte ($65000) >= cuota ($30000)",30000,65000,5000,2,4500,30500,35000,0,35000,ALDIA,ALDIA,false,false,NO
+101,"Adriana  Ballinari",651,REVERTIR,"saldo_al_corte ($40000) >= cuota ($40000)",40000,40000,5000,1,6000,-6000,0,0,0,MOROSO,ALDIA,true,false,NO
+152,"Carlitos Borri",652,REVERTIR,"saldo_al_corte ($40000) >= cuota ($40000)",40000,40000,5000,1,6000,-6000,0,0,0,MOROSO,ALDIA,true,false,NO
+194,"Marcela Vitale",653,REVERTIR,"saldo_al_corte ($30000) + tol ($5000) >= cuota ($35000)",35000,30000,5000,2,5250,-10250,-5000,5000,0,MOROSO,ALDIA,true,false,NO
+11,"Santi Perez",654,REVERTIR,"saldo_al_corte ($35000) + tol ($5000) >= cuota ($40000)",40000,35000,5000,1,6000,-11000,-5000,5000,0,MOROSO,ALDIA,true,false,NO
+52,"Romina Gomez",655,REVERTIR,"saldo_al_corte ($35000) + tol ($5000) >= cuota ($40000)",40000,35000,5000,2,6000,24000,30000,0,30000,ALDIA,ALDIA,false,false,NO
+36,"Analia  Rios",656,REVERTIR,"saldo_al_corte ($35000) >= cuota ($35000)",35000,35000,5000,1,5250,-5250,0,0,0,MOROSO,ALDIA,true,false,NO
+93,"Ines Vergara",657,REVERTIR,"saldo_al_corte ($35000) >= cuota ($35000)",35000,35000,5000,1,5250,-5250,0,0,0,MOROSO,ALDIA,true,false,NO
+76,"Daniela  Orellano",658,REVERTIR,"saldo_al_corte ($90000) >= cuota ($45000)",45000,90000,5000,1,6750,38250,45000,0,45000,ALDIA,ALDIA,false,false,NO
+43,"Nahuel  Lozano",659,REVERTIR,"saldo_al_corte ($35000) + tol ($5000) >= cuota ($40000)",40000,35000,5000,1,6000,24000,30000,0,30000,ALDIA,ALDIA,false,false,NO
+142,"Sol Guerediaga",660,REVERTIR,"saldo_al_corte ($70000) >= cuota ($35000)",35000,70000,5000,2,5250,29750,35000,0,35000,ALDIA,ALDIA,false,false,NO
+161,"Vicky Monacci",661,REVERTIR,"saldo_al_corte ($35000) >= cuota ($35000)",35000,35000,5000,1,5250,-5250,0,0,0,MOROSO,ALDIA,true,false,NO

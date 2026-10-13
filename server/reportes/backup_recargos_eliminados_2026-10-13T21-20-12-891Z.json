@@ -1,0 +1,1304 @@
+{
+  "metadata": {
+    "timestamp": "2026-10-13T21-20-12-891Z",
+    "dbName": "fluxer_auditoria",
+    "tolerancia": 5000,
+    "totalRevertidos": 12
+  },
+  "items": [
+    {
+      "clienteId": 23,
+      "alumno": "Donatella Zacconi",
+      "recargoData": {
+        "id": 650,
+        "monto": 4500,
+        "tipo": "RECARGO",
+        "descripcion": "Recargo por mora (15%) - 10/2026",
+        "fecha": "2026-10-10T00:00:00.000Z",
+        "clienteId": 23,
+        "pagoId": null,
+        "branchId": null,
+        "cliente": {
+          "id": 23,
+          "codigo_socio": "0023",
+          "nombre": "Donatella",
+          "apellido": "Zacconi",
+          "dni_cuit": "50760009",
+          "email": "donatella.eva.zacconi@gmail.com",
+          "telefono": "3412798020",
+          "fecha_inicio": "2026-09-10T00:00:00.000Z",
+          "observaciones": null,
+          "estado_pago": "ALDIA",
+          "estado_cliente": "ACTIVO",
+          "es_socio": true,
+          "categoriaId": 1,
+          "planId": 8,
+          "password": "$2b$10$gzMyd400LgniF0YnzJsRIeQ4Qrx7pmVYe/INlauCIufZ6VJHH073.",
+          "vencimientoCuota": "2026-11-10T00:00:00.000Z",
+          "saldo": 30500,
+          "origenSolicitud": "NUEVO",
+          "branchId": null,
+          "plan": {
+            "id": 8,
+            "nombre": "MUSCULACIÓN LIBRE x3",
+            "etiqueta": null,
+            "precio": "30000",
+            "frecuencia": "Mensual",
+            "tipoFrecuencia": "SEMANAL",
+            "cantidadClases": 3,
+            "caracteristicas": null,
+            "activo": true,
+            "codigo": "#PLN-008",
+            "observaciones": null
+          },
+          "movimientocuenta": [
+            {
+              "id": 51,
+              "monto": 30000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 09/2026",
+              "fecha": "2026-09-12T00:00:00.000Z",
+              "clienteId": 23,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 52,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-09-12T15:15:25.419Z",
+              "clienteId": 23,
+              "pagoId": 27,
+              "branchId": null
+            },
+            {
+              "id": 483,
+              "monto": 30000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-10-07T15:51:23.007Z",
+              "clienteId": 23,
+              "pagoId": 289,
+              "branchId": null
+            },
+            {
+              "id": 484,
+              "monto": 30000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-10-07T15:51:23.151Z",
+              "clienteId": 23,
+              "pagoId": 289,
+              "branchId": null
+            },
+            {
+              "id": 552,
+              "monto": 30000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 23,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 650,
+              "monto": 4500,
+              "tipo": "RECARGO",
+              "descripcion": "Recargo por mora (15%) - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 23,
+              "pagoId": null,
+              "branchId": null
+            }
+          ]
+        }
+      },
+      "bonificacionData": null
+    },
+    {
+      "clienteId": 101,
+      "alumno": "Adriana  Ballinari",
+      "recargoData": {
+        "id": 651,
+        "monto": 6000,
+        "tipo": "RECARGO",
+        "descripcion": "Recargo por mora (15%) - 10/2026",
+        "fecha": "2026-10-10T00:00:00.000Z",
+        "clienteId": 101,
+        "pagoId": null,
+        "branchId": null,
+        "cliente": {
+          "id": 101,
+          "codigo_socio": "0101",
+          "nombre": "Adriana ",
+          "apellido": "Ballinari",
+          "dni_cuit": "13029691",
+          "email": "adrianaballinari1@gmail.com",
+          "telefono": "3412136253",
+          "fecha_inicio": "2026-09-17T00:00:00.000Z",
+          "observaciones": null,
+          "estado_pago": "MOROSO",
+          "estado_cliente": "ACTIVO",
+          "es_socio": true,
+          "categoriaId": 2,
+          "planId": 13,
+          "password": "$2b$10$t4yREl5TwaPgIM.IxuF8d.C84nu1k8clpcJ5wb9Wcxdk.CA8oXnhm",
+          "vencimientoCuota": "2026-11-10T00:00:00.000Z",
+          "saldo": -6000,
+          "origenSolicitud": "NUEVO",
+          "branchId": null,
+          "plan": {
+            "id": 13,
+            "nombre": "PILATES X 2",
+            "etiqueta": null,
+            "precio": "40000",
+            "frecuencia": "Mensual",
+            "tipoFrecuencia": "SEMANAL",
+            "cantidadClases": null,
+            "caracteristicas": null,
+            "activo": true,
+            "codigo": "#PLN-013",
+            "observaciones": null
+          },
+          "movimientocuenta": [
+            {
+              "id": 172,
+              "monto": 35000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 09/2026",
+              "fecha": "2026-09-17T00:00:00.000Z",
+              "clienteId": 101,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 173,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-09-17T20:23:32.704Z",
+              "clienteId": 101,
+              "pagoId": 95,
+              "branchId": null
+            },
+            {
+              "id": 350,
+              "monto": 40000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-10-01T10:56:38.359Z",
+              "clienteId": 101,
+              "pagoId": 180,
+              "branchId": null
+            },
+            {
+              "id": 554,
+              "monto": 40000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 101,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 651,
+              "monto": 6000,
+              "tipo": "RECARGO",
+              "descripcion": "Recargo por mora (15%) - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 101,
+              "pagoId": null,
+              "branchId": null
+            }
+          ]
+        }
+      },
+      "bonificacionData": null
+    },
+    {
+      "clienteId": 152,
+      "alumno": "Carlitos Borri",
+      "recargoData": {
+        "id": 652,
+        "monto": 6000,
+        "tipo": "RECARGO",
+        "descripcion": "Recargo por mora (15%) - 10/2026",
+        "fecha": "2026-10-10T00:00:00.000Z",
+        "clienteId": 152,
+        "pagoId": null,
+        "branchId": null,
+        "cliente": {
+          "id": 152,
+          "codigo_socio": "0152",
+          "nombre": "Carlitos",
+          "apellido": "Borri",
+          "dni_cuit": "20494613",
+          "email": "borricarlitos@gmail.com",
+          "telefono": "3466405260",
+          "fecha_inicio": "2026-09-23T00:00:00.000Z",
+          "observaciones": null,
+          "estado_pago": "MOROSO",
+          "estado_cliente": "ACTIVO",
+          "es_socio": true,
+          "categoriaId": 2,
+          "planId": 13,
+          "password": "$2b$10$9CSHVMJReNndE0p7nmrhV.ryJyZIN/eC84dTKQWsT3Np1D2KRlsfm",
+          "vencimientoCuota": "2026-11-10T00:00:00.000Z",
+          "saldo": -6000,
+          "origenSolicitud": "NUEVO",
+          "branchId": null,
+          "plan": {
+            "id": 13,
+            "nombre": "PILATES X 2",
+            "etiqueta": null,
+            "precio": "40000",
+            "frecuencia": "Mensual",
+            "tipoFrecuencia": "SEMANAL",
+            "cantidadClases": null,
+            "caracteristicas": null,
+            "activo": true,
+            "codigo": "#PLN-013",
+            "observaciones": null
+          },
+          "movimientocuenta": [
+            {
+              "id": 247,
+              "monto": 35000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 09/2026",
+              "fecha": "2026-09-23T00:00:00.000Z",
+              "clienteId": 152,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 248,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-09-23T21:04:48.615Z",
+              "clienteId": 152,
+              "pagoId": 132,
+              "branchId": null
+            },
+            {
+              "id": 523,
+              "monto": 40000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-10-09T21:12:53.045Z",
+              "clienteId": 152,
+              "pagoId": 328,
+              "branchId": null
+            },
+            {
+              "id": 556,
+              "monto": 40000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 152,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 652,
+              "monto": 6000,
+              "tipo": "RECARGO",
+              "descripcion": "Recargo por mora (15%) - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 152,
+              "pagoId": null,
+              "branchId": null
+            }
+          ]
+        }
+      },
+      "bonificacionData": null
+    },
+    {
+      "clienteId": 194,
+      "alumno": "Marcela Vitale",
+      "recargoData": {
+        "id": 653,
+        "monto": 5250,
+        "tipo": "RECARGO",
+        "descripcion": "Recargo por mora (15%) - 10/2026",
+        "fecha": "2026-10-10T00:00:00.000Z",
+        "clienteId": 194,
+        "pagoId": null,
+        "branchId": null,
+        "cliente": {
+          "id": 194,
+          "codigo_socio": "0194",
+          "nombre": "Marcela",
+          "apellido": "Vitale",
+          "dni_cuit": "31342071",
+          "email": "ideasretazosideas@gmail.com",
+          "telefono": "3402577625",
+          "fecha_inicio": "2026-10-06T00:00:00.000Z",
+          "observaciones": null,
+          "estado_pago": "MOROSO",
+          "estado_cliente": "ACTIVO",
+          "es_socio": true,
+          "categoriaId": 3,
+          "planId": 3,
+          "password": "$2b$10$kv8LKSRcmTON/RD1i3Uvbu9MzOxG4HtO3U9v3Xw74/pxCu0PhGhKW",
+          "vencimientoCuota": "2026-11-10T00:00:00.000Z",
+          "saldo": -10250,
+          "origenSolicitud": "NUEVO",
+          "branchId": null,
+          "plan": {
+            "id": 3,
+            "nombre": "ENTRENAMIENTO GUIADO X 2",
+            "etiqueta": null,
+            "precio": "35000",
+            "frecuencia": "Mensual",
+            "tipoFrecuencia": "SEMANAL",
+            "cantidadClases": 2,
+            "caracteristicas": null,
+            "activo": true,
+            "codigo": "#PLN-003",
+            "observaciones": null
+          },
+          "movimientocuenta": [
+            {
+              "id": 333,
+              "monto": 40000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 09/2026",
+              "fecha": "2026-09-30T00:00:00.000Z",
+              "clienteId": 194,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 507,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-10-08T22:03:27.569Z",
+              "clienteId": 194,
+              "pagoId": 309,
+              "branchId": null
+            },
+            {
+              "id": 508,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-10-08T22:03:28.424Z",
+              "clienteId": 194,
+              "pagoId": 309,
+              "branchId": null
+            },
+            {
+              "id": 558,
+              "monto": 35000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 194,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 653,
+              "monto": 5250,
+              "tipo": "RECARGO",
+              "descripcion": "Recargo por mora (15%) - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 194,
+              "pagoId": null,
+              "branchId": null
+            }
+          ]
+        }
+      },
+      "bonificacionData": {
+        "id": 662,
+        "monto": 5000,
+        "tipo": "BONIFICACION",
+        "descripcion": "Bonificación diferencia aumento/ajuste 10/2026 - corrección",
+        "fecha": "2026-10-13T21:20:13.161Z"
+      }
+    },
+    {
+      "clienteId": 11,
+      "alumno": "Santi Perez",
+      "recargoData": {
+        "id": 654,
+        "monto": 6000,
+        "tipo": "RECARGO",
+        "descripcion": "Recargo por mora (15%) - 10/2026",
+        "fecha": "2026-10-10T00:00:00.000Z",
+        "clienteId": 11,
+        "pagoId": null,
+        "branchId": null,
+        "cliente": {
+          "id": 11,
+          "codigo_socio": "0011",
+          "nombre": "Santi",
+          "apellido": "Perez",
+          "dni_cuit": "49639149",
+          "email": "santiagoandresperez.49@gmail.com",
+          "telefono": "543466415545",
+          "fecha_inicio": "2026-09-08T00:00:00.000Z",
+          "observaciones": null,
+          "estado_pago": "MOROSO",
+          "estado_cliente": "ACTIVO",
+          "es_socio": true,
+          "categoriaId": 1,
+          "planId": 2,
+          "password": "$2b$10$UWeaSim8Z9aKcGFs9Ap/EOPlX4UXO3l.fm73dfNpdEn7Lk4Aqg5m.",
+          "vencimientoCuota": "2026-11-10T00:00:00.000Z",
+          "saldo": -11000,
+          "origenSolicitud": "NUEVO",
+          "branchId": null,
+          "plan": {
+            "id": 2,
+            "nombre": "MUSCULACIÓN LIBRE x 5",
+            "etiqueta": null,
+            "precio": "40000",
+            "frecuencia": "Mensual",
+            "tipoFrecuencia": "SEMANAL",
+            "cantidadClases": 5,
+            "caracteristicas": null,
+            "activo": true,
+            "codigo": "#PLN-002",
+            "observaciones": null
+          },
+          "movimientocuenta": [
+            {
+              "id": 16,
+              "monto": 35000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 09/2026",
+              "fecha": "2026-09-08T00:00:00.000Z",
+              "clienteId": 11,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 17,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-09-08T21:48:44.934Z",
+              "clienteId": 11,
+              "pagoId": 8,
+              "branchId": null
+            },
+            {
+              "id": 416,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-10-05T17:45:51.409Z",
+              "clienteId": 11,
+              "pagoId": 241,
+              "branchId": null
+            },
+            {
+              "id": 560,
+              "monto": 40000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 11,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 654,
+              "monto": 6000,
+              "tipo": "RECARGO",
+              "descripcion": "Recargo por mora (15%) - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 11,
+              "pagoId": null,
+              "branchId": null
+            }
+          ]
+        }
+      },
+      "bonificacionData": {
+        "id": 663,
+        "monto": 5000,
+        "tipo": "BONIFICACION",
+        "descripcion": "Bonificación diferencia aumento/ajuste 10/2026 - corrección",
+        "fecha": "2026-10-13T21:20:13.167Z"
+      }
+    },
+    {
+      "clienteId": 52,
+      "alumno": "Romina Gomez",
+      "recargoData": {
+        "id": 655,
+        "monto": 6000,
+        "tipo": "RECARGO",
+        "descripcion": "Recargo por mora (15%) - 10/2026",
+        "fecha": "2026-10-10T00:00:00.000Z",
+        "clienteId": 52,
+        "pagoId": null,
+        "branchId": null,
+        "cliente": {
+          "id": 52,
+          "codigo_socio": "0052",
+          "nombre": "Romina",
+          "apellido": "Gomez",
+          "dni_cuit": "33923690",
+          "email": "romigomez674@gmail.com",
+          "telefono": "3466402575",
+          "fecha_inicio": "2026-09-14T00:00:00.000Z",
+          "observaciones": null,
+          "estado_pago": "ALDIA",
+          "estado_cliente": "ACTIVO",
+          "es_socio": true,
+          "categoriaId": 3,
+          "planId": 4,
+          "password": "$2b$10$mMhI3LyaLykN6rkwj.C8GOeMMShcjA9QlDGcjQ4pP818B6s8Bx2TS",
+          "vencimientoCuota": "2026-11-10T00:00:00.000Z",
+          "saldo": 24000,
+          "origenSolicitud": "NUEVO",
+          "branchId": null,
+          "plan": {
+            "id": 4,
+            "nombre": "ENTRENAMIENTO GUIADO X 3",
+            "etiqueta": null,
+            "precio": "40000",
+            "frecuencia": "Mensual",
+            "tipoFrecuencia": "SEMANAL",
+            "cantidadClases": 3,
+            "caracteristicas": null,
+            "activo": true,
+            "codigo": "#PLN-004",
+            "observaciones": null
+          },
+          "movimientocuenta": [
+            {
+              "id": 93,
+              "monto": 35000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 09/2026",
+              "fecha": "2026-09-14T00:00:00.000Z",
+              "clienteId": 52,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 321,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-09-29T13:54:53.522Z",
+              "clienteId": 52,
+              "pagoId": 166,
+              "branchId": null
+            },
+            {
+              "id": 460,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Registro de Pago / Cuota",
+              "fecha": "2026-10-06T16:57:36.476Z",
+              "clienteId": 52,
+              "pagoId": 275,
+              "branchId": null
+            },
+            {
+              "id": 562,
+              "monto": 40000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 52,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 564,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-10-12T15:58:48.953Z",
+              "clienteId": 52,
+              "pagoId": 345,
+              "branchId": null
+            },
+            {
+              "id": 655,
+              "monto": 6000,
+              "tipo": "RECARGO",
+              "descripcion": "Recargo por mora (15%) - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 52,
+              "pagoId": null,
+              "branchId": null
+            }
+          ]
+        }
+      },
+      "bonificacionData": null
+    },
+    {
+      "clienteId": 36,
+      "alumno": "Analia  Rios",
+      "recargoData": {
+        "id": 656,
+        "monto": 5250,
+        "tipo": "RECARGO",
+        "descripcion": "Recargo por mora (15%) - 10/2026",
+        "fecha": "2026-10-10T00:00:00.000Z",
+        "clienteId": 36,
+        "pagoId": null,
+        "branchId": null,
+        "cliente": {
+          "id": 36,
+          "codigo_socio": "0036",
+          "nombre": "Analia ",
+          "apellido": "Rios",
+          "dni_cuit": "26657218",
+          "email": "analiavrios78@gmail.com",
+          "telefono": "3466403989",
+          "fecha_inicio": "2026-09-11T00:00:00.000Z",
+          "observaciones": null,
+          "estado_pago": "MOROSO",
+          "estado_cliente": "ACTIVO",
+          "es_socio": true,
+          "categoriaId": 3,
+          "planId": 3,
+          "password": "$2b$10$BPAfZQ39Nl9ymMTNA5zCBuzpvz6J952hBzhEzRVr8k5IMgrTeUR1K",
+          "vencimientoCuota": "2026-11-10T00:00:00.000Z",
+          "saldo": -5250,
+          "origenSolicitud": "NUEVO",
+          "branchId": null,
+          "plan": {
+            "id": 3,
+            "nombre": "ENTRENAMIENTO GUIADO X 2",
+            "etiqueta": null,
+            "precio": "35000",
+            "frecuencia": "Mensual",
+            "tipoFrecuencia": "SEMANAL",
+            "cantidadClases": 2,
+            "caracteristicas": null,
+            "activo": true,
+            "codigo": "#PLN-003",
+            "observaciones": null
+          },
+          "movimientocuenta": [
+            {
+              "id": 42,
+              "monto": 30000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 09/2026",
+              "fecha": "2026-09-11T00:00:00.000Z",
+              "clienteId": 36,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 43,
+              "monto": 30000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-09-11T16:36:11.200Z",
+              "clienteId": 36,
+              "pagoId": 22,
+              "branchId": null
+            },
+            {
+              "id": 393,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-10-04T20:37:15.817Z",
+              "clienteId": 36,
+              "pagoId": 217,
+              "branchId": null
+            },
+            {
+              "id": 565,
+              "monto": 35000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 36,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 656,
+              "monto": 5250,
+              "tipo": "RECARGO",
+              "descripcion": "Recargo por mora (15%) - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 36,
+              "pagoId": null,
+              "branchId": null
+            }
+          ]
+        }
+      },
+      "bonificacionData": null
+    },
+    {
+      "clienteId": 93,
+      "alumno": "Ines Vergara",
+      "recargoData": {
+        "id": 657,
+        "monto": 5250,
+        "tipo": "RECARGO",
+        "descripcion": "Recargo por mora (15%) - 10/2026",
+        "fecha": "2026-10-10T00:00:00.000Z",
+        "clienteId": 93,
+        "pagoId": null,
+        "branchId": null,
+        "cliente": {
+          "id": 93,
+          "codigo_socio": "0093",
+          "nombre": "Ines",
+          "apellido": "Vergara",
+          "dni_cuit": "23022250",
+          "email": "inesvergara478@gmail.com",
+          "telefono": "3466410517",
+          "fecha_inicio": "2026-09-16T00:00:00.000Z",
+          "observaciones": null,
+          "estado_pago": "MOROSO",
+          "estado_cliente": "ACTIVO",
+          "es_socio": true,
+          "categoriaId": 3,
+          "planId": 3,
+          "password": "$2b$10$yZKjB7KXz7dycR7Vfx/zeufKcgP1u7TaQM2Yi3UiMP7rK/EeFmWQ.",
+          "vencimientoCuota": "2026-11-10T00:00:00.000Z",
+          "saldo": -5250,
+          "origenSolicitud": "NUEVO",
+          "branchId": null,
+          "plan": {
+            "id": 3,
+            "nombre": "ENTRENAMIENTO GUIADO X 2",
+            "etiqueta": null,
+            "precio": "35000",
+            "frecuencia": "Mensual",
+            "tipoFrecuencia": "SEMANAL",
+            "cantidadClases": 2,
+            "caracteristicas": null,
+            "activo": true,
+            "codigo": "#PLN-003",
+            "observaciones": null
+          },
+          "movimientocuenta": [
+            {
+              "id": 152,
+              "monto": 30000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 09/2026",
+              "fecha": "2026-09-16T00:00:00.000Z",
+              "clienteId": 93,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 155,
+              "monto": 30000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-09-17T10:28:55.892Z",
+              "clienteId": 93,
+              "pagoId": 79,
+              "branchId": null
+            },
+            {
+              "id": 403,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-10-05T14:12:34.544Z",
+              "clienteId": 93,
+              "pagoId": 228,
+              "branchId": null
+            },
+            {
+              "id": 567,
+              "monto": 35000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 93,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 657,
+              "monto": 5250,
+              "tipo": "RECARGO",
+              "descripcion": "Recargo por mora (15%) - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 93,
+              "pagoId": null,
+              "branchId": null
+            }
+          ]
+        }
+      },
+      "bonificacionData": null
+    },
+    {
+      "clienteId": 76,
+      "alumno": "Daniela  Orellano",
+      "recargoData": {
+        "id": 658,
+        "monto": 6750,
+        "tipo": "RECARGO",
+        "descripcion": "Recargo por mora (15%) - 10/2026",
+        "fecha": "2026-10-10T00:00:00.000Z",
+        "clienteId": 76,
+        "pagoId": null,
+        "branchId": null,
+        "cliente": {
+          "id": 76,
+          "codigo_socio": "0076",
+          "nombre": "Daniela ",
+          "apellido": "Orellano",
+          "dni_cuit": "27400536371",
+          "email": "orellanodani271@gmail.com",
+          "telefono": "3476206621",
+          "fecha_inicio": "2026-09-15T00:00:00.000Z",
+          "observaciones": null,
+          "estado_pago": "ALDIA",
+          "estado_cliente": "ACTIVO",
+          "es_socio": true,
+          "categoriaId": 3,
+          "planId": 5,
+          "password": "$2b$10$C9FABJcU08zJnq8W7so09umTF7GuVHixX4f31BszqsNbQo3x/b5Xy",
+          "vencimientoCuota": "2026-11-10T00:00:00.000Z",
+          "saldo": 38250,
+          "origenSolicitud": "NUEVO",
+          "branchId": null,
+          "plan": {
+            "id": 5,
+            "nombre": "ENTRENAMIENTO GUIADO X 4",
+            "etiqueta": null,
+            "precio": "45000",
+            "frecuencia": "Mensual",
+            "tipoFrecuencia": "SEMANAL",
+            "cantidadClases": 4,
+            "caracteristicas": null,
+            "activo": true,
+            "codigo": "#PLN-005",
+            "observaciones": null
+          },
+          "movimientocuenta": [
+            {
+              "id": 117,
+              "monto": 40000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 09/2026",
+              "fecha": "2026-09-15T00:00:00.000Z",
+              "clienteId": 76,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 118,
+              "monto": 40000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-09-15T12:30:30.508Z",
+              "clienteId": 76,
+              "pagoId": 61,
+              "branchId": null
+            },
+            {
+              "id": 119,
+              "monto": 40000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-09-15T12:30:32.921Z",
+              "clienteId": 76,
+              "pagoId": 60,
+              "branchId": null
+            },
+            {
+              "id": 120,
+              "monto": 40000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-09-15T12:30:33.482Z",
+              "clienteId": 76,
+              "pagoId": 60,
+              "branchId": null
+            },
+            {
+              "id": 121,
+              "monto": -40000,
+              "tipo": "ANULACION",
+              "descripcion": "Anulación de Pago #60",
+              "fecha": "2026-09-15T12:30:50.704Z",
+              "clienteId": 76,
+              "pagoId": 60,
+              "branchId": null
+            },
+            {
+              "id": 406,
+              "monto": 50000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-10-05T14:22:36.674Z",
+              "clienteId": 76,
+              "pagoId": 231,
+              "branchId": null
+            },
+            {
+              "id": 571,
+              "monto": 45000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 76,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 658,
+              "monto": 6750,
+              "tipo": "RECARGO",
+              "descripcion": "Recargo por mora (15%) - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 76,
+              "pagoId": null,
+              "branchId": null
+            }
+          ]
+        }
+      },
+      "bonificacionData": null
+    },
+    {
+      "clienteId": 43,
+      "alumno": "Nahuel  Lozano",
+      "recargoData": {
+        "id": 659,
+        "monto": 6000,
+        "tipo": "RECARGO",
+        "descripcion": "Recargo por mora (15%) - 10/2026",
+        "fecha": "2026-10-10T00:00:00.000Z",
+        "clienteId": 43,
+        "pagoId": null,
+        "branchId": null,
+        "cliente": {
+          "id": 43,
+          "codigo_socio": "0043",
+          "nombre": "Nahuel ",
+          "apellido": "Lozano",
+          "dni_cuit": "40702839",
+          "email": "nahuelkx@hotmail.com",
+          "telefono": "3466405099",
+          "fecha_inicio": "2026-09-12T00:00:00.000Z",
+          "observaciones": null,
+          "estado_pago": "ALDIA",
+          "estado_cliente": "ACTIVO",
+          "es_socio": true,
+          "categoriaId": 1,
+          "planId": 2,
+          "password": "$2b$10$TdSeP7BR6NbFAp9naiBZju7DlbZgD/2X42pMm9cY.C2f8kIkeRBnC",
+          "vencimientoCuota": "2026-11-10T00:00:00.000Z",
+          "saldo": 24000,
+          "origenSolicitud": "NUEVO",
+          "branchId": null,
+          "plan": {
+            "id": 2,
+            "nombre": "MUSCULACIÓN LIBRE x 5",
+            "etiqueta": null,
+            "precio": "40000",
+            "frecuencia": "Mensual",
+            "tipoFrecuencia": "SEMANAL",
+            "cantidadClases": 5,
+            "caracteristicas": null,
+            "activo": true,
+            "codigo": "#PLN-002",
+            "observaciones": null
+          },
+          "movimientocuenta": [
+            {
+              "id": 59,
+              "monto": 35000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 09/2026",
+              "fecha": "2026-09-12T00:00:00.000Z",
+              "clienteId": 43,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 63,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-09-12T17:20:33.562Z",
+              "clienteId": 43,
+              "pagoId": 33,
+              "branchId": null
+            },
+            {
+              "id": 64,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-09-12T17:20:36.429Z",
+              "clienteId": 43,
+              "pagoId": 32,
+              "branchId": null
+            },
+            {
+              "id": 575,
+              "monto": 40000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 43,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 577,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-10-13T10:16:17.558Z",
+              "clienteId": 43,
+              "pagoId": 346,
+              "branchId": null
+            },
+            {
+              "id": 659,
+              "monto": 6000,
+              "tipo": "RECARGO",
+              "descripcion": "Recargo por mora (15%) - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 43,
+              "pagoId": null,
+              "branchId": null
+            }
+          ]
+        }
+      },
+      "bonificacionData": null
+    },
+    {
+      "clienteId": 142,
+      "alumno": "Sol Guerediaga",
+      "recargoData": {
+        "id": 660,
+        "monto": 5250,
+        "tipo": "RECARGO",
+        "descripcion": "Recargo por mora (15%) - 10/2026",
+        "fecha": "2026-10-10T00:00:00.000Z",
+        "clienteId": 142,
+        "pagoId": null,
+        "branchId": null,
+        "cliente": {
+          "id": 142,
+          "codigo_socio": "0142",
+          "nombre": "Sol",
+          "apellido": "Guerediaga ",
+          "dni_cuit": "39660812",
+          "email": "solguerediaga_96@hotmail.com",
+          "telefono": "3466459207",
+          "fecha_inicio": "2026-09-22T00:00:00.000Z",
+          "observaciones": null,
+          "estado_pago": "ALDIA",
+          "estado_cliente": "ACTIVO",
+          "es_socio": true,
+          "categoriaId": 3,
+          "planId": 3,
+          "password": "$2b$10$ODTEdgw2JcEgqG6S84UhG.QXhyL2w8JKvGKZgkl6EHn4ZJ2ATpvoK",
+          "vencimientoCuota": "2026-11-10T00:00:00.000Z",
+          "saldo": 29750,
+          "origenSolicitud": "NUEVO",
+          "branchId": null,
+          "plan": {
+            "id": 3,
+            "nombre": "ENTRENAMIENTO GUIADO X 2",
+            "etiqueta": null,
+            "precio": "35000",
+            "frecuencia": "Mensual",
+            "tipoFrecuencia": "SEMANAL",
+            "cantidadClases": 2,
+            "caracteristicas": null,
+            "activo": true,
+            "codigo": "#PLN-003",
+            "observaciones": null
+          },
+          "movimientocuenta": [
+            {
+              "id": 228,
+              "monto": 30000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 09/2026",
+              "fecha": "2026-09-22T00:00:00.000Z",
+              "clienteId": 142,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 287,
+              "monto": 30000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-09-25T01:36:36.375Z",
+              "clienteId": 142,
+              "pagoId": 150,
+              "branchId": null
+            },
+            {
+              "id": 475,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Registro de Pago / Cuota",
+              "fecha": "2026-10-06T22:22:27.726Z",
+              "clienteId": 142,
+              "pagoId": 284,
+              "branchId": null
+            },
+            {
+              "id": 488,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-10-07T17:02:06.806Z",
+              "clienteId": 142,
+              "pagoId": 292,
+              "branchId": null
+            },
+            {
+              "id": 578,
+              "monto": 35000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 142,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 660,
+              "monto": 5250,
+              "tipo": "RECARGO",
+              "descripcion": "Recargo por mora (15%) - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 142,
+              "pagoId": null,
+              "branchId": null
+            }
+          ]
+        }
+      },
+      "bonificacionData": null
+    },
+    {
+      "clienteId": 161,
+      "alumno": "Vicky Monacci",
+      "recargoData": {
+        "id": 661,
+        "monto": 5250,
+        "tipo": "RECARGO",
+        "descripcion": "Recargo por mora (15%) - 10/2026",
+        "fecha": "2026-10-10T00:00:00.000Z",
+        "clienteId": 161,
+        "pagoId": null,
+        "branchId": null,
+        "cliente": {
+          "id": 161,
+          "codigo_socio": "0161",
+          "nombre": "Vicky",
+          "apellido": "Monacci",
+          "dni_cuit": "35635273",
+          "email": "vickymonacci@gmail.com",
+          "telefono": "3466409036",
+          "fecha_inicio": "2026-09-24T00:00:00.000Z",
+          "observaciones": null,
+          "estado_pago": "MOROSO",
+          "estado_cliente": "ACTIVO",
+          "es_socio": true,
+          "categoriaId": 3,
+          "planId": 3,
+          "password": "$2b$10$.HdvyZ9WQHhCDv/nxmIk6ecmCFZ.Cpz.SBjgnNaEKr/R.0ja/hEka",
+          "vencimientoCuota": "2026-11-10T00:00:00.000Z",
+          "saldo": -5250,
+          "origenSolicitud": "NUEVO",
+          "branchId": null,
+          "plan": {
+            "id": 3,
+            "nombre": "ENTRENAMIENTO GUIADO X 2",
+            "etiqueta": null,
+            "precio": "35000",
+            "frecuencia": "Mensual",
+            "tipoFrecuencia": "SEMANAL",
+            "cantidadClases": 2,
+            "caracteristicas": null,
+            "activo": true,
+            "codigo": "#PLN-003",
+            "observaciones": null
+          },
+          "movimientocuenta": [
+            {
+              "id": 342,
+              "monto": 35000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 09/2026",
+              "fecha": "2026-09-30T00:00:00.000Z",
+              "clienteId": 161,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 344,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-09-30T23:44:37.531Z",
+              "clienteId": 161,
+              "pagoId": 175,
+              "branchId": null
+            },
+            {
+              "id": 461,
+              "monto": 35000,
+              "tipo": "INGRESO",
+              "descripcion": "Aprobación de Pago / Cuota",
+              "fecha": "2026-10-06T17:29:39.304Z",
+              "clienteId": 161,
+              "pagoId": 276,
+              "branchId": null
+            },
+            {
+              "id": 582,
+              "monto": 35000,
+              "tipo": "CARGO",
+              "descripcion": "Cuota mensual - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 161,
+              "pagoId": null,
+              "branchId": null
+            },
+            {
+              "id": 661,
+              "monto": 5250,
+              "tipo": "RECARGO",
+              "descripcion": "Recargo por mora (15%) - 10/2026",
+              "fecha": "2026-10-10T00:00:00.000Z",
+              "clienteId": 161,
+              "pagoId": null,
+              "branchId": null
+            }
+          ]
+        }
+      },
+      "bonificacionData": null
+    }
+  ]
+}

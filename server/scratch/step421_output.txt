@@ -1,0 +1,47 @@
+Created At: 2026-10-13T18:58:41-03:00
+Completed At: 2026-10-13T18:58:48-03:00
+
+				The command exited with code 0.
+				Output:
+				<truncated 5852 lines>
+│ 15      │ 50  │ 'María del Valle Granitto'          │ 30000 │ 1              │ 0              │ 500         │ 5000        │ 'ALDIA'      │ 'ALDIA'      │ '2026-12-10' │
+│ 16      │ 51  │ 'Jaqui Sánchez'                     │ 60000 │ 1              │ 0              │ -7000       │ 2000        │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 17      │ 56  │ 'Hernán  Me'                        │ 40000 │ 1              │ 0              │ 54000       │ 60000       │ 'ALDIA'      │ 'ALDIA'      │ '2026-12-10' │
+│ 18      │ 57  │ 'Tomas Allione'                     │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 19      │ 58  │ 'analia  vega'                      │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 20      │ 63  │ 'Leonel Ferrari'                    │ 35000 │ 1              │ 0              │ -5250       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 21      │ 64  │ 'Noelia Villafañe'                  │ 35000 │ 1              │ 0              │ -5250       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 22      │ 65  │ 'Javier  Solis'                     │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 23      │ 67  │ 'Veronica  Vazquez'                 │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 24      │ 75  │ 'Mariana Azcarate'                  │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 25      │ 79  │ 'Mario pascual Dipente'             │ 60000 │ 1              │ 0              │ -9000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 26      │ 84  │ 'Mabel Garelli'                     │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 27      │ 85  │ 'Miguel Gabella'                    │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 28      │ 86  │ 'Jose Luis Barrinat'                │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 29      │ 95  │ 'Georgina Maltomini'                │ 40000 │ 1              │ 0              │ -3000       │ 3000        │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 30      │ 97  │ 'Norma Lenarduzzi'                  │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 31      │ 98  │ 'Raquel  Castellan'                 │ 60000 │ 1              │ 0              │ 461000      │ 470000      │ 'ALDIA'      │ 'ALDIA'      │ '2026-12-10' │
+│ 32      │ 99  │ 'Lucia Marquez'                     │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 33      │ 106 │ 'Gabriela Bussutti'                 │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 34      │ 112 │ 'Leila Diaz'                        │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 35      │ 118 │ 'Milva Erika Rios'                  │ 35000 │ 1              │ 0              │ 29750       │ 35000       │ 'ALDIA'      │ 'ALDIA'      │ '2026-12-10' │
+│ 36      │ 120 │ 'Javier  Silvi'                     │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 37      │ 127 │ 'Maria jose  Bertero'               │ 40000 │ 1              │ 0              │ 29000       │ 35000       │ 'ALDIA'      │ 'ALDIA'      │ '2026-12-10' │
+│ 38      │ 131 │ 'ELISA BERTOSSI'                    │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 39      │ 134 │ 'Maria del mar  Vazquez'            │ 35000 │ 1              │ 0              │ -5250       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 40      │ 138 │ 'Sebastián  Zarate'                 │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 41      │ 141 │ 'Omar Barberis'                     │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 42      │ 149 │ 'andres barrinat'                   │ 30000 │ 1              │ 0              │ -4500       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 43      │ 153 │ 'Omar Mangiaterra'                  │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 44      │ 154 │ 'lorena vachino'                    │ 40000 │ 1              │ 0              │ 34000       │ 40000       │ 'ALDIA'      │ 'ALDIA'      │ '2026-12-10' │
+│ 45      │ 156 │ 'Laura Vergara'                     │ 60000 │ 1              │ 0              │ -9000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 46      │ 159 │ 'Ezequiel  Galindez'                │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 47      │ 164 │ 'Yoli Maria Ada Cabrera (pascuale)' │ 40000 │ 1              │ 0              │ -6000       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 48      │ 165 │ 'Hugo Santa cruz'                   │ 40000 │ 1              │ 0              │ 24000       │ 30000       │ 'ALDIA'      │ 'ALDIA'      │ '2026-12-10' │
+│ 49      │ 168 │ 'Noah Daniel Zelada'                │ 40000 │ 1              │ 0              │ 34000       │ 40000       │ 'ALDIA'      │ 'ALDIA'      │ '2026-12-10' │
+│ 50      │ 169 │ 'moio caetano'                      │ 30000 │ 1              │ 0              │ -4500       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 51      │ 178 │ 'delfina castaño'                   │ 8000  │ 1              │ 0              │ -1200       │ 0           │ 'MOROSO'     │ 'ALDIA'      │ '2026-12-10' │
+│ 52      │ 181 │ 'Facundo  carbajal'                 │ 30000 │ 1              │ 0              │ 500         │ 5000        │ 'ALDIA'      │ 'ALDIA'      │ '2026-12-10' │
+│ 53      │ 203 │ 'Antonella Riccobello'              │ 35000 │ 1              │ 0              │ 54750       │ 60000       │ 'ALDIA'      │ 'ALDIA'      │ '2026-12-10' │
+└─────────┴─────┴─────────────────────────────────────┴───────┴────────────────┴────────────────┴─────────────┴─────────────┴──────────────┴──────────────┴──────────────┘
+

@@ -1,6 +1,23 @@
 const prisma = require('../config/prisma');
 
-async function asegurarCargosAlDia(clienteId) {
+const OFFSET_AR_MS = -3 * 60 * 60 * 1000; // Argentina UTC-3 sin DST
+
+function aComponentesArgentina(date = new Date()) {
+    const dAr = new Date(date.getTime() + OFFSET_AR_MS);
+    return {
+        year: dAr.getUTCFullYear(),
+        month: dAr.getUTCMonth(),
+        day: dAr.getUTCDate(),
+        numeroFecha: dAr.getUTCFullYear() * 10000 + (dAr.getUTCMonth() + 1) * 100 + dAr.getUTCDate()
+    };
+}
+
+function finDelDiaArgentina(year, month, day) {
+    // 23:59:59.999 en Argentina (UTC-3) equivale a 26:59:59.999 en UTC (+3 horas)
+    return new Date(Date.UTC(year, month, day, 26, 59, 59, 999));
+}
+
+async function asegurarCargosAlDia(clienteId, options = {}) {
     const idInt = parseInt(clienteId);
     if (isNaN(idInt)) return;
 
@@ -38,10 +55,15 @@ async function asegurarCargosAlDia(clienteId) {
 
         const precio = parseFloat(plan.precio) || 0;
 
+        // Movimientos existentes del cliente para calcular saldo_al_corte
+        const movimientosExistentes = await tx.movimientocuenta.findMany({
+            where: { clienteId: cliente.id },
+            orderBy: { fecha: 'asc' }
+        });
+
         let vencimiento = cliente.vencimientoCuota;
-        const hoy = new Date();
-        // Limpiamos horas para comparar solo fechas de forma justa
-        hoy.setHours(0,0,0,0);
+        const ahora = options.fechaSimulada ? new Date(options.fechaSimulada) : new Date();
+        const hoyAr = aComponentesArgentina(ahora);
 
         if (!vencimiento) {
             vencimiento = new Date();
@@ -54,32 +76,65 @@ async function asegurarCargosAlDia(clienteId) {
         let currentVencimiento = new Date(vencimiento);
         currentVencimiento.setHours(0, 0, 0, 0);
 
-        // Mientras el vencimiento ya pasó o es hoy, y no superamos el límite
-        while (currentVencimiento <= hoy && cargosGenerados < maxCargos) {
+        // Mientras el vencimiento ya pasó o es hoy (en hora Argentina), y no superamos el límite
+        while (cargosGenerados < maxCargos) {
+            const numeroFechaVenc = currentVencimiento.getFullYear() * 10000 + (currentVencimiento.getMonth() + 1) * 100 + currentVencimiento.getDate();
+            if (numeroFechaVenc > hoyAr.numeroFecha) {
+                break;
+            }
+
             const mesAnio = `${String(currentVencimiento.getMonth() + 1).padStart(2, '0')}/${currentVencimiento.getFullYear()}`;
             
             // 1. Cargo base de la cuota
             const fechaCargo = new Date(currentVencimiento);
             fechaCargo.setHours(0, 0, 0, 0); // Normalización explícita a inicio del día
 
-            nuevosMovimientos.push({
+            const cargoActual = {
                 monto: precio,
                 tipo: 'CARGO',
                 descripcion: `Cuota mensual - ${mesAnio}`,
                 fecha: fechaCargo,
                 clienteId: cliente.id,
-                // Inyectar branchId del cliente para que el movimiento quede asignado
-                // a la sucursal correcta. cliente.branchId puede ser null en instalaciones
-                // sin multi-sucursal (comportamiento válido, el campo es nullable).
                 ...(cliente.branchId && { branchId: cliente.branchId })
-            });
+            };
+            nuevosMovimientos.push(cargoActual);
 
-            // 2. Comprobar si corresponde recargo: 
-            const fechaLimitePago = new Date(currentVencimiento);
+            // 2. Comprobar si corresponde recargo:
+            // Corte: fin del día fechaLimitePago en hora Argentina (UTC-3, sin DST)
             const diaReal = Math.max(diaMaximoCobro, currentVencimiento.getDate());
-            fechaLimitePago.setDate(diaReal);
+            const corteAr = finDelDiaArgentina(currentVencimiento.getFullYear(), currentVencimiento.getMonth(), diaReal);
 
-            if (hoy > fechaLimitePago && recargoPorcentaje > 0 && precio > 0) {
+            // saldo_al_corte = suma de movimientocuenta del cliente con fecha <= corte,
+            // EXCLUYENDO el CARGO y el RECARGO del ciclo actual.
+            // Incluye movimientos existentes + movimientos de ciclos anteriores del bucle actual.
+            let saldoAlCorte = 0;
+            for (const mov of movimientosExistentes) {
+                if (new Date(mov.fecha) <= corteAr) {
+                    const monto = parseFloat(mov.monto);
+                    if (mov.tipo === 'CARGO' || mov.tipo === 'RECARGO') {
+                        saldoAlCorte -= monto;
+                    } else {
+                        saldoAlCorte += monto;
+                    }
+                }
+            }
+            for (const mov of nuevosMovimientos) {
+                if (mov !== cargoActual && new Date(mov.fecha) <= corteAr) {
+                    const monto = parseFloat(mov.monto);
+                    if (mov.tipo === 'CARGO' || mov.tipo === 'RECARGO') {
+                        saldoAlCorte -= monto;
+                    } else {
+                        saldoAlCorte += monto;
+                    }
+                }
+            }
+
+            // Generar RECARGO solo si:
+            // ahora (hora Argentina) > fin del día fechaLimitePago (hora Argentina) Y saldo_al_corte < cuota
+            const pasoFechaLimite = ahora.getTime() > corteAr.getTime();
+            const correspondeRecargo = pasoFechaLimite && (saldoAlCorte < precio) && recargoPorcentaje > 0 && precio > 0;
+
+            if (correspondeRecargo) {
                 const montoRecargo = (precio * recargoPorcentaje) / 100;
                 const fechaRecargo = new Date(currentVencimiento);
                 fechaRecargo.setHours(0, 0, 0, 0);
@@ -185,4 +240,4 @@ function calcularCicloActual(vencimientoActual, diaMaximoCobro = 10) {
     return { inicio, fin };
 }
 
-module.exports = { asegurarCargosAlDia, calcularCicloActual };
+module.exports = { asegurarCargosAlDia, calcularCicloActual, aComponentesArgentina, finDelDiaArgentina };

@@ -1,0 +1,17 @@
+clienteId,alumno,recargoId,categoria,motivo,cuota,saldo_al_corte,recargo,saldo_antes,saldo_despues,estado_antes,estado_despues,bloqueado_antes,bloqueado_despues,fecha_aprobacion_confiable
+23,"Donatella Zacconi",553,REVERTIR,"saldo_al_corte ($65000) >= cuota ($30000)",30000,65000,4500,30500,35000,ALDIA,ALDIA,false,false,NO
+101,"Adriana  Ballinari",555,REVERTIR,"saldo_al_corte ($40000) >= cuota ($40000)",40000,40000,6000,-6000,0,ALDIA,ALDIA,true,false,NO
+152,"Carlitos Borri",557,REVERTIR,"saldo_al_corte ($40000) >= cuota ($40000)",40000,40000,6000,-6000,0,MOROSO,ALDIA,true,false,NO
+194,"Marcela Vitale",559,MANUAL,"Pago parcial a término: 0 < saldo_al_corte ($30000) < cuota ($35000)",35000,30000,5250,-10250,-10250,MOROSO,MOROSO,true,true,NO
+11,"Santi Perez",561,MANUAL,"Pago parcial a término: 0 < saldo_al_corte ($35000) < cuota ($40000)",40000,35000,6000,-11000,-11000,MOROSO,MOROSO,true,true,NO
+52,"Romina Gomez",563,MANUAL,"Pago parcial a término: 0 < saldo_al_corte ($35000) < cuota ($40000)",40000,35000,6000,24000,24000,ALDIA,ALDIA,false,false,NO
+36,"Analia  Rios",566,REVERTIR,"saldo_al_corte ($35000) >= cuota ($35000)",35000,35000,5250,-5250,0,MOROSO,ALDIA,true,false,NO
+93,"Ines Vergara",568,REVERTIR,"saldo_al_corte ($35000) >= cuota ($35000)",35000,35000,5250,-5250,0,MOROSO,ALDIA,true,false,NO
+114,"Dulce Cardozo",570,MANUAL,"Pago parcial a término: 0 < saldo_al_corte ($6000) < cuota ($35000)",35000,6000,5250,-34250,-34250,MOROSO,MOROSO,true,true,NO
+76,"Daniela  Orellano",572,REVERTIR,"saldo_al_corte ($90000) >= cuota ($45000)",45000,90000,6750,38250,45000,ALDIA,ALDIA,false,false,NO
+49,"Florencia  Muñoz",574,NO TOCAR,"Sin cobertura a término: saldo_al_corte ($0) <= 0",45000,0,6750,-51750,-51750,MOROSO,MOROSO,true,true,NO
+43,"Nahuel  Lozano",576,MANUAL,"Pago parcial a término: 0 < saldo_al_corte ($35000) < cuota ($40000)",40000,35000,6000,24000,24000,ALDIA,ALDIA,false,false,NO
+142,"Sol Guerediaga",579,REVERTIR,"saldo_al_corte ($70000) >= cuota ($35000)",35000,70000,5250,29750,35000,ALDIA,ALDIA,false,false,NO
+133,"Brenda aimé  Zanabria",581,NO TOCAR,"Sin cobertura a término: saldo_al_corte ($0) <= 0",40000,0,6000,-46000,-46000,MOROSO,MOROSO,true,true,NO
+161,"Vicky Monacci",583,REVERTIR,"saldo_al_corte ($35000) >= cuota ($35000)",35000,35000,5250,-5250,0,MOROSO,ALDIA,true,false,NO
+163,"Gabriela Garcia",585,NO TOCAR,"Sin cobertura a término: saldo_al_corte ($0) <= 0",40000,0,6000,-46000,-46000,MOROSO,MOROSO,true,true,NO

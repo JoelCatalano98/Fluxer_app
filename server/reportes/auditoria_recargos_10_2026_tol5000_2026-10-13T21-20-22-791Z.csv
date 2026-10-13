@@ -1,0 +1,5 @@
+clienteId,alumno,recargoId,categoria,motivo,cuota,saldo_al_corte,tolerancia,pagos_octubre,recargo,saldo_antes,saldo_post_recargo,bonificacion,saldo_despues,estado_antes,estado_despues,bloqueado_antes,bloqueado_despues,fecha_aprobacion_confiable
+114,"Dulce Cardozo",570,NO TOCAR,"Sin pagos registrados en octubre",35000,6000,5000,0,5250,-34250,-29000,0,-34250,MOROSO,MOROSO,true,true,NO
+49,"Florencia  Muñoz",574,NO TOCAR,"Sin pagos registrados en octubre",45000,0,5000,0,6750,-51750,-45000,0,-51750,MOROSO,MOROSO,true,true,NO
+133,"Brenda aimé  Zanabria",581,NO TOCAR,"Sin pagos registrados en octubre",40000,0,5000,0,6000,-46000,-40000,0,-46000,MOROSO,MOROSO,true,true,NO
+163,"Gabriela Garcia",585,NO TOCAR,"Sin pagos registrados en octubre",40000,0,5000,0,6000,-46000,-40000,0,-46000,MOROSO,MOROSO,true,true,NO
