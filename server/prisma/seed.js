@@ -23,6 +23,7 @@ async function main() {
     await upsertParam('multiDisciplinaHabilitado', 'Habilitar asignación de múltiples disciplinas por cliente', 'boolean', 'false');
     await upsertParam('libroRutinasHabilitado', 'Habilitar el módulo de Libro de Rutinas', 'boolean', 'false');
     await upsertParam('ocultarInscriptosHabilitado', 'Ocultar en la app de socios la lista de inscriptos por horario', 'boolean', 'false');
+    await upsertParam('permitirRecuperoMensual', 'Permitir recuperar clases canceladas a tiempo dentro del mismo mes calendario en planes semanales', 'boolean', 'false');
 
     // Creación del usuario administrador inicial
     const existeAdmin = await prisma.usuario.findFirst({

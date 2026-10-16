@@ -22,6 +22,114 @@ function calcularRangoSemanaUTC(fechaStr) {
     return { lunes, domingo };
 }
 
+// Helper para extraer YYYY, MM, DD en timezone America/Argentina/Buenos_Aires
+// Si recibe 'YYYY-MM-DD' (con o sin T00:00:00.000Z), toma los componentes directos de la fecha nominal;
+// si recibe un Date o timestamp con hora distinta, usa Intl en America/Argentina/Buenos_Aires.
+function extraerFechaNominalArgentina(fechaInput) {
+    if (typeof fechaInput === 'string') {
+        const match = fechaInput.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T00:00:00(?:\.000)?Z$)/);
+        if (match) {
+            return {
+                year: Number(match[1]),
+                month: Number(match[2]),
+                day: Number(match[3]),
+                isoDate: `${match[1]}-${match[2]}-${match[3]}`
+            };
+        }
+    }
+    const d = fechaInput instanceof Date ? fechaInput : new Date(fechaInput);
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Argentina/Buenos_Aires',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
+    const parts = formatter.formatToParts(d);
+    const year = Number(parts.find(p => p.type === 'year').value);
+    const month = Number(parts.find(p => p.type === 'month').value);
+    const day = Number(parts.find(p => p.type === 'day').value);
+    const isoDate = `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return { year, month, day, isoDate };
+}
+
+// Helper para calcular el rango del MES CALENDARIO (día 1 al último día del mes) en UTC
+// para columnas @db.Date, sin sufrir el desfasaje UTC-3 de setHours(0,0,0,0).
+function calcularRangoMesCalendarioUTC(fechaInput) {
+    const { year, month } = extraerFechaNominalArgentina(fechaInput);
+    const inicioMes = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
+    const finMes = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+    return { inicioMes, finMes, year, month };
+}
+
+// Cuenta cuántas veces caen los días de la semana indicados (0=Dom..6=Sab) en un mes calendario (year, month 1..12)
+function contarOcurrenciasDiaSemanaEnMes(year, month, diasSemana) {
+    if (!Array.isArray(diasSemana) || diasSemana.length === 0) return 0;
+    const diasSet = new Set(diasSemana.map(Number));
+    const totalDiasMes = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    let totalOcurrencias = 0;
+
+    for (let dia = 1; dia <= totalDiasMes; dia++) {
+        const dow = new Date(Date.UTC(year, month - 1, dia)).getUTCDay();
+        if (diasSet.has(dow)) {
+            totalOcurrencias++;
+        }
+    }
+    return totalOcurrencias;
+}
+
+/**
+ * Infiere los N días habituales del socio en el mes (N = cantidadClasesPlan) a partir de los turnos
+ * que tiene en ese mes (ACTIVO o CANCELADO_PENALIZADO) y calcula el cupo mensual real (8, 9 o 10).
+ *
+ * NOTA / LIMITACIÓN CONOCIDA ACEPTADA:
+ * Como la cancelación en término realiza un DELETE físico en `turnos_clientes`, los días habituales
+ * se infieren por mayoría de frecuencia entre los turnos existentes del mes. Si un socio cancela
+ * la mayoría de las ocurrencias de uno de sus días fijos y las recupera todas en un mismo tercer día
+ * (ej. cancela 3 miércoles y recupera 3 viernes en un mes de 4 miércoles), el día de recupero puede
+ * igualar o superar en frecuencia al día original.
+ */
+function inferirDiasHabitualesYCupoMensual(turnosMes, cantidadClasesPlan, year, month) {
+    const n = parseInt(cantidadClasesPlan);
+    if (!Array.isArray(turnosMes) || turnosMes.length === 0 || isNaN(n) || n <= 0) {
+        return { diasHabituales: [], cupoMensual: 0 };
+    }
+
+    const frecuenciasPorDia = new Map();
+    for (const t of turnosMes) {
+        const dow = (t.horario && typeof t.horario.dia_semana === 'number')
+            ? t.horario.dia_semana
+            : new Date(t.fecha).getUTCDay();
+        frecuenciasPorDia.set(dow, (frecuenciasPorDia.get(dow) || 0) + 1);
+    }
+
+    // Ordenar de mayor a menor frecuencia; en caso de empate, por dia_semana ascendente
+    const diasOrdenados = Array.from(frecuenciasPorDia.entries())
+        .sort((a, b) => (b[1] - a[1]) || (a[0] - b[0]))
+        .map(entry => entry[0]);
+
+    const diasHabituales = diasOrdenados.slice(0, n);
+    if (diasHabituales.length < n) {
+        return { diasHabituales, cupoMensual: 0 };
+    }
+
+    const cupoMensual = contarOcurrenciasDiaSemanaEnMes(year, month, diasHabituales);
+    return { diasHabituales, cupoMensual };
+}
+
+// Lee el parámetro booleano permitirRecuperoMensual respetando precedencia por sucursal (branchId) y fallback global (null)
+async function isPermitirRecuperoMensualEnabled(db, branchId = null) {
+    if (branchId) {
+        const branchParam = await db.parametroSistema.findFirst({
+            where: { clave: 'permitirRecuperoMensual', branchId: parseInt(branchId) }
+        });
+        if (branchParam) return branchParam.valor === 'true';
+    }
+    const globalParam = await db.parametroSistema.findFirst({
+        where: { clave: 'permitirRecuperoMensual', branchId: null }
+    });
+    return globalParam ? globalParam.valor === 'true' : false;
+}
+
 // Obtener horarios disponibles para el socio
 const getClasesDisponibles = async (req, res) => {
     try {
@@ -153,16 +261,19 @@ const reservarTurno = async (req, res) => {
             });
         }
 
-        if (req.user && req.user.id !== parseInt(clienteId)) {
+        const clienteIdInt = parseInt(clienteId);
+        const horarioIdInt = parseInt(horarioId);
+
+        if (req.user && req.user.id !== clienteIdInt) {
             return res.status(403).json({ success: false, message: 'No puedes reservar un turno para otro usuario' });
         }
 
         // 1. Asegurar que los cargos y la deuda estén actualizados
-        await asegurarCargosAlDia(clienteId);
+        await asegurarCargosAlDia(clienteIdInt);
 
         // Validar estado del cliente
         const clienteActual = await req.db.cliente.findUnique({
-            where: { id: parseInt(clienteId) },
+            where: { id: clienteIdInt },
             include: {
                 plan: true
             }
@@ -205,163 +316,226 @@ const reservarTurno = async (req, res) => {
             });
         }
 
-        // Parsear fecha YYYY-MM-DD o ISO a YYYY-MM-DDT00:00:00.000Z
-        const d = new Date(fechaExacta);
-        d.setUTCHours(0,0,0,0);
+        // Parsear fecha YYYY-MM-DD o ISO a YYYY-MM-DDT00:00:00.000Z (respetando fecha nominal en Argentina)
+        const { isoDate: fechaIso } = extraerFechaNominalArgentina(fechaExacta);
+        const d = new Date(`${fechaIso}T00:00:00.000Z`);
 
-        const horario = await req.db.horarioConfig.findUnique({
-            where: { id: parseInt(horarioId) },
-            include: { 
-                turnos: {
-                    where: { 
-                        fecha: d,
-                        estado: 'ACTIVO'
-                    }
-                } 
-            }
-        });
+        // Transacción atómica con bloqueo pesimista por socio para evitar condiciones de carrera
+        // (dos requests simultáneos del mismo socio no pueden superar el cupo semanal/mensual ni duplicar reserva)
+        const txResult = await prisma.$transaction(async (tx) => {
+            // Lock exclusivo sobre la fila del socio en InnoDB
+            await tx.$queryRaw`SELECT id FROM clientes WHERE id = ${clienteIdInt} FOR UPDATE`;
 
-        if (!horario) {
-            return res.status(404).json({
-                success: false,
-                message: 'El horario solicitado no existe'
-            });
-        }
+            const branchWhere = req.branchId ? { branchId: req.branchId } : {};
 
-        const configuracion = await req.db.configuracion.findFirst();
-        const maxGlobal = configuracion?.cupoGlobal || 15;
-        const bloqueo = configuracion?.bloqueoCapacidad;
-        const cupo = horario.cupo_maximo ?? maxGlobal;
-
-        if (horario.turnos.length >= cupo && bloqueo) {
-            return res.status(400).json({
-                success: false,
-                message: 'Cupo máximo alcanzado'
-            });
-        }
-
-        // Validar límite de tiempo para reservar (ej: limiteCancelacionMinutos)
-        const margenMinutos = configuracion?.limiteCancelacionMinutos || 60;
-        // Construir la fecha/hora real de la clase forzando -03:00
-        const fechaIso = new Date(d).toISOString().split('T')[0];
-        const hrObj = new Date(horario.hora_inicio);
-        const hh = String(hrObj.getUTCHours()).padStart(2, '0');
-        const mm = String(hrObj.getUTCMinutes()).padStart(2, '0');
-        
-        const fechaClaseExacta = new Date(`${fechaIso}T${hh}:${mm}:00-03:00`);
-        const ahora = new Date();
-
-        // Si ya pasó la clase o falta menos del margen permitido (asumiendo que sirve para reserva)
-        const minutosFaltantes = (fechaClaseExacta.getTime() - ahora.getTime()) / (1000 * 60);
-        if (minutosFaltantes < 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'No puedes reservar un turno de una clase que ya pasó o está por empezar.'
-            });
-        }
-
-        // Validar límite dinámico global por configuración
-        if (configuracion?.maxReservasSemana > 0) {
-            const { lunes, domingo } = calcularRangoSemanaUTC(fechaExacta);
-
-            const turnosSemana = await req.db.turnoCliente.count({
-                where: {
-                    clienteId: parseInt(clienteId),
-                    fecha: {
-                        gte: lunes,
-                        lte: domingo
-                    }
+            const horario = await tx.horarioConfig.findFirst({
+                where: { id: horarioIdInt, ...branchWhere },
+                include: { 
+                    turnos: {
+                        where: { 
+                            fecha: d,
+                            estado: 'ACTIVO',
+                            ...branchWhere
+                        }
+                    } 
                 }
             });
 
-            if (turnosSemana >= configuracion.maxReservasSemana) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Has alcanzado tu límite máximo de clases permitidas para esta semana (Límite Global)."
-                });
+            if (!horario) {
+                return { status: 404, body: { success: false, message: 'El horario solicitado no existe' } };
             }
-        }
 
-        // Validar límite dinámico por Plan (si aplica)
-        const plan = clienteActual.plan;
-        if (plan && plan.cantidadClases !== null && plan.cantidadClases > 0) {
-            const tipoFrec = plan.tipoFrecuencia || 'SEMANAL';
-            let limiteExcedido = false;
-            let rangoMsg = '';
+            const configuracion = await tx.configuracion.findFirst();
+            const maxGlobal = configuracion?.cupoGlobal || 15;
+            const bloqueo = configuracion?.bloqueoCapacidad;
+            const cupo = horario.cupo_maximo ?? maxGlobal;
 
-            if (tipoFrec === 'SEMANAL') {
-                const { lunes, domingo } = calcularRangoSemanaUTC(fechaExacta);
+            if (horario.turnos.length >= cupo && bloqueo) {
+                return { status: 400, body: { success: false, message: 'Cupo máximo alcanzado' } };
+            }
 
-                const count = await req.db.turnoCliente.count({
-                    where: { clienteId: parseInt(clienteId), fecha: { gte: lunes, lte: domingo } }
-                });
+            // Validar límite de tiempo para reservar (ej: limiteCancelacionMinutos)
+            const margenMinutos = configuracion?.limiteCancelacionMinutos || 60;
+            // Construir la fecha/hora real de la clase forzando -03:00 (America/Argentina/Buenos_Aires)
+            const hrObj = new Date(horario.hora_inicio);
+            const hh = String(hrObj.getUTCHours()).padStart(2, '0');
+            const mm = String(hrObj.getUTCMinutes()).padStart(2, '0');
+            
+            const fechaClaseExacta = new Date(`${fechaIso}T${hh}:${mm}:00-03:00`);
+            const ahora = new Date();
 
-                if (count >= plan.cantidadClases) {
-                    limiteExcedido = true;
-                    rangoMsg = 'esta semana';
-                }
-            } else if (tipoFrec === 'MENSUAL') {
-                const diaMaximo = configuracion?.diaMaximoCobro || 10;
-                // calcularCicloActual recibe el próximo vencimiento (actualizado previamente) y devuelve el inicio y fin de mes
-                const { inicio, fin } = calcularCicloActual(clienteActual.vencimientoCuota, diaMaximo);
-                
-                // Las fechas que devuelve `calcularCicloActual` están en hora local 00:00:00 (desde Date)
-                // Para asegurarnos del count, las estandarizamos en UTC como las demás búsquedas
-                const inicioUTC = new Date(inicio);
-                inicioUTC.setUTCHours(0,0,0,0);
-                const finUTC = new Date(fin);
-                // El fin del ciclo (vencimiento) se considera el inicio del próximo, así que usamos lt: finUTC
-                finUTC.setUTCHours(0,0,0,0);
+            // Si ya pasó la clase o falta menos del margen permitido (asumiendo que sirve para reserva)
+            const minutosFaltantes = (fechaClaseExacta.getTime() - ahora.getTime()) / (1000 * 60);
+            if (minutosFaltantes < 0) {
+                return {
+                    status: 400,
+                    body: {
+                        success: false,
+                        message: 'No puedes reservar un turno de una clase que ya pasó o está por empezar.'
+                    }
+                };
+            }
 
-                const count = await req.db.turnoCliente.count({
-                    where: { 
-                        clienteId: parseInt(clienteId), 
-                        fecha: { 
-                            gte: inicioUTC, 
-                            lt: finUTC 
-                        } 
+            // Validar límite dinámico global por configuración.
+            // NOTA: Si configuracion.maxReservasSemana > 0, se evalúa aquí ANTES del validador por Plan
+            // y actúa como tope duro semanal global, bloqueando igual aunque permitirRecuperoMensual sea true.
+            if (configuracion?.maxReservasSemana > 0) {
+                const { lunes, domingo } = calcularRangoSemanaUTC(fechaIso);
+
+                const turnosSemana = await tx.turnoCliente.count({
+                    where: {
+                        clienteId: clienteIdInt,
+                        fecha: {
+                            gte: lunes,
+                            lte: domingo
+                        },
+                        ...branchWhere
                     }
                 });
 
-                if (count >= plan.cantidadClases) {
-                    limiteExcedido = true;
-                    const fechaReseteo = `${finUTC.getDate()}/${finUTC.getMonth() + 1}/${finUTC.getFullYear()}`;
-                    rangoMsg = `tu ciclo mensual. Tus reservas se renuevan el ${fechaReseteo}`;
+                if (turnosSemana >= configuracion.maxReservasSemana) {
+                    return {
+                        status: 400,
+                        body: {
+                            success: false,
+                            message: "Has alcanzado tu límite máximo de clases permitidas para esta semana (Límite Global)."
+                        }
+                    };
                 }
             }
 
-            if (limiteExcedido) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Tu plan permite un máximo de ${plan.cantidadClases} clases. Has alcanzado el límite para ${rangoMsg}.`
-                });
-            }
-        }
+            // Validar límite dinámico por Plan (si aplica)
+            const plan = clienteActual.plan;
+            if (plan && plan.cantidadClases !== null && plan.cantidadClases > 0) {
+                const tipoFrec = plan.tipoFrecuencia || 'SEMANAL';
+                let limiteExcedido = false;
+                let rangoMsg = '';
 
-        // Verificar si el usuario ya está anotado
-        const yaAnotado = horario.turnos.find(t => t.clienteId === parseInt(clienteId));
-        if (yaAnotado) {
-            return res.status(400).json({
-                success: false,
-                message: 'Ya estás anotado en esta clase'
+                if (tipoFrec === 'SEMANAL') {
+                    const { lunes, domingo } = calcularRangoSemanaUTC(fechaIso);
+
+                    const count = await tx.turnoCliente.count({
+                        where: {
+                            clienteId: clienteIdInt,
+                            fecha: { gte: lunes, lte: domingo },
+                            ...branchWhere
+                        }
+                    });
+
+                    if (count >= plan.cantidadClases) {
+                        // El validador semanal bloquea. Evaluamos si aplica recupero mensual por mes calendario.
+                        const permitirRecupero = await isPermitirRecuperoMensualEnabled(tx, req.branchId);
+
+                        if (!permitirRecupero) {
+                            limiteExcedido = true;
+                            rangoMsg = 'esta semana';
+                        } else {
+                            const { inicioMes, finMes, year, month } = calcularRangoMesCalendarioUTC(fechaIso);
+
+                            const turnosMes = await tx.turnoCliente.findMany({
+                                where: {
+                                    clienteId: clienteIdInt,
+                                    fecha: { gte: inicioMes, lte: finMes },
+                                    estado: { in: ['ACTIVO', 'CANCELADO_PENALIZADO'] },
+                                    ...branchWhere
+                                },
+                                include: {
+                                    horario: { select: { dia_semana: true } }
+                                }
+                            });
+
+                            const turnosEnElMes = turnosMes.length;
+                            const { diasHabituales, cupoMensual } = inferirDiasHabitualesYCupoMensual(
+                                turnosMes,
+                                plan.cantidadClases,
+                                year,
+                                month
+                            );
+
+                            // Si no tiene turnos suficientes en el mes para inferir sus N días habituales,
+                            // o si ya alcanzó/superó el cupo mensual de ese mes calendario, bloquear igual que hoy.
+                            if (diasHabituales.length < plan.cantidadClases || turnosEnElMes >= cupoMensual) {
+                                limiteExcedido = true;
+                                rangoMsg = 'esta semana';
+                            }
+                        }
+                    }
+                } else if (tipoFrec === 'MENSUAL') {
+                    const diaMaximo = configuracion?.diaMaximoCobro || 10;
+                    // calcularCicloActual recibe el próximo vencimiento (actualizado previamente) y devuelve el inicio y fin de mes
+                    const { inicio, fin } = calcularCicloActual(clienteActual.vencimientoCuota, diaMaximo);
+                    
+                    // Las fechas que devuelve `calcularCicloActual` están en hora local 00:00:00 (desde Date)
+                    // Para asegurarnos del count, las estandarizamos en UTC como las demás búsquedas
+                    const inicioUTC = new Date(inicio);
+                    inicioUTC.setUTCHours(0,0,0,0);
+                    const finUTC = new Date(fin);
+                    // El fin del ciclo (vencimiento) se considera el inicio del próximo, así que usamos lt: finUTC
+                    finUTC.setUTCHours(0,0,0,0);
+
+                    const count = await tx.turnoCliente.count({
+                        where: { 
+                            clienteId: clienteIdInt, 
+                            fecha: { 
+                                gte: inicioUTC, 
+                                lt: finUTC 
+                            },
+                            ...branchWhere
+                        }
+                    });
+
+                    if (count >= plan.cantidadClases) {
+                        limiteExcedido = true;
+                        const fechaReseteo = `${finUTC.getDate()}/${finUTC.getMonth() + 1}/${finUTC.getFullYear()}`;
+                        rangoMsg = `tu ciclo mensual. Tus reservas se renuevan el ${fechaReseteo}`;
+                    }
+                }
+
+                if (limiteExcedido) {
+                    return {
+                        status: 400,
+                        body: {
+                            success: false,
+                            message: `Tu plan permite un máximo de ${plan.cantidadClases} clases. Has alcanzado el límite para ${rangoMsg}.`
+                        }
+                    };
+                }
+            }
+
+            // Verificar si el usuario ya está anotado
+            const yaAnotado = horario.turnos.find(t => t.clienteId === clienteIdInt);
+            if (yaAnotado) {
+                return {
+                    status: 400,
+                    body: {
+                        success: false,
+                        message: 'Ya estás anotado en esta clase'
+                    }
+                };
+            }
+
+            // Crear reserva TurnoCliente
+            const nuevoTurno = await tx.turnoCliente.create({
+                data: {
+                    horarioId: horarioIdInt,
+                    clienteId: clienteIdInt,
+                    fecha: d,
+                    estado: 'ACTIVO',
+                    ...(req.branchId && { branchId: req.branchId })
+                }
             });
-        }
 
-        // Crear reserva TurnoCliente
-        const nuevoTurno = await req.db.turnoCliente.create({
-            data: {
-                horarioId: parseInt(horarioId),
-                clienteId: parseInt(clienteId),
-                fecha: d,
-                estado: 'ACTIVO'
-            }
+            return {
+                status: 201,
+                body: {
+                    success: true,
+                    data: nuevoTurno,
+                    message: '¡Turno reservado con éxito!'
+                }
+            };
         });
 
-        return res.status(201).json({
-            success: true,
-            data: nuevoTurno,
-            message: '¡Turno reservado con éxito!'
-        });
+        return res.status(txResult.status).json(txResult.body);
     } catch (error) {
         console.error('Error al reservar turno:', error);
         return res.status(500).json({

@@ -53,11 +53,11 @@ if (fileArgIndex !== -1 && process.argv[fileArgIndex + 1]) {
     const reportsDir = path.join(__dirname, '..', 'reportes');
     if (fs.existsSync(reportsDir)) {
         const files = fs.readdirSync(reportsDir)
-            .filter(f => f.startsWith('backup_recargos_eliminados_') && f.endsWith('.json'))
-            .sort()
-            .reverse();
+            .filter(f => (f.startsWith('backup_recargos_eliminados_') || f.startsWith('backup_perdon_recargos_')) && f.endsWith('.json'))
+            .map(f => ({ name: f, mtime: fs.statSync(path.join(reportsDir, f)).mtimeMs }))
+            .sort((a, b) => b.mtime - a.mtime);
         if (files.length > 0) {
-            jsonFile = path.join(reportsDir, files[0]);
+            jsonFile = path.join(reportsDir, files[0].name);
         }
     }
 }
@@ -207,16 +207,17 @@ async function main() {
         );
 
         // Verificar si hay bonificaciones a deshacer
+        const cicloBuscar = jsonParsed.ciclo || '10/2026';
         const bonificacionesPresentes = cliente.movimientocuenta.filter(m =>
             m.tipo === 'BONIFICACION' &&
-            m.descripcion.includes('10/2026')
+            m.descripcion.includes(cicloBuscar)
         );
         const totalBonifADeshacer = bonificacionesPresentes.reduce((acc, b) => acc + b.monto, 0);
 
         // Simular saldo tras restaurar:
         // Quitar bonificaciones y volver a restar recargo
         const movsSimulados = cliente.movimientocuenta
-            .filter(m => !(m.tipo === 'BONIFICACION' && m.descripcion.includes('10/2026')));
+            .filter(m => !(m.tipo === 'BONIFICACION' && m.descripcion.includes(cicloBuscar)));
         
         if (!yaExisteRecargo) {
             movsSimulados.push({
@@ -289,12 +290,13 @@ async function main() {
             await prisma.$transaction(async (tx) => {
                 const recargo = plan.rawItem.recargoData;
 
-                // 1. Eliminar bonificaciones aplicadas durante la corrección
+                // 1. Eliminar bonificaciones aplicadas durante la corrección o perdón
+                const cicloBuscar = jsonParsed.ciclo || '10/2026';
                 const borradas = await tx.movimientocuenta.deleteMany({
                     where: {
                         clienteId: plan.clienteId,
                         tipo: 'BONIFICACION',
-                        descripcion: { contains: '10/2026' }
+                        descripcion: { contains: cicloBuscar }
                     }
                 });
                 if (borradas.count > 0) {

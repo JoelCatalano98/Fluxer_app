@@ -1,0 +1,62 @@
+{
+  "tipoOperacion": "PERDON_COMERCIAL_RECARGOS",
+  "ciclo": "10/2026",
+  "database": "fluxer_auditoria",
+  "timestamp": "2026-10-14T00:24:16.982Z",
+  "items": [
+    {
+      "clienteId": 133,
+      "alumno": "Brenda aimé  Zanabria",
+      "accion": "PERDON_COMERCIAL",
+      "fechaAplicacion": "2026-10-14T00:24:16.982Z",
+      "recargoData": {
+        "id": 581,
+        "monto": 6000,
+        "tipo": "RECARGO",
+        "descripcion": "Recargo por mora (15%) - 10/2026",
+        "fecha": "2026-10-10T00:00:00.000Z",
+        "clienteId": 133,
+        "pagoId": null,
+        "branchId": null
+      },
+      "bonificacionData": {
+        "monto": 6000,
+        "tipo": "BONIFICACION",
+        "descripcion": "Bonificación recargo por mora 10/2026 - perdón comercial",
+        "clienteId": 133,
+        "branchId": null
+      },
+      "saldoAntes": -46000,
+      "saldoDespues": -40000,
+      "estadoAntes": "MOROSO",
+      "estadoDespues": "MOROSO"
+    },
+    {
+      "clienteId": 163,
+      "alumno": "Gabriela Garcia",
+      "accion": "PERDON_COMERCIAL",
+      "fechaAplicacion": "2026-10-14T00:24:16.982Z",
+      "recargoData": {
+        "id": 585,
+        "monto": 6000,
+        "tipo": "RECARGO",
+        "descripcion": "Recargo por mora (15%) - 10/2026",
+        "fecha": "2026-10-10T00:00:00.000Z",
+        "clienteId": 163,
+        "pagoId": null,
+        "branchId": null
+      },
+      "bonificacionData": {
+        "monto": 6000,
+        "tipo": "BONIFICACION",
+        "descripcion": "Bonificación recargo por mora 10/2026 - perdón comercial",
+        "clienteId": 163,
+        "branchId": null
+      },
+      "saldoAntes": -46000,
+      "saldoDespues": -40000,
+      "estadoAntes": "MOROSO",
+      "estadoDespues": "MOROSO"
+    }
+  ]
+}
